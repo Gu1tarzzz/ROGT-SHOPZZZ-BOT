@@ -96,7 +96,7 @@ console.log("Modal ID =", id);
     const description = value(interaction, "description");
     if (action === "create") {
       const all = await categoryRepository.list(interaction.guildId);
-      const category = categoryRepository.create(interaction.guildId, { name, description, hidden: false });
+      const category = categoryRepository.create(interaction.guildId, { name, description, hidden: false, featured: false, guildId: interaction.guildId });
       category.position = all.length + 1;
       await categoryRepository.save(category);
       return interaction.reply({ content: `สร้างหมวดหมู่ **${name}** แล้ว`, ephemeral: true });
@@ -105,6 +105,7 @@ console.log("Modal ID =", id);
     if (!category) return interaction.reply({ content: "ไม่พบหมวดหมู่นี้", ephemeral: true });
     category.name = name;
     category.description = description;
+    category.updatedAt = new Date().toISOString();
     await categoryRepository.save(category);
     return interaction.reply({ content: `บันทึกหมวดหมู่ **${name}** แล้ว`, ephemeral: true });
   }
@@ -113,7 +114,7 @@ console.log("Modal ID =", id);
     const stock = Number(value(interaction, "stock"));
     if (price === undefined || !Number.isInteger(stock) || stock < -1) return interaction.reply({ content: "ราคา หรือสต็อกไม่ถูกต้อง", ephemeral: true });
     const [imageUrl, requiredRoleId, color, emoji, status] = splitLines(value(interaction, "details"));
-    const fields = { name: value(interaction, "name"), description: value(interaction, "description"), price, stock, imageUrl: parseOptional(imageUrl), requiredRoleId: parseOptional(requiredRoleId), buttonColor: validColor(color), emoji: parseOptional(emoji), status: status === "inactive" ? "inactive" as const : "active" as const };
+    const fields = { name: value(interaction, "name"), description: value(interaction, "description"), price, stock, imageUrl: parseOptional(imageUrl), requiredRoleId: parseOptional(requiredRoleId), buttonColor: validColor(color), emoji: parseOptional(emoji), status: status === "inactive" ? "inactive" as const : "active" as const, featured: false, guildId: interaction.guildId, tags: [] };
     if (action === "create") {
       if (!id) return interaction.reply({ content: "ไม่พบหมวดหมู่สินค้า", ephemeral: true });
       console.log("Modal ID =", id);

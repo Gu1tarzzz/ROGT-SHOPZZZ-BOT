@@ -4,7 +4,7 @@ import type { Category, DatabaseFile, GuildSettings, HexColor, Order, Product, S
 import { JsonStore } from "./jsonStore.js";
 
 type Entity = Category | Product | Order;
-const emptyFile = <T>(): DatabaseFile<T> => ({ version: 1, data: {} });
+const emptyFile = <T>(): DatabaseFile<T> => ({ version: 2, lastModified: new Date().toISOString(), data: {} });
 
 class EntityRepository<T extends Entity> {
   public constructor(protected readonly store: JsonStore<DatabaseFile<T>>) {}
@@ -70,8 +70,9 @@ export class CategoryRepository extends EntityRepository<Category> {
   public async list(guildId: string, includeHidden = true): Promise<Category[]> {
     return (await this.all(guildId)).filter((c) => includeHidden || !c.hidden).sort((a, b) => a.position - b.position);
   }
-  public create(guildId: string, input: Omit<Category, "id" | "position" | "createdAt">): Category {
-    return { ...input, id: `${guildId}:${randomUUID()}`, position: 0, createdAt: new Date().toISOString() };
+  public create(guildId: string, input: Omit<Category, "id" | "position" | "createdAt" | "updatedAt">): Category {
+    const now = new Date().toISOString();
+    return { ...input, id: `${guildId}:${randomUUID()}`, position: 0, createdAt: now, updatedAt: now };
   }
 }
 
@@ -368,7 +369,7 @@ export class StockRepository {
     return Object.values(file.data).find((c) => c.guildId === guildId && c.code === code.toUpperCase() && c.enabled);
   }
 
-  public async useCoupon(couponId: string, userId: string, orderId: string): Promise<boolean> {
+  public async useCoupon(couponId: string, userId: string, orderId: string, discountAmount: number): Promise<boolean> {
     const file = await this.couponStore.read();
     const coupon = file.data[couponId];
     if (!coupon || !coupon.enabled) return false;
@@ -380,6 +381,7 @@ export class StockRepository {
       couponId,
       userId,
       orderId,
+      discountAmount,
       usedAt: new Date().toISOString()
     };
     await Promise.all([
@@ -495,22 +497,25 @@ export class StockRepository {
   }
 
   // Product Tags Management
-  public async createTag(name: string, color: HexColor, emoji?: string): Promise<ProductTag> {
+  public async createTag(guildId: string, name: string, color: HexColor, emoji?: string): Promise<ProductTag> {
     const tag: ProductTag = {
       id: randomUUID(),
+      guildId,
       name,
       color,
       emoji,
+      createdAt: new Date().toISOString()
     };
     await this.productTagStore.update((file) => ({ ...file, data: { ...file.data, [tag.id]: tag } }));
     return tag;
   }
 
-  public async tagProduct(productId: string, tagId: string): Promise<void> {
+  public async tagProduct(productId: string, tagId: string, guildId: string): Promise<void> {
     const tagged: TaggedProduct = {
       productId,
       tagId,
-      addedAt: new Date().toISOString()
+      guildId,
+      createdAt: new Date().toISOString()
     };
     await this.taggedProductStore.update((file) => ({ ...file, data: { ...file.data, [`${productId}:${tagId}`]: tagged } }));
   }

@@ -8,6 +8,7 @@ export const shopCommand = {
   async execute(interaction: import("discord.js").ChatInputCommandInteraction): Promise<void> {
     if (!interaction.guildId) return;
     const settings = await settingsRepository.get(interaction.guildId);
-    await interaction.reply({ embeds: [await shopEmbed(interaction.guildId)], components: [shopButtons(settings.shop)] });
+    const buttonRows = shopButtons(settings.shop, true);
+    await interaction.reply({ embeds: [await shopEmbed(interaction.guildId)], components: buttonRows });
   }
 };

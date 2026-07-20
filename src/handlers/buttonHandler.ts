@@ -1,0 +1,118 @@
+import { type ButtonInteraction } from "discord.js";
+import { categoryManagerMenu, categorySortButtons, productCategoryMenu, productManagerMenu } from "../components/setupComponents.js";
+import { categoryMenu } from "../components/shopComponents.js";
+import { categoryRepository, productRepository } from "../database/repositories.js";
+import { openCategoryModal, openModal, openProductModal } from "./modalHandler.js";
+import { showDashboard } from "./setupHandler.js";
+import { cancelTicket, closeTicket, createOrderTicket, promptSlip, reviewSlip } from "./ticketHandler.js";
+import { premiumEmbed } from "../utils/discord.js";
+import { hasAdminAccess } from "../utils/permissions.js";
+
+async function assertAdmin(interaction: ButtonInteraction): Promise<boolean> {
+  if (!interaction.guild) return false;
+  const member = await interaction.guild.members.fetch(interaction.user.id);
+  if (await hasAdminAccess(member)) return true;
+  await interaction.reply({ content: "เฉพาะ Owner, Administrator หรือ Staff Role ที่ตั้งค่าไว้เท่านั้น", ephemeral: true });
+  return false;
+}
+
+export async function handleButton(interaction: ButtonInteraction): Promise<unknown> {
+  if (!interaction.guildId) return;
+  const [scope, action, id, extra] = interaction.customId.split(":");
+  if (scope === "shop") {
+    if (action === "browse" || action === "order") {
+      const categories = await categoryRepository.list(interaction.guildId, false);
+      if (!categories.length) return interaction.reply({ content: "ร้านค้ายังไม่มีหมวดหมู่สินค้า", ephemeral: true });
+      const embed = await premiumEmbed(interaction.guildId, action === "order" ? "สร้างคำสั่งซื้อ" : "เลือกชมสินค้า", "เลือกหมวดหมู่ แล้วเลือกสินค้าที่ต้องการ");
+      return interaction.reply({ embeds: [embed], components: [categoryMenu(categories)], ephemeral: true });
+    }
+    if (action === "support") return createOrderTicket(interaction);
+    if (action === "info") {
+      const embed = await premiumEmbed(interaction.guildId, "ข้อมูลร้านค้า", "ROGT SHOPZZZ — Realm of Gu1tarzzz\n\nสินค้าทุกรายการจัดการโดยทีมงานผ่านระบบ Marketplace\nหากต้องการความช่วยเหลือ กรุณากดปุ่ม Support");
+      return interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+  }
+  if (scope === "order" && action === "create") {
+    const product = await productRepository.find(id);
+    if (!product) return interaction.reply({ content: "ไม่พบสินค้านี้", ephemeral: true });
+    return createOrderTicket(interaction, product);
+  }
+  if (scope === "ticket") {
+    if (action === "slip") return promptSlip(interaction);
+    if (action === "cancel") return cancelTicket(interaction);
+    if (action === "close") return closeTicket(interaction);
+  }
+  if (scope === "review") return reviewSlip(interaction, id, action as "approve" | "reject" | "refund");
+
+  if (!await assertAdmin(interaction)) return;
+  if (scope === "setup") {
+    if (action === "home") return showDashboard(interaction);
+    if (action === "modal") return openModal(interaction);
+  }
+  if (scope === "category") {
+    const categories = await categoryRepository.list(interaction.guildId);
+    if (action === "create") return openCategoryModal(interaction);
+    if (["edit", "delete", "visibility", "sort"].includes(action) && id === "pick") {
+      if (!categories.length) return interaction.reply({ content: "ยังไม่มีหมวดหมู่", ephemeral: true });
+      return interaction.reply({ content: "เลือกหมวดหมู่ที่ต้องการจัดการ", components: [categoryManagerMenu(categories, action as "edit" | "delete" | "visibility" | "sort")], ephemeral: true });
+    }
+    if (action === "move") {
+      const category = await categoryRepository.find(id);
+      if (!category) return interaction.reply({ content: "ไม่พบหมวดหมู่", ephemeral: true });
+      const ordered = categories.sort((a, b) => a.position - b.position);
+      const currentIndex = ordered.findIndex((item) => item.id === category.id);
+      const otherIndex = extra === "up" ? currentIndex - 1 : currentIndex + 1;
+      if (otherIndex < 0 || otherIndex >= ordered.length) return interaction.reply({ content: "ไม่สามารถเลื่อนต่อได้", ephemeral: true });
+      const other = ordered[otherIndex];
+      [category.position, other.position] = [other.position, category.position];
+      await Promise.all([categoryRepository.save(category), categoryRepository.save(other)]);
+      return interaction.reply({ content: "อัปเดตลำดับหมวดหมู่แล้ว", ephemeral: true });
+    }
+  }
+  if (scope === "product") {
+    const products = await productRepository.list(interaction.guildId);
+    if (action === "create" && id === "pick") {
+      const categories = await categoryRepository.list(interaction.guildId);
+      if (!categories.length) return interaction.reply({ content: "สร้างหมวดหมู่ก่อนเพิ่มสินค้า", ephemeral: true });
+      return interaction.reply({ content: "เลือกหมวดหมู่สำหรับสินค้าใหม่", components: [productCategoryMenu(categories)], ephemeral: true });
+    }
+    if (["edit", "delete", "visibility"].includes(action) && id === "pick") {
+      if (!products.length) return interaction.reply({ content: "ยังไม่มีสินค้า", ephemeral: true });
+      return interaction.reply({ content: "เลือกสินค้าที่ต้องการจัดการ", components: [productManagerMenu(products, action as "edit" | "delete" | "visibility")], ephemeral: true });
+    }
+  }
+}
+
+export async function handleCategoryPick(interaction: import("discord.js").StringSelectMenuInteraction, action: "edit" | "delete" | "visibility" | "sort"): Promise<unknown> {
+  const category = await categoryRepository.find(interaction.values[0]);
+  if (!category) return interaction.reply({ content: "ไม่พบหมวดหมู่", ephemeral: true });
+  if (action === "edit") return openCategoryModal(interaction as never, category.id);
+  if (action === "delete") {
+    const products = await productRepository.list(interaction.guildId!);
+    if (products.some((product) => product.categoryId === category.id)) return interaction.reply({ content: "ลบไม่ได้: ยังมีสินค้าอยู่ในหมวดหมู่นี้", ephemeral: true });
+    await categoryRepository.remove(category.id);
+    return interaction.update({ content: `ลบหมวดหมู่ **${category.name}** แล้ว`, components: [] });
+  }
+  if (action === "visibility") {
+    category.hidden = !category.hidden;
+    await categoryRepository.save(category);
+    return interaction.update({ content: `${category.hidden ? "ซ่อน" : "แสดง"}หมวดหมู่ **${category.name}** แล้ว`, components: [] });
+  }
+  const embed = await premiumEmbed(interaction.guildId!, "เรียงลำดับหมวดหมู่", `กำลังจัดตำแหน่ง **${category.name}**\nใช้ปุ่มเพื่อเลื่อนหมวดหมู่นี้`);
+  return interaction.update({ embeds: [embed], components: [categorySortButtons(category.id)] });
+}
+
+export async function handleProductPick(interaction: import("discord.js").StringSelectMenuInteraction, action: "create" | "edit" | "delete" | "visibility"): Promise<unknown> {
+  if (action === "create") return openProductModal(interaction as never, interaction.values[0]);
+  const product = await productRepository.find(interaction.values[0]);
+  if (!product) return interaction.reply({ content: "ไม่พบสินค้า", ephemeral: true });
+  if (action === "edit") return openProductModal(interaction as never, undefined, product);
+  if (action === "delete") {
+    await productRepository.remove(product.id);
+    return interaction.update({ content: `ลบสินค้า **${product.name}** แล้ว`, components: [] });
+  }
+  product.hidden = !product.hidden;
+  product.updatedAt = new Date().toISOString();
+  await productRepository.save(product);
+  return interaction.update({ content: `${product.hidden ? "ซ่อน" : "แสดง"}สินค้า **${product.name}** แล้ว`, components: [] });
+}

@@ -1,0 +1,155 @@
+import { ChannelType, EmbedBuilder, PermissionFlagsBits, type ButtonInteraction, type GuildTextBasedChannel, type Message } from "discord.js";
+import { ticketButtons, reviewButtons } from "../components/ticketComponents.js";
+import { orderRepository, productRepository, settingsRepository } from "../database/repositories.js";
+import type { Order, OrderStatus, Product } from "../types.js";
+import { channelSlug, formatPrice } from "../utils/formatters.js";
+import { hasStaffAccess } from "../utils/permissions.js";
+
+function paymentInstructions(settings: Awaited<ReturnType<typeof settingsRepository.get>>): string {
+  const options = [
+    settings.payment.trueMoneyWallet && `**TrueMoney Wallet:** ${settings.payment.trueMoneyWallet}`,
+    settings.payment.promptPay && `**PromptPay:** ${settings.payment.promptPay}`,
+    settings.payment.bankAccount && `**ธนาคาร:** ${[settings.payment.bankName, settings.payment.accountName, settings.payment.bankAccount].filter(Boolean).join(" • ")}`,
+    settings.payment.qrImage && `QR: ${settings.payment.qrImage}`
+  ].filter(Boolean);
+  return [settings.payment.instructions, ...options].filter(Boolean).join("\n");
+}
+
+export async function createOrderTicket(interaction: ButtonInteraction, product?: Product): Promise<unknown> {
+  if (!interaction.guild || !interaction.guildId) return;
+  const guild = interaction.guild;
+  const customer = await guild.members.fetch(interaction.user.id);
+  const settings = await settingsRepository.get(guild.id);
+  if (settings.bot.maintenanceMode) return interaction.reply({ content: "ขณะนี้ร้านอยู่ระหว่างปรับปรุง", ephemeral: true });
+  if (settings.shop.status === "closed") return interaction.reply({ content: "ขณะนี้ร้านปิดปรับปรุง กรุณาลองใหม่ภายหลัง", ephemeral: true });
+  if (product && (product.hidden || product.status !== "active" || product.stock === 0)) return interaction.reply({ content: "สินค้านี้ไม่พร้อมจำหน่ายในขณะนี้", ephemeral: true });
+  if (product?.requiredRoleId && !customer.roles.cache.has(product.requiredRoleId)) return interaction.reply({ content: "คุณไม่มี Role ที่จำเป็นสำหรับสินค้านี้", ephemeral: true });
+  if (product && !settings.payment.enabled) return interaction.reply({ content: "ร้านค้ายังไม่ได้เปิดการรับชำระเงิน กรุณาติดต่อทีมงาน", ephemeral: true });
+  await interaction.deferReply({ ephemeral: true });
+  const label = product?.name ?? "support";
+  const ticketCategory = product ? settings.tickets.categoryId : (settings.tickets.supportCategoryId || settings.tickets.categoryId);
+  const overwrites = [
+    { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
+    { id: customer.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AttachFiles] },
+    ...[...new Set([...settings.tickets.staffRoleIds, ...settings.bot.staffRoleIds])].map((id) => ({ id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] }))
+  ];
+  const channel = await guild.channels.create({
+    name: `${product ? settings.tickets.ticketPrefix : "support"}-${channelSlug(customer.displayName)}-${Date.now().toString().slice(-4)}`,
+    type: ChannelType.GuildText,
+    parent: ticketCategory || undefined,
+    permissionOverwrites: overwrites,
+    reason: `ROGT marketplace ticket: ${label}`
+  });
+  const order = orderRepository.create({
+    guildId: guild.id,
+    channelId: channel.id,
+    customerId: customer.id,
+    productId: product?.id,
+    productName: label,
+    price: product?.price ?? 0,
+    status: "pending_payment",
+    type: product ? "order" : "support"
+  });
+  await orderRepository.save(order);
+  const embed = new EmbedBuilder()
+    .setColor(settings.shop.embedColor)
+    .setTitle(product ? "✦ คำสั่งซื้อใหม่" : "✦ Support Ticket")
+    .setDescription(product ? [
+      `**สินค้า:** ${product.name}`,
+      `**ราคา:** ${formatPrice(product.price)}`,
+      `**ลูกค้า:** <@${customer.id}>`,
+      "",
+      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+      "**วิธีชำระเงิน**",
+      paymentInstructions(settings) || "กรุณารอทีมงานแจ้งรายละเอียดการชำระเงิน",
+      "",
+      "หลังชำระเงิน กด **อัปโหลดสลิป** แล้วส่งรูปสลิปในห้องนี้"
+    ].join("\n") : `สวัสดี <@${customer.id}> กรุณาอธิบายสิ่งที่ต้องการให้ทีมงานช่วยเหลือได้เลย`)
+    .setFooter({ text: `Order ID: ${order.id}` })
+    .setTimestamp();
+  await channel.send({ content: `<@${customer.id}>`, embeds: [embed], components: [ticketButtons(order.status)] });
+  await interaction.editReply({ content: `สร้าง Ticket เรียบร้อยแล้ว: ${channel}` });
+}
+
+export async function promptSlip(interaction: ButtonInteraction): Promise<unknown> {
+  return interaction.reply({ content: "ส่งรูปหรือไฟล์สลิปการชำระเงินในห้อง Ticket นี้ได้เลย ระบบจะส่งให้ทีมงานตรวจสอบอัตโนมัติ", ephemeral: true });
+}
+
+export async function cancelTicket(interaction: ButtonInteraction): Promise<unknown> {
+  if (!interaction.guildId || !interaction.channelId) return;
+  const order = await orderRepository.byChannel(interaction.channelId);
+  if (!order || order.customerId !== interaction.user.id) return interaction.reply({ content: "เฉพาะผู้สร้าง Ticket เท่านั้นที่ยกเลิกได้", ephemeral: true });
+  if (["approved", "closed", "refunded"].includes(order.status)) return interaction.reply({ content: "ไม่สามารถยกเลิกรายการนี้ได้", ephemeral: true });
+  await setOrderStatus(order, "cancelled");
+  await interaction.reply({ content: "ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว ทีมงานจะได้รับแจ้ง", ephemeral: true });
+  if (interaction.channel?.isSendable()) await interaction.channel.send("คำสั่งซื้อนี้ถูกยกเลิกโดยลูกค้า");
+}
+
+export async function closeTicket(interaction: ButtonInteraction): Promise<unknown> {
+  if (!interaction.guild || !interaction.channel?.isSendable() || !interaction.channelId) return;
+  const member = await interaction.guild.members.fetch(interaction.user.id);
+  const order = await orderRepository.byChannel(interaction.channelId);
+  if (!order || (order.customerId !== member.id && !(await hasStaffAccess(member)))) return interaction.reply({ content: "คุณไม่มีสิทธิ์ปิด Ticket นี้", ephemeral: true });
+  if (order.status !== "approved" && order.status !== "cancelled") await setOrderStatus(order, "closed");
+  const channel = interaction.channel;
+  if ("permissionOverwrites" in channel) await channel.permissionOverwrites.edit(order.customerId, { SendMessages: false }, { reason: "ROGT ticket closed" });
+  if ("setName" in channel && !channel.name.startsWith("closed-")) await channel.setName(`closed-${channel.name}`.slice(0, 100));
+  await interaction.reply({ content: "Ticket ถูกปิดแล้ว", ephemeral: true });
+  await channel.send("Ticket นี้ถูกปิดแล้ว หากต้องการความช่วยเหลือเพิ่มเติม กรุณาสร้าง Ticket ใหม่");
+}
+
+export async function forwardSlip(message: Message): Promise<unknown> {
+  if (!message.guild || !message.attachments.size || message.author.bot) return;
+  const order = await orderRepository.byChannel(message.channelId);
+  if (!order || order.type !== "order" || order.customerId !== message.author.id || ["approved", "cancelled", "closed", "refunded"].includes(order.status)) return;
+  const settings = await settingsRepository.get(message.guild.id);
+  if (!settings.payment.slipChannelId) {
+    await message.reply("ได้รับสลิปแล้ว แต่ร้านค้ายังไม่ได้ตั้งค่า Slip Channel กรุณาแจ้งทีมงาน");
+    return;
+  }
+  const slipChannel = await message.guild.channels.fetch(settings.payment.slipChannelId).catch(() => null);
+  if (!slipChannel?.isTextBased()) {
+    await message.reply("ไม่พบ Slip Channel ที่ตั้งค่าไว้ กรุณาแจ้งทีมงาน");
+    return;
+  }
+  const attachment = message.attachments.first();
+  const embed = new EmbedBuilder()
+    .setColor(settings.shop.embedColor)
+    .setTitle("✦ สลิปรอการตรวจสอบ")
+    .setDescription(`**สินค้า:** ${order.productName}\n**จำนวน:** ${formatPrice(order.price)}\n**ลูกค้า:** <@${order.customerId}>\n**Ticket:** <#${order.channelId}>\n**Order ID:** ${order.id}`)
+    .setTimestamp();
+  if (attachment?.contentType?.startsWith("image/")) embed.setImage(attachment.url);
+  const review = await (slipChannel as GuildTextBasedChannel).send({ embeds: [embed], files: attachment ? [attachment.url] : [], components: [reviewButtons(order.id)] });
+  await setOrderStatus(order, "pending_review", review.id);
+  await message.reply("ส่งสลิปให้ทีมงานตรวจสอบแล้ว กรุณารอการยืนยัน");
+}
+
+export async function reviewSlip(interaction: ButtonInteraction, orderId: string, decision: "approve" | "reject" | "refund"): Promise<unknown> {
+  if (!interaction.guild) return;
+  const member = await interaction.guild.members.fetch(interaction.user.id);
+  if (!(await hasStaffAccess(member))) return interaction.reply({ content: "เฉพาะทีมงานเท่านั้นที่ตรวจสอบสลิปได้", ephemeral: true });
+  const order = await orderRepository.find(orderId);
+  if (!order || order.guildId !== interaction.guild.id) return interaction.reply({ content: "ไม่พบคำสั่งซื้อนี้", ephemeral: true });
+  const target: OrderStatus = decision === "approve" ? "approved" : decision === "reject" ? "rejected" : "refunded";
+  if (target === "approved" && order.productId && order.status !== "approved") {
+    const product = await productRepository.find(order.productId);
+    if (product && product.stock > 0) {
+      if (product.stock === 0) return interaction.reply({ content: "สินค้าไม่มีสต็อก", ephemeral: true });
+      product.stock -= 1;
+      product.updatedAt = new Date().toISOString();
+      await productRepository.save(product);
+    }
+  }
+  await setOrderStatus(order, target);
+  const labels: Record<typeof decision, string> = { approve: "อนุมัติ", reject: "ปฏิเสธ", refund: "คืนเงิน" };
+  await interaction.update({ content: `**${labels[decision]}แล้ว** โดย <@${member.id}>`, components: [] });
+  const ticketChannel = await interaction.guild.channels.fetch(order.channelId).catch(() => null);
+  if (ticketChannel?.isSendable()) await ticketChannel.send(`ทีมงานได้ **${labels[decision]}** การชำระเงินของ <@${order.customerId}> แล้ว`);
+}
+
+async function setOrderStatus(order: Order, status: OrderStatus, slipMessageId?: string): Promise<void> {
+  order.status = status;
+  order.updatedAt = new Date().toISOString();
+  if (slipMessageId) order.slipMessageId = slipMessageId;
+  await orderRepository.save(order);
+}

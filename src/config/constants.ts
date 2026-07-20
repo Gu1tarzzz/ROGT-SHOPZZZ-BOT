@@ -1,0 +1,44 @@
+import { ButtonStyle } from "discord.js";
+import type { ButtonColor, GuildSettings } from "../types.js";
+
+export const BRAND = "ROGT SHOPZZZ";
+export const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+
+export const DEFAULT_GUILD_SETTINGS: GuildSettings = {
+  shop: {
+    storeName: BRAND,
+    description: "ตลาดดิจิทัลพรีเมียมแห่ง Realm of Gu1tarzzz",
+    footer: "Realm of Gu1tarzzz • Secure Marketplace",
+    embedColor: "#9B7BFF",
+    status: "open",
+    supportText: "ติดต่อทีมงานผ่านปุ่ม Support ได้ตลอดเวลา",
+    buttons: {
+      browse: "เลือกชมสินค้า",
+      order: "สร้างคำสั่งซื้อ",
+      support: "ติดต่อทีมงาน",
+      information: "ข้อมูลร้านค้า"
+    }
+  },
+  payment: {
+    enabled: false,
+    instructions: "กรุณาชำระเงินตามช่องทางที่ร้านค้ากำหนด แล้วอัปโหลดสลิปในห้องนี้"
+  },
+  tickets: {
+    staffRoleIds: [],
+    ticketPrefix: "order"
+  },
+  bot: {
+    staffRoleIds: [],
+    locale: "th",
+    maintenanceMode: false
+  }
+};
+
+export const BUTTON_STYLES: Record<ButtonColor, ButtonStyle> = {
+  Primary: ButtonStyle.Primary,
+  Secondary: ButtonStyle.Secondary,
+  Success: ButtonStyle.Success,
+  Danger: ButtonStyle.Danger
+};
+
+export const PRODUCT_BUTTON_COLORS: ButtonColor[] = ["Primary", "Secondary", "Success", "Danger"];

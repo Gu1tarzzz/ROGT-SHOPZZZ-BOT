@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, type APISelectMenuOption } from "discord.js";
 import { BUTTON_STYLES } from "../config/constants.js";
 import type { Category, Product, ShopSettings } from "../types.js";
-import { formatPrice, truncate } from "../utils/formatters.js";
+import { formatPrice, formatStock, truncate } from "../utils/formatters.js";
 
 export function shopButtons(shop: ShopSettings): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -24,7 +24,7 @@ export function categoryMenu(categories: Category[], customId = "shop:category")
 export function productMenu(products: Product[], customId = "shop:product"): ActionRowBuilder<StringSelectMenuBuilder> {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
     new StringSelectMenuBuilder().setCustomId(customId).setPlaceholder("เลือกสินค้า").addOptions(products.slice(0, 25).map((product) => ({
-      label: truncate(product.name, 100), value: product.id, description: truncate(`${formatPrice(product.price)} • คงเหลือ ${product.stock}`, 100), emoji: product.emoji || undefined
+      label: truncate(product.name, 100), value: product.id, description: truncate(`${formatPrice(product.price)} • คงเหลือ ${formatStock(product.stock)}`, 100), emoji: product.emoji || undefined
     })))
   );
 }

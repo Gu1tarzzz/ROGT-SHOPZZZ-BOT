@@ -91,6 +91,61 @@ export interface Order {
   staffNote?: string;
 }
 
+export type StockTransactionType = "purchase" | "restock" | "adjustment" | "refund" | "reservation" | "cancellation";
+
+export interface StockTransaction {
+  id: string;
+  guildId: string;
+  productId: string;
+  type: StockTransactionType;
+  quantity: number;
+  previousStock: number;
+  newStock: number;
+  orderId?: string;
+  reason?: string;
+  performedBy: string;
+  createdAt: string;
+}
+
+export interface StockReservation {
+  id: string;
+  guildId: string;
+  productId: string;
+  customerId: string;
+  orderId?: string;
+  quantity: number;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export type StockAlertType = "low_stock" | "out_of_stock" | "restock_request";
+
+export interface StockAlert {
+  id: string;
+  guildId: string;
+  productId: string;
+  type: StockAlertType;
+  threshold: number;
+  currentStock: number;
+  acknowledged: boolean;
+  acknowledgedBy?: string;
+  createdAt: string;
+  acknowledgedAt?: string;
+}
+
+export interface RestockRequest {
+  id: string;
+  guildId: string;
+  productId: string;
+  requestedBy: string;
+  requestedQuantity: number;
+  status: "pending" | "approved" | "rejected";
+  notes?: string;
+  reviewedBy?: string;
+  createdAt: string;
+  reviewedAt?: string;
+}
+
 export interface GuildSettings {
   shop: ShopSettings;
   payment: PaymentSettings;

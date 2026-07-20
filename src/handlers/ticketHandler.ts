@@ -1,6 +1,6 @@
 import { ChannelType, EmbedBuilder, PermissionFlagsBits, type ButtonInteraction, type GuildTextBasedChannel, type Message } from "discord.js";
 import { ticketButtons, reviewButtons } from "../components/ticketComponents.js";
-import { orderRepository, productRepository, settingsRepository } from "../database/repositories.js";
+import { orderRepository, productRepository, settingsRepository, stockRepository } from "../database/repositories.js";
 import type { Order, OrderStatus, Product } from "../types.js";
 import { channelSlug, formatPrice } from "../utils/formatters.js";
 import { hasStaffAccess } from "../utils/permissions.js";
@@ -22,7 +22,15 @@ export async function createOrderTicket(interaction: ButtonInteraction, product?
   const settings = await settingsRepository.get(guild.id);
   if (settings.bot.maintenanceMode) return interaction.reply({ content: "ขณะนี้ร้านอยู่ระหว่างปรับปรุง", ephemeral: true });
   if (settings.shop.status === "closed") return interaction.reply({ content: "ขณะนี้ร้านปิดปรับปรุง กรุณาลองใหม่ภายหลัง", ephemeral: true });
-  if (product && (product.hidden || product.status !== "active" || product.stock === 0)) return interaction.reply({ content: "สินค้านี้ไม่พร้อมจำหน่ายในขณะนี้", ephemeral: true });
+  
+  let availableStock = product?.stock ?? 0;
+  if (product && product.stock >= 0) {
+    const reservations = await stockRepository.getActiveReservations(product.id);
+    const reservedQuantity = reservations.reduce((sum, r) => sum + r.quantity, 0);
+    availableStock = product.stock - reservedQuantity;
+  }
+  
+  if (product && (product.hidden || product.status !== "active" || availableStock <= 0)) return interaction.reply({ content: "สินค้านี้ไม่พร้อมจำหน่ายในขณะนี้", ephemeral: true });
   if (product?.requiredRoleId && !customer.roles.cache.has(product.requiredRoleId)) return interaction.reply({ content: "คุณไม่มี Role ที่จำเป็นสำหรับสินค้านี้", ephemeral: true });
   if (product && !settings.payment.enabled) return interaction.reply({ content: "ร้านค้ายังไม่ได้เปิดการรับชำระเงิน กรุณาติดต่อทีมงาน", ephemeral: true });
   await interaction.deferReply({ ephemeral: true });
@@ -51,6 +59,18 @@ export async function createOrderTicket(interaction: ButtonInteraction, product?
     type: product ? "order" : "support"
   });
   await orderRepository.save(order);
+  
+  if (product && product.stock >= 0) {
+    await stockRepository.createReservation(
+      guild.id,
+      product.id,
+      customer.id,
+      1,
+      order.id,
+      15
+    );
+  }
+  
   const embed = new EmbedBuilder()
     .setColor(settings.shop.embedColor)
     .setTitle(product ? "✦ คำสั่งซื้อใหม่" : "✦ Support Ticket")
@@ -80,6 +100,15 @@ export async function cancelTicket(interaction: ButtonInteraction): Promise<unkn
   const order = await orderRepository.byChannel(interaction.channelId);
   if (!order || order.customerId !== interaction.user.id) return interaction.reply({ content: "เฉพาะผู้สร้าง Ticket เท่านั้นที่ยกเลิกได้", ephemeral: true });
   if (["approved", "closed", "refunded"].includes(order.status)) return interaction.reply({ content: "ไม่สามารถยกเลิกรายการนี้ได้", ephemeral: true });
+  
+  if (order.productId && order.status === "pending_payment") {
+    const reservations = await stockRepository.getActiveReservations(order.productId);
+    const reservation = reservations.find((r) => r.orderId === order.id);
+    if (reservation) {
+      await stockRepository.cancelReservation(reservation.id);
+    }
+  }
+  
   await setOrderStatus(order, "cancelled");
   await interaction.reply({ content: "ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว ทีมงานจะได้รับแจ้ง", ephemeral: true });
   if (interaction.channel?.isSendable()) await interaction.channel.send("คำสั่งซื้อนี้ถูกยกเลิกโดยลูกค้า");
@@ -131,15 +160,63 @@ export async function reviewSlip(interaction: ButtonInteraction, orderId: string
   const order = await orderRepository.find(orderId);
   if (!order || order.guildId !== interaction.guild.id) return interaction.reply({ content: "ไม่พบคำสั่งซื้อนี้", ephemeral: true });
   const target: OrderStatus = decision === "approve" ? "approved" : decision === "reject" ? "rejected" : "refunded";
-  if (target === "approved" && order.productId && order.status !== "approved") {
+  
+  if (target === "approved" && order.productId) {
     const product = await productRepository.find(order.productId);
-    if (product && product.stock > 0) {
-      if (product.stock === 0) return interaction.reply({ content: "สินค้าไม่มีสต็อก", ephemeral: true });
+    if (product && product.stock >= 0) {
+      const reservations = await stockRepository.getActiveReservations(product.id);
+      const reservation = reservations.find((r) => r.orderId === order.id);
+      
+      const previousStock = product.stock;
       product.stock -= 1;
       product.updatedAt = new Date().toISOString();
       await productRepository.save(product);
+      
+      await stockRepository.logTransaction(
+        interaction.guild.id,
+        product.id,
+        "purchase",
+        -1,
+        previousStock,
+        member.id,
+        order.id
+      );
+      
+      if (reservation) {
+        await stockRepository.cancelReservation(reservation.id);
+      }
+      
+      const settings = await settingsRepository.get(interaction.guild.id);
+      if (product.stock <= 5 && product.stock > 0) {
+        await stockRepository.createAlert(interaction.guild.id, product.id, "low_stock", 5, product.stock);
+      } else if (product.stock === 0) {
+        await stockRepository.createAlert(interaction.guild.id, product.id, "out_of_stock", 0, 0);
+      }
+    }
+  } else if (target === "rejected" || target === "refunded") {
+    if (order.productId && order.status === "pending_review") {
+      const reservations = await stockRepository.getActiveReservations(order.productId);
+      const reservation = reservations.find((r) => r.orderId === order.id);
+      if (reservation) {
+        await stockRepository.cancelReservation(reservation.id);
+        
+        const product = await productRepository.find(order.productId);
+        if (product) {
+          await stockRepository.logTransaction(
+            interaction.guild.id,
+            product.id,
+            target === "refunded" ? "refund" : "cancellation",
+            0,
+            product.stock,
+            member.id,
+            order.id,
+            target === "refunded" ? "คืนเงินให้ลูกค้า" : "ปฏิเสธการชำระเงิน"
+          );
+        }
+      }
     }
   }
+  
   await setOrderStatus(order, target);
   const labels: Record<typeof decision, string> = { approve: "อนุมัติ", reject: "ปฏิเสธ", refund: "คืนเงิน" };
   await interaction.update({ content: `**${labels[decision]}แล้ว** โดย <@${member.id}>`, components: [] });

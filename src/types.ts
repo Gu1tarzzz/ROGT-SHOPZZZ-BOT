@@ -41,6 +41,7 @@ export interface ShopSettings {
   authorName?: string;
   authorIcon?: string;
   marketplaceFeatures?: string[];
+  storeLogo?: string;
   buttons: {
     browse: string;
     order: string;

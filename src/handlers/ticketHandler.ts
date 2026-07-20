@@ -52,9 +52,12 @@ export async function createOrderTicket(interaction: ButtonInteraction, product?
     guildId: guild.id,
     channelId: channel.id,
     customerId: customer.id,
+    customerName: customer.displayName,
     productId: product?.id,
     productName: label,
     price: product?.price ?? 0,
+    finalPrice: product?.price ?? 0,
+    discountAmount: 0,
     status: "pending_payment",
     type: product ? "order" : "support"
   });
@@ -202,11 +205,18 @@ export async function reviewSlip(interaction: ButtonInteraction, orderId: string
         
         await stockRepository.logPurchase({
           guildId: interaction.guild.id,
-          orderId: order.id,
+          customerId: order.customerId,
+          customerName: order.customerName,
           productId: product.id,
-          type: "delivery",
-          details: { itemId: item.id, customerId: order.customerId },
-          performedBy: member.id
+          productName: order.productName,
+          price: order.price,
+          finalPrice: order.finalPrice,
+          discountAmount: order.discountAmount,
+          couponCode: order.couponCode,
+          quantity: 1,
+          stockItemId: item.id,
+          orderId: order.id,
+          deliveredAt: new Date().toISOString()
         });
       }
       

@@ -1,5 +1,5 @@
 import { ButtonStyle } from "discord.js";
-import type { ButtonColor, GuildSettings } from "../types.js";
+import type { ButtonColor, GuildSettings, HexColor } from "../types.js";
 
 export const BRAND = "ROGT SHOPZZZ";
 export const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
@@ -8,14 +8,14 @@ export const DEFAULT_STOCK_SETTINGS = {
   lowStockThreshold: 5,
   reservationDurationMinutes: 15,
   autoAlertsEnabled: true
-};
+} as const;
 
 export const DEFAULT_GUILD_SETTINGS: GuildSettings = {
   shop: {
     storeName: BRAND,
     description: "ตลาดดิจิทัลพรีเมียมแห่ง Realm of Gu1tarzzz",
     footer: "Realm of Gu1tarzzz • Secure Marketplace",
-    embedColor: "#9B7BFF",
+    embedColor: "#9B7BFF" as HexColor,
     status: "open",
     supportText: "ติดต่อทีมงานผ่านปุ่ม Support ได้ตลอดเวลา",
     marketplaceFeatures: ["✅ จัดส่งอัตโนมัติ", "🔒 ปลอดภัย 100%", "💬 ซัพพอร์ตตลอด 24ชม.", "⭐ สินค้าคุณภาพพรีเมียม"],

@@ -3,12 +3,31 @@ import { BUTTON_STYLES } from "../config/constants.js";
 import type { Category, Product, ShopSettings } from "../types.js";
 import { formatPrice, formatStock, truncate } from "../utils/formatters.js";
 
-export function shopButtons(shop: ShopSettings): ActionRowBuilder<ButtonBuilder> {
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+export function shopButtons(shop: ShopSettings, allowRefresh = false): ActionRowBuilder<ButtonBuilder>[] {
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+  
+  const mainRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId("shop:browse").setLabel(shop.buttons.browse).setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId("shop:order").setLabel(shop.buttons.order).setStyle(ButtonStyle.Success),
     new ButtonBuilder().setCustomId("shop:support").setLabel(shop.buttons.support).setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId("shop:info").setLabel(shop.buttons.information).setStyle(ButtonStyle.Secondary)
+  );
+  rows.push(mainRow);
+  
+  if (allowRefresh) {
+    const refreshRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId("shop:refresh").setLabel("🔄 รีเฟรชร้านค้า").setStyle(ButtonStyle.Secondary)
+    );
+    rows.push(refreshRow);
+  }
+  
+  return rows;
+}
+
+export function shopAdminButtons(): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId("shop:refresh:self").setLabel("🔄 รีเฟรชร้านนี้").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId("shop:refresh:all").setLabel("🌐 รีเฟรชทุกร้าน").setStyle(ButtonStyle.Danger)
   );
 }
 

@@ -186,12 +186,54 @@ export async function reviewSlip(interaction: ButtonInteraction, orderId: string
         await stockRepository.cancelReservation(reservation.id);
       }
       
+      // Auto-delivery: Find and deliver a stock item
+      const availableItems = await stockRepository.getAvailableStockItems(product.id, 1);
+      if (availableItems.length > 0) {
+        const item = availableItems[0];
+        await stockRepository.reserveStockItem(item.id, 5);
+        await stockRepository.deliverStockItem(item.id, order.customerId);
+        
+        const ticketChannel = await interaction.guild.channels.fetch(order.channelId).catch(() => null);
+        if (ticketChannel?.isSendable()) {
+          await ticketChannel.send({
+            content: `<@${order.customerId}> **จัดส่งสินค้าแล้ว!**\n\n\`\`\`${item.content}\`\`\`\n\nหากมีปัญหากรุณาติดต่อทีมงาน`
+          });
+        }
+        
+        await stockRepository.logPurchase({
+          guildId: interaction.guild.id,
+          orderId: order.id,
+          productId: product.id,
+          type: "delivery",
+          details: { itemId: item.id, customerId: order.customerId },
+          performedBy: member.id
+        });
+      }
+      
       const settings = await settingsRepository.get(interaction.guild.id);
       if (product.stock <= 5 && product.stock > 0) {
         await stockRepository.createAlert(interaction.guild.id, product.id, "low_stock", 5, product.stock);
       } else if (product.stock === 0) {
         await stockRepository.createAlert(interaction.guild.id, product.id, "out_of_stock", 0, 0);
       }
+      
+      // Log order history
+      await stockRepository.logOrderHistory({
+        id: order.id,
+        guildId: interaction.guild.id,
+        customerId: order.customerId,
+        customerName: ``,
+        productId: product.id,
+        productName: order.productName,
+        price: order.price,
+        finalPrice: order.price,
+        discountAmount: 0,
+        paymentStatus: "paid",
+        deliveryStatus: "delivered",
+        status: "approved",
+        createdAt: order.createdAt,
+        completedAt: new Date().toISOString()
+      });
     }
   } else if (target === "rejected" || target === "refunded") {
     if (order.productId && order.status === "pending_review") {

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { DEFAULT_GUILD_SETTINGS, DEFAULT_STOCK_SETTINGS } from "../config/constants.js";
-import type { Category, DatabaseFile, GuildSettings, Order, Product, StockTransaction, StockReservation, StockAlert, RestockRequest } from "../types.js";
+import type { Category, DatabaseFile, GuildSettings, HexColor, Order, Product, StockTransaction, StockReservation, StockAlert, RestockRequest, StockItem, Coupon, CouponUsage, ShoppingCart, OrderHistory, PurchaseLog, ShopStatistics, ProductTag, TaggedProduct, ShopAppearance } from "../types.js";
 import { JsonStore } from "./jsonStore.js";
 
 type Entity = Category | Product | Order;
@@ -103,6 +103,16 @@ export class StockRepository {
   private readonly reservationStore = new JsonStore<DatabaseFile<StockReservation>>("stockReservations.json", emptyFile<StockReservation>());
   private readonly alertStore = new JsonStore<DatabaseFile<StockAlert>>("stockAlerts.json", emptyFile<StockAlert>());
   private readonly restockRequestStore = new JsonStore<DatabaseFile<RestockRequest>>("restockRequests.json", emptyFile<RestockRequest>());
+  private readonly stockItemStore = new JsonStore<DatabaseFile<StockItem>>("stockItems.json", emptyFile<StockItem>());
+  private readonly couponStore = new JsonStore<DatabaseFile<Coupon>>("coupons.json", emptyFile<Coupon>());
+  private readonly couponUsageStore = new JsonStore<DatabaseFile<CouponUsage>>("couponUsages.json", emptyFile<CouponUsage>());
+  private readonly cartStore = new JsonStore<DatabaseFile<ShoppingCart>>("shoppingCarts.json", emptyFile<ShoppingCart>());
+  private readonly orderHistoryStore = new JsonStore<DatabaseFile<OrderHistory>>("orderHistory.json", emptyFile<OrderHistory>());
+  private readonly purchaseLogStore = new JsonStore<DatabaseFile<PurchaseLog>>("purchaseLogs.json", emptyFile<PurchaseLog>());
+  private readonly statisticsStore = new JsonStore<DatabaseFile<ShopStatistics>>("shopStatistics.json", emptyFile<ShopStatistics>());
+  private readonly productTagStore = new JsonStore<DatabaseFile<ProductTag>>("productTags.json", emptyFile<ProductTag>());
+  private readonly taggedProductStore = new JsonStore<DatabaseFile<TaggedProduct>>("taggedProducts.json", emptyFile<TaggedProduct>());
+  private readonly shopAppearanceStore = new JsonStore<DatabaseFile<ShopAppearance>>("shopAppearance.json", emptyFile<ShopAppearance>());
 
   public async logTransaction(guildId: string, productId: string, type: StockTransaction["type"], quantity: number, previousStock: number, performedBy: string, orderId?: string, reason?: string): Promise<StockTransaction> {
     const transaction: StockTransaction = {
@@ -235,6 +245,290 @@ export class StockRepository {
       }
       return file;
     });
+  }
+
+  // Stock Item Management (Inventory System)
+  public async addStockItem(guildId: string, productId: string, content: string): Promise<StockItem> {
+    const item: StockItem = {
+      id: randomUUID(),
+      guildId,
+      productId,
+      content,
+      status: "available",
+      createdAt: new Date().toISOString()
+    };
+    await this.stockItemStore.update((file) => ({ ...file, data: { ...file.data, [item.id]: item } }));
+    return item;
+  }
+
+  public async addStockItemsBulk(guildId: string, productId: string, contents: string[]): Promise<StockItem[]> {
+    const items = contents.map((content): StockItem => ({
+      id: randomUUID(),
+      guildId,
+      productId,
+      content,
+      status: "available",
+      createdAt: new Date().toISOString()
+    }));
+    await this.stockItemStore.update((file) => {
+      const newData = { ...file.data };
+      items.forEach((item) => { newData[item.id] = item; });
+      return { ...file, data: newData };
+    });
+    return items;
+  }
+
+  public async getAvailableStockItems(productId: string, limit = 1): Promise<StockItem[]> {
+    const file = await this.stockItemStore.read();
+    return Object.values(file.data)
+      .filter((item) => item.productId === productId && item.status === "available")
+      .slice(0, limit);
+  }
+
+  public async reserveStockItem(itemId: string, durationMinutes = 15): Promise<void> {
+    const reservedUntil = new Date(Date.now() + durationMinutes * 60 * 1000).toISOString();
+    await this.stockItemStore.update((file) => {
+      const item = file.data[itemId];
+      if (item) {
+        file.data[itemId] = { ...item, status: "reserved", reservedUntil };
+      }
+      return file;
+    });
+  }
+
+  public async deliverStockItem(itemId: string, deliveredTo: string): Promise<void> {
+    const now = new Date().toISOString();
+    await this.stockItemStore.update((file) => {
+      const item = file.data[itemId];
+      if (item) {
+        file.data[itemId] = { ...item, status: "delivered", deliveredTo, deliveredAt: now, reservedUntil: undefined };
+      }
+      return file;
+    });
+  }
+
+  public async deleteStockItem(itemId: string): Promise<void> {
+    await this.stockItemStore.update((file) => {
+      const item = file.data[itemId];
+      if (item) {
+        file.data[itemId] = { ...item, status: "deleted" };
+      }
+      return file;
+    });
+  }
+
+  public async bulkDeleteStockItems(productId: string, itemIds: string[]): Promise<number> {
+    let deleted = 0;
+    await this.stockItemStore.update((file) => {
+      const data = { ...file.data };
+      itemIds.forEach((id) => {
+        if (data[id] && data[id].productId === productId) {
+          data[id] = { ...data[id], status: "deleted" };
+          deleted++;
+        }
+      });
+      return { ...file, data };
+    });
+    return deleted;
+  }
+
+  public async getStockItemsByProduct(productId: string, status?: StockItem["status"]): Promise<StockItem[]> {
+    const file = await this.stockItemStore.read();
+    const items = Object.values(file.data).filter((item) => item.productId === productId);
+    if (status) return items.filter((item) => item.status === status);
+    return items;
+  }
+
+  public async exportStockItems(productId: string): Promise<StockItem[]> {
+    return this.getStockItemsByProduct(productId);
+  }
+
+  // Coupon Management
+  public async createCoupon(guildId: string, code: string, type: Coupon["type"], value: number, description?: string, expiresAt?: string, usageLimit?: number, perUserLimit?: number): Promise<Coupon> {
+    const coupon: Coupon = {
+      id: randomUUID(),
+      guildId,
+      code: code.toUpperCase(),
+      type,
+      value,
+      description,
+      expiresAt,
+      usageLimit,
+      usedCount: 0,
+      perUserLimit,
+      enabled: true,
+      createdAt: new Date().toISOString()
+    };
+    await this.couponStore.update((file) => ({ ...file, data: { ...file.data, [coupon.id]: coupon } }));
+    return coupon;
+  }
+
+  public async getCouponByCode(guildId: string, code: string): Promise<Coupon | undefined> {
+    const file = await this.couponStore.read();
+    return Object.values(file.data).find((c) => c.guildId === guildId && c.code === code.toUpperCase() && c.enabled);
+  }
+
+  public async useCoupon(couponId: string, userId: string, orderId: string): Promise<boolean> {
+    const file = await this.couponStore.read();
+    const coupon = file.data[couponId];
+    if (!coupon || !coupon.enabled) return false;
+    if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) return false;
+    if (coupon.expiresAt && new Date(coupon.expiresAt) <= new Date()) return false;
+    
+    const usage: CouponUsage = {
+      id: randomUUID(),
+      couponId,
+      userId,
+      orderId,
+      usedAt: new Date().toISOString()
+    };
+    await Promise.all([
+      this.couponUsageStore.update((f) => ({ ...f, data: { ...f.data, [usage.id]: usage } })),
+      this.couponStore.update((f) => ({ ...f, data: { ...f.data, [couponId]: { ...coupon, usedCount: coupon.usedCount + 1 } } }))
+    ]);
+    return true;
+  }
+
+  public async getCouponUsageByUser(couponId: string, userId: string): Promise<CouponUsage[]> {
+    const file = await this.couponUsageStore.read();
+    return Object.values(file.data).filter((u) => u.couponId === couponId && u.userId === userId);
+  }
+
+  public async toggleCoupon(couponId: string, enabled: boolean): Promise<void> {
+    await this.couponStore.update((file) => {
+      const coupon = file.data[couponId];
+      if (coupon) {
+        file.data[couponId] = { ...coupon, enabled };
+      }
+      return file;
+    });
+  }
+
+  // Shopping Cart Management
+  public async getOrCreateCart(customerId: string, guildId: string): Promise<ShoppingCart> {
+    const file = await this.cartStore.read();
+    const existing = Object.values(file.data).find((c) => c.customerId === customerId && c.guildId === guildId);
+    if (existing) return existing;
+    
+    const cart: ShoppingCart = {
+      customerId,
+      guildId,
+      items: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await this.cartStore.update((f) => ({ ...f, data: { ...f.data, [customerId]: cart } }));
+    return cart;
+  }
+
+  public async addToCart(customerId: string, guildId: string, productId: string, quantity = 1): Promise<ShoppingCart> {
+    const cart = await this.getOrCreateCart(customerId, guildId);
+    const existingItem = cart.items.find((i) => i.productId === productId);
+    if (existingItem) {
+      existingItem.quantity += quantity;
+    } else {
+      cart.items.push({ productId, quantity });
+    }
+    cart.updatedAt = new Date().toISOString();
+    await this.cartStore.update((f) => ({ ...f, data: { ...f.data, [customerId]: cart } }));
+    return cart;
+  }
+
+  public async removeFromCart(customerId: string, guildId: string, productId: string): Promise<ShoppingCart> {
+    const cart = await this.getOrCreateCart(customerId, guildId);
+    cart.items = cart.items.filter((i) => i.productId !== productId);
+    cart.updatedAt = new Date().toISOString();
+    await this.cartStore.update((f) => ({ ...f, data: { ...f.data, [customerId]: cart } }));
+    return cart;
+  }
+
+  public async clearCart(customerId: string, guildId: string): Promise<void> {
+    await this.cartStore.update((file) => {
+      const cart = Object.values(file.data).find((c) => c.customerId === customerId && c.guildId === guildId);
+      if (cart) {
+        delete file.data[cart.customerId];
+      }
+      return file;
+    });
+  }
+
+  // Order History Management
+  public async logOrderHistory(order: OrderHistory): Promise<void> {
+    await this.orderHistoryStore.update((file) => ({ ...file, data: { ...file.data, [order.id]: order } }));
+  }
+
+  public async getOrderHistory(guildId: string, customerId?: string, limit = 50): Promise<OrderHistory[]> {
+    const file = await this.orderHistoryStore.read();
+    let orders = Object.values(file.data).filter((o) => o.guildId === guildId);
+    if (customerId) orders = orders.filter((o) => o.customerId === customerId);
+    return orders.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit);
+  }
+
+  // Purchase Log Management
+  public async logPurchase(log: Omit<PurchaseLog, "id" | "createdAt">): Promise<PurchaseLog> {
+    const purchaseLog: PurchaseLog = {
+      id: randomUUID(),
+      createdAt: new Date().toISOString(),
+      ...log
+    };
+    await this.purchaseLogStore.update((file) => ({ ...file, data: { ...file.data, [purchaseLog.id]: purchaseLog } }));
+    return purchaseLog;
+  }
+
+  public async getPurchaseLogs(guildId: string, productId?: string, limit = 100): Promise<PurchaseLog[]> {
+    const file = await this.purchaseLogStore.read();
+    let logs = Object.values(file.data).filter((l) => l.guildId === guildId);
+    if (productId) logs = logs.filter((l) => l.productId === productId);
+    return logs.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit);
+  }
+
+  // Statistics Management
+  public async recordStatistics(stats: ShopStatistics): Promise<void> {
+    await this.statisticsStore.update((file) => ({ ...file, data: { ...file.data, [stats.date]: stats } }));
+  }
+
+  public async getStatistics(guildId: string, startDate: string, endDate: string): Promise<ShopStatistics[]> {
+    const file = await this.statisticsStore.read();
+    return Object.values(file.data)
+      .filter((s) => s.guildId === guildId && s.date >= startDate && s.date <= endDate)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  // Product Tags Management
+  public async createTag(name: string, color: HexColor, emoji?: string): Promise<ProductTag> {
+    const tag: ProductTag = {
+      id: randomUUID(),
+      name,
+      color,
+      emoji,
+    };
+    await this.productTagStore.update((file) => ({ ...file, data: { ...file.data, [tag.id]: tag } }));
+    return tag;
+  }
+
+  public async tagProduct(productId: string, tagId: string): Promise<void> {
+    const tagged: TaggedProduct = {
+      productId,
+      tagId,
+      addedAt: new Date().toISOString()
+    };
+    await this.taggedProductStore.update((file) => ({ ...file, data: { ...file.data, [`${productId}:${tagId}`]: tagged } }));
+  }
+
+  public async getProductTags(productId: string): Promise<ProductTag[]> {
+    const [taggedFile, tagsFile] = await Promise.all([this.taggedProductStore.read(), this.productTagStore.read()]);
+    const taggedIds = Object.values(taggedFile.data).filter((t) => t.productId === productId).map((t) => t.tagId);
+    return Object.values(tagsFile.data).filter((t) => taggedIds.includes(t.id));
+  }
+
+  // Shop Appearance Management
+  public async updateShopAppearance(appearance: ShopAppearance): Promise<void> {
+    await this.shopAppearanceStore.update((file) => ({ ...file, data: { ...file.data, [appearance.guildId]: appearance } }));
+  }
+
+  public async getShopAppearance(guildId: string): Promise<ShopAppearance | undefined> {
+    const file = await this.shopAppearanceStore.read();
+    return file.data[guildId];
   }
 }
 

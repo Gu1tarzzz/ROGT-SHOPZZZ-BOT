@@ -146,6 +146,123 @@ export interface RestockRequest {
   reviewedAt?: string;
 }
 
+export type StockItemStatus = "available" | "reserved" | "delivered" | "deleted";
+
+export interface StockItem {
+  id: string;
+  guildId: string;
+  productId: string;
+  content: string;
+  status: StockItemStatus;
+  deliveredTo?: string;
+  deliveredAt?: string;
+  reservedUntil?: string;
+  createdAt: string;
+}
+
+export interface Coupon {
+  id: string;
+  guildId: string;
+  code: string;
+  type: "percentage" | "fixed";
+  value: number;
+  description?: string;
+  expiresAt?: string;
+  usageLimit?: number;
+  usedCount: number;
+  perUserLimit?: number;
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface CouponUsage {
+  id: string;
+  couponId: string;
+  userId: string;
+  orderId: string;
+  usedAt: string;
+}
+
+export interface ShoppingCartItem {
+  productId: string;
+  quantity: number;
+}
+
+export interface ShoppingCart {
+  customerId: string;
+  guildId: string;
+  items: ShoppingCartItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderHistory {
+  id: string;
+  guildId: string;
+  customerId: string;
+  customerName: string;
+  productId?: string;
+  productName: string;
+  price: number;
+  finalPrice: number;
+  discountAmount: number;
+  couponCode?: string;
+  paymentStatus: "pending" | "paid" | "refunded";
+  deliveryStatus: "pending" | "delivered" | "failed";
+  deliveredItemId?: string;
+  staffId?: string;
+  status: OrderStatus;
+  createdAt: string;
+  completedAt?: string;
+}
+
+export interface PurchaseLog {
+  id: string;
+  guildId: string;
+  orderId?: string;
+  productId?: string;
+  type: "purchase" | "delivery" | "refund" | "cancel" | "restock" | "adjustment" | "coupon_applied";
+  details: Record<string, unknown>;
+  performedBy: string;
+  createdAt: string;
+}
+
+export interface ShopStatistics {
+  guildId: string;
+  date: string;
+  totalOrders: number;
+  totalRevenue: number;
+  productsSold: number;
+  newCustomers: number;
+  refunds: number;
+}
+
+export interface ProductTag {
+  id: string;
+  name: string;
+  color: HexColor;
+  emoji?: string;
+}
+
+export interface TaggedProduct {
+  productId: string;
+  tagId: string;
+  addedAt: string;
+}
+
+export interface ShopAppearance {
+  guildId: string;
+  bannerUrl?: string;
+  bannerGif?: string;
+  thumbnailUrl?: string;
+  storeLogo?: string;
+  colorTheme: HexColor;
+  footerText: string;
+  authorName?: string;
+  authorIcon?: string;
+  animatedBanner: boolean;
+}
+
 export interface GuildSettings {
   shop: ShopSettings;
   payment: PaymentSettings;

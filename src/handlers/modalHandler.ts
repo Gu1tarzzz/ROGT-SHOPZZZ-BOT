@@ -13,12 +13,17 @@ export async function openModal(interaction: import("discord.js").ButtonInteract
   if (!interaction.guildId) return;
   const settings = await settingsRepository.get(interaction.guildId);
   const [, , type] = interaction.customId.split(":");
-  if (type === "design") {
-    return interaction.showModal(createModal("settings:design", "แก้ไขดีไซน์ร้านค้า", [
+  if (type === "appearance") {
+    return interaction.showModal(createModal("settings:appearance", "ตั้งค่าหน้าตา Premium Shop", [
       { id: "name", label: "ชื่อร้าน", value: settings.shop.storeName, required: true, maxLength: 100 },
       { id: "description", label: "คำอธิบายร้าน", value: settings.shop.description, required: true, style: TextInputStyle.Paragraph, maxLength: 1000 },
       { id: "footer", label: "Footer", value: settings.shop.footer, required: true, maxLength: 200 },
       { id: "color", label: "สี Embed (#RRGGBB)", value: settings.shop.embedColor, required: true, maxLength: 7 },
+      { id: "banner", label: "Banner URL (ภาพปกติ)", value: settings.shop.banner, placeholder: "https://...", maxLength: 1024 },
+      { id: "bannerGif", label: "Banner GIF (ภาพเคลื่อนไหว)", value: settings.shop.bannerGif, placeholder: "https://...", maxLength: 1024 },
+      { id: "thumbnail", label: "Thumbnail URL", value: settings.shop.thumbnail, placeholder: "https://...", maxLength: 1024 },
+      { id: "authorName", label: "Author Name", value: settings.shop.authorName, placeholder: "ชื่อที่แสดงด้านบน", maxLength: 100 },
+      { id: "authorIcon", label: "Author Icon URL", value: settings.shop.authorIcon, placeholder: "https://...", maxLength: 1024 },
       { id: "status", label: "สถานะ (open / closed)", value: settings.shop.status, required: true, maxLength: 10 }
     ]));
   }
@@ -28,12 +33,6 @@ export async function openModal(interaction: import("discord.js").ButtonInteract
       { id: "order", label: "ปุ่ม Create Order", value: settings.shop.buttons.order, required: true, maxLength: 80 },
       { id: "support", label: "ปุ่ม Support", value: settings.shop.buttons.support, required: true, maxLength: 80 },
       { id: "information", label: "ปุ่ม Store Information", value: settings.shop.buttons.information, required: true, maxLength: 80 }
-    ]));
-  }
-  if (type === "banner") {
-    return interaction.showModal(createModal("settings:banner", "Banner & Thumbnail", [
-      { id: "banner", label: "Banner URL (ใส่ - เพื่อล้าง)", value: settings.shop.banner, placeholder: "https://...", maxLength: 1024 },
-      { id: "thumbnail", label: "Thumbnail URL (ใส่ - เพื่อล้าง)", value: settings.shop.thumbnail, placeholder: "https://...", maxLength: 1024 }
     ]));
   }
   if (type === "payment") {
@@ -129,14 +128,27 @@ console.log("Guild ID =", interaction.guildId);
     return interaction.reply({ content: `บันทึกสินค้า **${product.name}** แล้ว`, ephemeral: true });
   }
   if (scope !== "settings") return;
-  if (action === "design") {
+  if (action === "appearance") {
     const color = value(interaction, "color");
     if (!isValidHex(color)) return interaction.reply({ content: "สี Embed ต้องอยู่ในรูปแบบ #RRGGBB", ephemeral: true });
-    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, shop: { ...settings.shop, storeName: value(interaction, "name"), description: value(interaction, "description"), footer: value(interaction, "footer"), embedColor: color, status: value(interaction, "status").toLowerCase() === "closed" ? "closed" : "open" } }));
+    await settingsRepository.update(interaction.guildId, (settings) => ({ 
+      ...settings, 
+      shop: { 
+        ...settings.shop, 
+        storeName: value(interaction, "name"), 
+        description: value(interaction, "description"), 
+        footer: value(interaction, "footer"), 
+        embedColor: color, 
+        banner: parseOptional(value(interaction, "banner")),
+        bannerGif: parseOptional(value(interaction, "bannerGif")),
+        thumbnail: parseOptional(value(interaction, "thumbnail")),
+        authorName: parseOptional(value(interaction, "authorName")),
+        authorIcon: parseOptional(value(interaction, "authorIcon")),
+        status: value(interaction, "status").toLowerCase() === "closed" ? "closed" : "open" 
+      } 
+    }));
   } else if (action === "labels") {
     await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, shop: { ...settings.shop, buttons: { browse: value(interaction, "browse"), order: value(interaction, "order"), support: value(interaction, "support"), information: value(interaction, "information") } } }));
-  } else if (action === "banner") {
-    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, shop: { ...settings.shop, banner: parseOptional(value(interaction, "banner")), thumbnail: parseOptional(value(interaction, "thumbnail")) } }));
   } else if (action === "payment") {
     const bank = splitLines(value(interaction, "bank"));
     const details = splitLines(value(interaction, "details"));

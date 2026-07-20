@@ -7,8 +7,7 @@ export function dashboardMenu(): ActionRowBuilder<StringSelectMenuBuilder> {
     new StringSelectMenuBuilder().setCustomId("setup:section").setPlaceholder("เลือกส่วนที่ต้องการจัดการ").addOptions(
       { label: "Category Manager", value: "categories", description: "สร้าง แก้ไข ซ่อน และเรียงหมวดหมู่", emoji: "📂" },
       { label: "Product Manager", value: "products", description: "จัดการสินค้า ราคา สต็อก และสิทธิ์", emoji: "📦" },
-      { label: "Shop Design", value: "design", description: "ชื่อร้าน คำอธิบาย สี และปุ่ม", emoji: "📝" },
-      { label: "Banner Settings", value: "banner", description: "รูป Banner และ Thumbnail", emoji: "🖼" },
+      { label: "Shop Appearance", value: "appearance", description: "ชื่อร้าน Banner สี และหน้าตาพรีเมียม", emoji: "🏪" },
       { label: "Payment Settings", value: "payment", description: "ช่องทางชำระเงินและสลิป", emoji: "💳" },
       { label: "Ticket Settings", value: "tickets", description: "ห้อง Ticket และทีมงาน", emoji: "🎫" },
       { label: "Bot Settings", value: "bot", description: "เจ้าของ สิทธิ์ทีมงาน และสถานะระบบ", emoji: "⚙" }
@@ -72,10 +71,9 @@ export function productCategoryMenu(categories: Category[]): ActionRowBuilder<St
   );
 }
 
-export function sectionButtons(section: "design" | "banner" | "payment" | "tickets" | "bot"): ActionRowBuilder<ButtonBuilder> {
+export function sectionButtons(section: "appearance" | "payment" | "tickets" | "bot"): ActionRowBuilder<ButtonBuilder> {
   const map = {
-    design: ["แก้ไขดีไซน์ร้าน", "setup:modal:design", ButtonStyle.Primary],
-    banner: ["แก้ไขรูปภาพ", "setup:modal:banner", ButtonStyle.Primary],
+    appearance: ["แก้ไขหน้าตาショップ", "setup:modal:appearance", ButtonStyle.Primary],
     payment: ["แก้ไขการชำระเงิน", "setup:modal:payment", ButtonStyle.Primary],
     tickets: ["แก้ไข Ticket", "setup:modal:tickets", ButtonStyle.Primary],
     bot: ["แก้ไข Bot", "setup:modal:bot", ButtonStyle.Primary]
@@ -84,7 +82,6 @@ export function sectionButtons(section: "design" | "banner" | "payment" | "ticke
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId(customId).setLabel(label).setStyle(style),
   );
-  if (section === "design") row.addComponents(new ButtonBuilder().setCustomId("setup:modal:labels").setLabel("ข้อความบนปุ่ม").setStyle(ButtonStyle.Secondary));
   return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับแดชบอร์ด").setStyle(ButtonStyle.Secondary));
 }
 

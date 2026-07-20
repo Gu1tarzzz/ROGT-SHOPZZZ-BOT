@@ -40,9 +40,16 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
     return;
   }
   const settings = await settingsRepository.get(guildId);
-  const sectionContent: Record<string, { title: string; text: string; key: "design" | "banner" | "payment" | "tickets" | "bot" }> = {
-    design: { title: "SHOP DESIGN", key: "design", text: `**ชื่อร้าน:** ${settings.shop.storeName}\n**คำอธิบาย:** ${truncate(settings.shop.description, 300)}\n**สี Embed:** ${settings.shop.embedColor}\n**สถานะ:** ${settings.shop.status}` },
-    banner: { title: "BANNER SETTINGS", key: "banner", text: `**Banner:** ${settings.shop.banner || "ยังไม่ได้ตั้งค่า"}\n**Thumbnail:** ${settings.shop.thumbnail || "ยังไม่ได้ตั้งค่า"}` },
+  const sectionContent: Record<string, { title: string; text: string; key: "appearance" | "payment" | "tickets" | "bot" }> = {
+    appearance: { title: "SHOP APPEARANCE", key: "appearance", text: [
+      `**ชื่อร้าน:** ${settings.shop.storeName}`,
+      `**คำอธิบาย:** ${truncate(settings.shop.description, 200)}`,
+      `**สี Embed:** ${settings.shop.embedColor}`,
+      `**Banner:** ${settings.shop.bannerGif || settings.shop.banner || "ยังไม่ได้ตั้งค่า"}`,
+      `**Thumbnail:** ${settings.shop.thumbnail || "ยังไม่ได้ตั้งค่า"}`,
+      `**Author:** ${settings.shop.authorName || "-"}`,
+      `**สถานะ:** ${settings.shop.status}`
+    ].join("\n") },
     payment: { title: "PAYMENT SETTINGS", key: "payment", text: `**เปิดรับชำระเงิน:** ${settings.payment.enabled ? "ใช่" : "ไม่"}\n**TrueMoney:** ${settings.payment.trueMoneyWallet || "-"}\n**PromptPay:** ${settings.payment.promptPay || "-"}\n**ธนาคาร:** ${settings.payment.bankAccount || "-"}\n**Slip Channel:** ${settings.payment.slipChannelId ? `<#${settings.payment.slipChannelId}>` : "ยังไม่ได้ตั้งค่า"}` },
     tickets: { title: "TICKET SETTINGS", key: "tickets", text: `**หมวด Order:** ${settings.tickets.categoryId ? `<#${settings.tickets.categoryId}>` : "ยังไม่ได้ตั้งค่า"}\n**หมวด Support:** ${settings.tickets.supportCategoryId ? `<#${settings.tickets.supportCategoryId}>` : "ใช้หมวด Order"}\n**Prefix:** ${settings.tickets.ticketPrefix}\n**ทีมงาน:** ${settings.tickets.staffRoleIds.length || 0} Role` },
     bot: { title: "BOT SETTINGS", key: "bot", text: `**Owner override:** ${settings.bot.ownerId ? `<@${settings.bot.ownerId}>` : "Guild Owner"}\n**Staff Roles:** ${settings.bot.staffRoleIds.length || 0} Role\n**Maintenance:** ${settings.bot.maintenanceMode ? "เปิด" : "ปิด"}` }

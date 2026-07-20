@@ -3,6 +3,7 @@ import { escapeMarkdown } from "discord.js";
 export const truncate = (value: string, max = 100): string => value.length > max ? `${value.slice(0, max - 1)}…` : value;
 export const cleanText = (value: string): string => escapeMarkdown(value.trim());
 export const formatPrice = (price: number): string => new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", minimumFractionDigits: 0 }).format(price);
+export const formatNumber = (num: number): string => new Intl.NumberFormat("th-TH").format(num);
 export const formatStock = (stock: number, reserved = 0): string => {
   if (stock < 0) return "ไม่จำกัด";
   if (reserved > 0) return `${stock - reserved} / ${stock}`;

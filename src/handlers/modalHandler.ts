@@ -24,6 +24,7 @@ export async function openModal(interaction: import("discord.js").ButtonInteract
       { id: "thumbnail", label: "Thumbnail URL", value: settings.shop.thumbnail, placeholder: "https://...", maxLength: 1024 },
       { id: "authorName", label: "Author Name", value: settings.shop.authorName, placeholder: "ชื่อที่แสดงด้านบน", maxLength: 100 },
       { id: "authorIcon", label: "Author Icon URL", value: settings.shop.authorIcon, placeholder: "https://...", maxLength: 1024 },
+      { id: "storeLogo", label: "Store Logo URL", value: settings.shop.storeLogo, placeholder: "https://...", maxLength: 1024 },
       { id: "status", label: "สถานะ (open / closed)", value: settings.shop.status, required: true, maxLength: 10 }
     ]));
   }
@@ -144,6 +145,7 @@ console.log("Guild ID =", interaction.guildId);
         thumbnail: parseOptional(value(interaction, "thumbnail")),
         authorName: parseOptional(value(interaction, "authorName")),
         authorIcon: parseOptional(value(interaction, "authorIcon")),
+        storeLogo: parseOptional(value(interaction, "storeLogo")),
         status: value(interaction, "status").toLowerCase() === "closed" ? "closed" : "open" 
       } 
     }));

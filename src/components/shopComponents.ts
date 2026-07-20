@@ -17,11 +17,11 @@ export function shopButtons(shop: ShopSettings, allowRefresh = false): ActionRow
   return rows;
 }
 
-export function shopAdminButtons(): ActionRowBuilder<ButtonBuilder> {
+export function shopAdminButtons(hasLiveShop: boolean = false): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId("shop:refresh:self").setLabel("🔄 รีเฟรชร้านนี้").setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId("shop:refresh:all").setLabel("🌐 รีเฟรชทุกร้าน").setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId("shop:appearance").setLabel("🏪 ตั้งค่าหน้าตาショップ").setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder().setCustomId("shop:preview").setLabel("👁️ แสดงตัวอย่าง").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId("shop:publish").setLabel("📤 เผยแพร่ร้าน").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId("shop:appearance").setLabel("🏪 ตั้งค่าหน้าตา Premium").setStyle(ButtonStyle.Secondary)
   );
 }
 

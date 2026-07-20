@@ -48,6 +48,7 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
       `**Banner:** ${settings.shop.bannerGif || settings.shop.banner || "ยังไม่ได้ตั้งค่า"}`,
       `**Thumbnail:** ${settings.shop.thumbnail || "ยังไม่ได้ตั้งค่า"}`,
       `**Author:** ${settings.shop.authorName || "-"}`,
+      `**Store Logo:** ${settings.shop.storeLogo || "-"}`,
       `**สถานะ:** ${settings.shop.status}`
     ].join("\n") },
     payment: { title: "PAYMENT SETTINGS", key: "payment", text: `**เปิดรับชำระเงิน:** ${settings.payment.enabled ? "ใช่" : "ไม่"}\n**TrueMoney:** ${settings.payment.trueMoneyWallet || "-"}\n**PromptPay:** ${settings.payment.promptPay || "-"}\n**ธนาคาร:** ${settings.payment.bankAccount || "-"}\n**Slip Channel:** ${settings.payment.slipChannelId ? `<#${settings.payment.slipChannelId}>` : "ยังไม่ได้ตั้งค่า"}` },

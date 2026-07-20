@@ -1,7 +1,7 @@
 import { EmbedBuilder, type Guild, type GuildMember, type InteractionReplyOptions } from "discord.js";
 import { DIVIDER } from "../config/constants.js";
 import { settingsRepository, categoryRepository, productRepository } from "../database/repositories.js";
-import { truncate } from "./formatters.js";
+import { truncate, formatNumber } from "./formatters.js";
 
 export async function premiumEmbed(guildId: string, title: string, description?: string): Promise<EmbedBuilder> {
   const { shop } = await settingsRepository.get(guildId);
@@ -38,12 +38,42 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     : "";
   
   const statsText = [
-    `📂 หมวดหมู่: **${categories.length}**`,
-    `📦 สินค้า: **${products.length}**`,
-    `💾 สต็อกพร้อมส่ง: **${totalStock < 0 ? "ไม่จำกัด" : totalStock}**`
+    `📂 หมวดหมู่: **${formatNumber(categories.length)}**`,
+    `📦 สินค้า: **${formatNumber(products.length)}**`,
+    `💾 สต็อกพร้อมส่ง: **${totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock)}**`
   ].join("\n");
   
-  const description = `${shop.description}${features}\n\n${DIVIDER}\n${statsText}\n${DIVIDER}\n**สถานะร้านค้า**  ${status}`;
+  const descriptionLines: string[] = [];
+  
+  // Header with store name
+  descriptionLines.push(`**${shop.storeName}**`);
+  descriptionLines.push("");
+  
+  // Description
+  if (shop.description) {
+    descriptionLines.push(shop.description);
+    descriptionLines.push("");
+  }
+  
+  // Features
+  if (features) {
+    descriptionLines.push(features.trim());
+    descriptionLines.push("");
+  }
+  
+  // Divider
+  descriptionLines.push(DIVIDER);
+  
+  // Statistics
+  descriptionLines.push(statsText);
+  
+  // Divider
+  descriptionLines.push(DIVIDER);
+  
+  // Status
+  descriptionLines.push(`**สถานะร้านค้า**  ${status}`);
+  
+  const description = descriptionLines.join("\n");
   
   const embed = new EmbedBuilder()
     .setColor(shop.embedColor)

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { DEFAULT_GUILD_SETTINGS } from "../config/constants.js";
-import type { Category, DatabaseFile, GuildSettings, Order, Product } from "../types.js";
+import { DEFAULT_GUILD_SETTINGS, DEFAULT_STOCK_SETTINGS } from "../config/constants.js";
+import type { Category, DatabaseFile, GuildSettings, Order, Product, StockTransaction, StockReservation, StockAlert, RestockRequest } from "../types.js";
 import { JsonStore } from "./jsonStore.js";
 
 type Entity = Category | Product | Order;
@@ -98,7 +98,148 @@ export class OrderRepository extends EntityRepository<Order> {
   }
 }
 
+export class StockRepository {
+  private readonly transactionStore = new JsonStore<DatabaseFile<StockTransaction>>("stockTransactions.json", emptyFile<StockTransaction>());
+  private readonly reservationStore = new JsonStore<DatabaseFile<StockReservation>>("stockReservations.json", emptyFile<StockReservation>());
+  private readonly alertStore = new JsonStore<DatabaseFile<StockAlert>>("stockAlerts.json", emptyFile<StockAlert>());
+  private readonly restockRequestStore = new JsonStore<DatabaseFile<RestockRequest>>("restockRequests.json", emptyFile<RestockRequest>());
+
+  public async logTransaction(guildId: string, productId: string, type: StockTransaction["type"], quantity: number, previousStock: number, performedBy: string, orderId?: string, reason?: string): Promise<StockTransaction> {
+    const transaction: StockTransaction = {
+      id: randomUUID(),
+      guildId,
+      productId,
+      type,
+      quantity,
+      previousStock,
+      newStock: previousStock + quantity,
+      orderId,
+      reason,
+      performedBy,
+      createdAt: new Date().toISOString()
+    };
+    await this.transactionStore.update((file) => ({ ...file, data: { ...file.data, [transaction.id]: transaction } }));
+    return transaction;
+  }
+
+  public async getTransactionHistory(productId: string, limit = 50): Promise<StockTransaction[]> {
+    const file = await this.transactionStore.read();
+    return Object.values(file.data)
+      .filter((t) => t.productId === productId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, limit);
+  }
+
+  public async createReservation(guildId: string, productId: string, customerId: string, quantity: number, orderId?: string, durationMinutes = 15): Promise<StockReservation> {
+    const expiresAt = new Date(Date.now() + durationMinutes * 60 * 1000).toISOString();
+    const reservation: StockReservation = {
+      id: randomUUID(),
+      guildId,
+      productId,
+      customerId,
+      orderId,
+      quantity,
+      expiresAt,
+      createdAt: new Date().toISOString()
+    };
+    await this.reservationStore.update((file) => ({ ...file, data: { ...file.data, [reservation.id]: reservation } }));
+    return reservation;
+  }
+
+  public async getActiveReservations(productId: string): Promise<StockReservation[]> {
+    const file = await this.reservationStore.read();
+    const now = new Date().toISOString();
+    return Object.values(file.data).filter((r) => r.productId === productId && r.expiresAt > now);
+  }
+
+  public async cancelReservation(reservationId: string): Promise<void> {
+    await this.reservationStore.update((file) => {
+      const data = { ...file.data };
+      delete data[reservationId];
+      return { ...file, data };
+    });
+  }
+
+  public async cleanupExpiredReservations(): Promise<number> {
+    const file = await this.reservationStore.read();
+    const now = new Date().toISOString();
+    const expired = Object.entries(file.data).filter(([_, r]) => r.expiresAt <= now);
+    if (expired.length === 0) return 0;
+    await this.reservationStore.update((file) => {
+      const data = { ...file.data };
+      expired.forEach(([id]) => delete data[id]);
+      return { ...file, data };
+    });
+    return expired.length;
+  }
+
+  public async createAlert(guildId: string, productId: string, type: StockAlert["type"], threshold: number, currentStock: number): Promise<StockAlert> {
+    const alert: StockAlert = {
+      id: randomUUID(),
+      guildId,
+      productId,
+      type,
+      threshold,
+      currentStock,
+      acknowledged: false,
+      createdAt: new Date().toISOString()
+    };
+    await this.alertStore.update((file) => ({ ...file, data: { ...file.data, [alert.id]: alert } }));
+    return alert;
+  }
+
+  public async getUnacknowledgedAlerts(guildId: string, productId?: string): Promise<StockAlert[]> {
+    const file = await this.alertStore.read();
+    return Object.values(file.data)
+      .filter((a) => a.guildId === guildId && !a.acknowledged && (!productId || a.productId === productId))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+
+  public async acknowledgeAlert(alertId: string, acknowledgedBy: string): Promise<void> {
+    await this.alertStore.update((file) => {
+      const alert = file.data[alertId];
+      if (alert) {
+        file.data[alertId] = { ...alert, acknowledged: true, acknowledgedBy, acknowledgedAt: new Date().toISOString() };
+      }
+      return file;
+    });
+  }
+
+  public async createRestockRequest(guildId: string, productId: string, requestedBy: string, requestedQuantity: number, notes?: string): Promise<RestockRequest> {
+    const request: RestockRequest = {
+      id: randomUUID(),
+      guildId,
+      productId,
+      requestedBy,
+      requestedQuantity,
+      status: "pending",
+      notes,
+      createdAt: new Date().toISOString()
+    };
+    await this.restockRequestStore.update((file) => ({ ...file, data: { ...file.data, [request.id]: request } }));
+    return request;
+  }
+
+  public async getPendingRestockRequests(guildId: string): Promise<RestockRequest[]> {
+    const file = await this.restockRequestStore.read();
+    return Object.values(file.data)
+      .filter((r) => r.guildId === guildId && r.status === "pending")
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+
+  public async reviewRestockRequest(requestId: string, status: "approved" | "rejected", reviewedBy: string): Promise<void> {
+    await this.restockRequestStore.update((file) => {
+      const request = file.data[requestId];
+      if (request) {
+        file.data[requestId] = { ...request, status, reviewedBy, reviewedAt: new Date().toISOString() };
+      }
+      return file;
+    });
+  }
+}
+
 export const settingsRepository = new SettingsRepository();
 export const categoryRepository = new CategoryRepository();
 export const productRepository = new ProductRepository();
 export const orderRepository = new OrderRepository();
+export const stockRepository = new StockRepository();

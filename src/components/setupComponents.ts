@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from "discord.js";
-import type { Category, Product } from "../types.js";
-import { truncate } from "../utils/formatters.js";
+import type { Category, Product, StockTransaction } from "../types.js";
+import { formatStock, truncate } from "../utils/formatters.js";
 
 export function dashboardMenu(): ActionRowBuilder<StringSelectMenuBuilder> {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
@@ -61,7 +61,7 @@ export function productManagerMenu(products: Product[], mode: "edit" | "delete" 
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
     new StringSelectMenuBuilder().setCustomId(`product:pick:${mode}`).setPlaceholder("เลือกสินค้า").addOptions(products.slice(0, 25).map((product) => ({
       label: truncate(product.name, 100), value: product.id,
-      description: truncate(`${product.hidden ? "ซ่อน" : product.status} • คงเหลือ ${product.stock}`, 100)
+      description: truncate(`${product.hidden ? "ซ่อน" : product.status} • คงเหลือ ${formatStock(product.stock)}`, 100)
     })))
   );
 }
@@ -86,4 +86,32 @@ export function sectionButtons(section: "design" | "banner" | "payment" | "ticke
   );
   if (section === "design") row.addComponents(new ButtonBuilder().setCustomId("setup:modal:labels").setLabel("ข้อความบนปุ่ม").setStyle(ButtonStyle.Secondary));
   return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับแดชบอร์ด").setStyle(ButtonStyle.Secondary));
+}
+
+export function stockManagerButtons(): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId("stock:view:all").setLabel("ดูสต็อกทั้งหมด").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId("stock:alerts").setLabel("การแจ้งเตือน").setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId("stock:restock").setLabel("ขอเติมสต็อก").setStyle(ButtonStyle.Success)
+  );
+}
+
+export function stockActionButtons(productId: string): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId(`stock:add:${productId}`).setLabel("+ เพิ่มสต็อก").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`stock:remove:${productId}`).setLabel("- ลดสต็อก").setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId(`stock:history:${productId}`).setLabel("ประวัติ").setStyle(ButtonStyle.Secondary)
+  );
+}
+
+export function stockHistoryMenu(transactions: StockTransaction[]): ActionRowBuilder<StringSelectMenuBuilder> {
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    new StringSelectMenuBuilder().setCustomId("stock:history:view").setPlaceholder("ดูรายการธุรกรรม").addOptions(
+      transactions.slice(0, 25).map((t) => ({
+        label: `${t.type} ${t.quantity > 0 ? "+" : ""}${t.quantity}`,
+        value: t.id,
+        description: `${t.previousStock} → ${t.newStock} • โดย <@${t.performedBy}>`
+      }))
+    )
+  );
 }

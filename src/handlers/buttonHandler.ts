@@ -1,12 +1,13 @@
-import { type ButtonInteraction } from "discord.js";
-import { categoryManagerMenu, categorySortButtons, productCategoryMenu, productManagerMenu } from "../components/setupComponents.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type ButtonInteraction } from "discord.js";
+import { categoryManagerMenu, categorySortButtons, productCategoryMenu, productManagerMenu, stockActionButtons } from "../components/setupComponents.js";
 import { categoryMenu } from "../components/shopComponents.js";
-import { categoryRepository, productRepository } from "../database/repositories.js";
+import { categoryRepository, productRepository, stockRepository } from "../database/repositories.js";
 import { openCategoryModal, openModal, openProductModal } from "./modalHandler.js";
 import { showDashboard } from "./setupHandler.js";
 import { cancelTicket, closeTicket, createOrderTicket, promptSlip, reviewSlip } from "./ticketHandler.js";
 import { premiumEmbed } from "../utils/discord.js";
 import { hasAdminAccess } from "../utils/permissions.js";
+import { formatStock } from "../utils/formatters.js";
 
 async function assertAdmin(interaction: ButtonInteraction): Promise<boolean> {
   if (!interaction.guild) return false;
@@ -79,6 +80,30 @@ export async function handleButton(interaction: ButtonInteraction): Promise<unkn
     if (["edit", "delete", "visibility"].includes(action) && id === "pick") {
       if (!products.length) return interaction.reply({ content: "ยังไม่มีสินค้า", ephemeral: true });
       return interaction.reply({ content: "เลือกสินค้าที่ต้องการจัดการ", components: [productManagerMenu(products, action as "edit" | "delete" | "visibility")], ephemeral: true });
+    }
+  }
+  
+  if (scope === "stock") {
+    if (!await assertAdmin(interaction)) return;
+    if (action === "history" && id) {
+      const product = await productRepository.find(id);
+      if (!product) return interaction.reply({ content: "ไม่พบสินค้า", ephemeral: true });
+      const transactions = await stockRepository.getTransactionHistory(id, 25);
+      const embed = await premiumEmbed(
+        interaction.guildId,
+        `📦 ประวัติสต็อก: ${product.name}`,
+        transactions.length > 0
+          ? transactions.map((t) => `• **${t.type}**: \`${t.previousStock}\` → \`${t.newStock}\` (${t.quantity > 0 ? "+" : ""}${t.quantity})`).join("\n")
+          : "ยังไม่มีประวัติการทำธุรกรรม"
+      );
+      embed.setFooter({ text: `คงเหลือปัจจุบัน: ${formatStock(product.stock)}` });
+      return interaction.reply({ 
+        embeds: [embed], 
+        components: transactions.length > 0 
+          ? [stockActionButtons(id), new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary))] 
+          : [],
+        ephemeral: true 
+      });
     }
   }
 }

@@ -4,6 +4,12 @@ import type { ButtonColor, GuildSettings } from "../types.js";
 export const BRAND = "ROGT SHOPZZZ";
 export const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
 
+export const DEFAULT_STOCK_SETTINGS = {
+  lowStockThreshold: 5,
+  reservationDurationMinutes: 15,
+  autoAlertsEnabled: true
+};
+
 export const DEFAULT_GUILD_SETTINGS: GuildSettings = {
   shop: {
     storeName: BRAND,

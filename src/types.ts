@@ -35,8 +35,12 @@ export interface ShopSettings {
   embedColor: HexColor;
   thumbnail?: string;
   banner?: string;
+  bannerGif?: string;
   status: "open" | "closed";
   supportText: string;
+  authorName?: string;
+  authorIcon?: string;
+  marketplaceFeatures?: string[];
   buttons: {
     browse: string;
     order: string;

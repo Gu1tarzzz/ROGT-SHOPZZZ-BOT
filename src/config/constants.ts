@@ -18,6 +18,7 @@ export const DEFAULT_GUILD_SETTINGS: GuildSettings = {
     embedColor: "#9B7BFF",
     status: "open",
     supportText: "ติดต่อทีมงานผ่านปุ่ม Support ได้ตลอดเวลา",
+    marketplaceFeatures: ["✅ จัดส่งอัตโนมัติ", "🔒 ปลอดภัย 100%", "💬 ซัพพอร์ตตลอด 24ชม.", "⭐ สินค้าคุณภาพพรีเมียม"],
     buttons: {
       browse: "เลือกชมสินค้า",
       order: "สร้างคำสั่งซื้อ",

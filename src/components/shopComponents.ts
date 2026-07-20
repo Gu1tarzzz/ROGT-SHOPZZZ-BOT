@@ -14,20 +14,14 @@ export function shopButtons(shop: ShopSettings, allowRefresh = false): ActionRow
   );
   rows.push(mainRow);
   
-  if (allowRefresh) {
-    const refreshRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder().setCustomId("shop:refresh").setLabel("🔄 รีเฟรชร้านค้า").setStyle(ButtonStyle.Secondary)
-    );
-    rows.push(refreshRow);
-  }
-  
   return rows;
 }
 
 export function shopAdminButtons(): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId("shop:refresh:self").setLabel("🔄 รีเฟรชร้านนี้").setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId("shop:refresh:all").setLabel("🌐 รีเฟรชทุกร้าน").setStyle(ButtonStyle.Danger)
+    new ButtonBuilder().setCustomId("shop:refresh:all").setLabel("🌐 รีเฟรชทุกร้าน").setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId("shop:appearance").setLabel("🏪 ตั้งค่าหน้าตาショップ").setStyle(ButtonStyle.Secondary)
   );
 }
 

@@ -2,9 +2,11 @@ import { categoryRepository, productRepository, settingsRepository } from "../da
 import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons } from "../components/setupComponents.js";
 import { premiumEmbed } from "../utils/discord.js";
 import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
+import { SMALL_DIVIDER, DIVIDER } from "../config/constants.js";
 // ═══════════════════════════════════════════════════════════════
 // PREMIUM ADMIN DASHBOARD - ROGT SHOPZZZ
-// Modern • Clean • Professional UI
+// Fantasy • Magic • Luxury • Minimal Design
+// Inspired by: Steam Store, Riot Games, Epic Games Store
 // ═══════════════════════════════════════════════════════════════
 export async function showDashboard(interaction) {
     if (!interaction.guildId)
@@ -24,14 +26,14 @@ export async function showDashboard(interaction) {
     const paymentStatus = settings.payment.enabled ? "🟢 Enabled" : "🔴 Disabled";
     const ticketStatus = settings.tickets.categoryId ? "✅ Configured" : "⚠️ Not Set";
     const publishStatus = settings.shop.publishedMessageId ? "✅ Live" : "⚠️ Offline";
-    // Build clean, modern dashboard description
+    // Build premium, modern dashboard description
     const lines = [];
     // Header
     lines.push(`# 👑 ROGT Admin Dashboard`);
     lines.push("");
     lines.push("*Premium Marketplace Management System*");
     lines.push("");
-    lines.push("━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    lines.push(SMALL_DIVIDER);
     lines.push("");
     // Store Info
     lines.push("**🏪 Store Information**");
@@ -39,16 +41,16 @@ export async function showDashboard(interaction) {
     lines.push(`**Name:** ${settings.shop.storeName}`);
     lines.push(`**Status:** ${statusEmoji} ${settings.shop.status === "open" ? "Open" : "Closed"}`);
     lines.push("");
-    lines.push("━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    lines.push(DIVIDER);
     lines.push("");
     // Statistics
     lines.push("**📊 Marketplace Statistics**");
     lines.push("");
-    lines.push(`📂 Categories: **${formatNumber(categories.length)}**`);
-    lines.push(`📦 Products: **${formatNumber(products.length)}**`);
-    lines.push(`💾 Total Stock: **${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}**`);
+    lines.push(`📂 Categories ─ **${formatNumber(categories.length)}**`);
+    lines.push(`📦 Products ── **${formatNumber(products.length)}**`);
+    lines.push(`💾 Stock ───── **${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}**`);
     lines.push("");
-    lines.push("━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    lines.push(DIVIDER);
     lines.push("");
     // System Status
     lines.push("**⚙️ System Status**");
@@ -60,7 +62,7 @@ export async function showDashboard(interaction) {
         lines.push(`📍 Channel: <#${settings.shop.publishedChannelId}>`);
     }
     lines.push("");
-    lines.push("━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    lines.push(DIVIDER);
     lines.push("");
     lines.push(`Last Refresh: <t:${timestamp}:R> • <t:${timestamp}:f>`);
     lines.push("");

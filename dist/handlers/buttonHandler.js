@@ -25,14 +25,14 @@ export async function handleButton(interaction) {
         if (action === "browse" || action === "order") {
             const categories = await categoryRepository.list(interaction.guildId, false);
             if (!categories.length)
-                return interaction.reply({ content: "ร้านค้ายังไม่มีหมวดหมู่สินค้า", ephemeral: true });
-            const embed = await premiumEmbed(interaction.guildId, action === "order" ? "สร้างคำสั่งซื้อ" : "เลือกชมสินค้า", "เลือกหมวดหมู่ แล้วเลือกสินค้าที่ต้องการ");
+                return interaction.reply({ content: "❌ No categories available yet.", ephemeral: true });
+            const embed = await premiumEmbed(interaction.guildId, action === "order" ? "✨ Create Order" : "🛒 Browse Store", "Select a category, then choose your desired product.");
             return interaction.reply({ embeds: [embed], components: [categoryMenu(categories)], ephemeral: true });
         }
         if (action === "support")
             return createOrderTicket(interaction);
         if (action === "info") {
-            const embed = await premiumEmbed(interaction.guildId, "ข้อมูลร้านค้า", "ROGT SHOPZZZ — Realm of Gu1tarzzz\n\nสินค้าทุกรายการจัดการโดยทีมงานผ่านระบบ Marketplace\nหากต้องการความช่วยเหลือ กรุณากดปุ่ม Support");
+            const embed = await premiumEmbed(interaction.guildId, "ℹ️ Store Information", "**ROGT SHOPZZZ** — *Realm of Gu1tarzzz*\n\nAll products are managed by our team through the Marketplace system.\nFor assistance, please use the Support button.");
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }
     }

@@ -1,11 +1,12 @@
 import { EmbedBuilder, type Guild, type GuildMember, type InteractionReplyOptions } from "discord.js";
-import { DIVIDER, THEME } from "../config/constants.js";
+import { DIVIDER, SMALL_DIVIDER, THEME } from "../config/constants.js";
 import { settingsRepository, categoryRepository, productRepository } from "../database/repositories.js";
 import { truncate, formatNumber } from "./formatters.js";
 
 // ═══════════════════════════════════════════════════════════════
 // PREMIUM MARKETPLACE EMBED - ROGT SHOPZZZ
-// Modern • Clean • Professional • Fantasy Theme
+// Fantasy • Magic • Luxury • Dark Mode
+// Inspired by: Steam Store, Riot Games, Epic Games Store
 // ═══════════════════════════════════════════════════════════════
 
 export async function premiumEmbed(guildId: string, title: string, description?: string): Promise<EmbedBuilder> {
@@ -41,43 +42,48 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
   const statusEmoji = shop.status === "open" ? "🟢" : "🔴";
   const statusText = shop.status === "open" ? "Open for Business" : "Currently Closed";
   
-  // Build clean, modern description
+  // Build premium, modern description with clean hierarchy
   const lines: string[] = [];
+  
+  // Hero Section - Store branding
+  lines.push(`# ✦ ${shop.storeName} ✦`);
+  lines.push("");
   
   // Store Description
   if (shop.description) {
-    lines.push(`${shop.description}`);
+    lines.push(`*${shop.description}*`);
     lines.push("");
   }
   
-  // Status Indicator
+  // Status Indicator with visual separator
+  lines.push(`${SMALL_DIVIDER}`);
   lines.push(`${statusEmoji} │ **${statusText}**`);
   lines.push("");
   lines.push(DIVIDER);
   lines.push("");
   
-  // Statistics - Clean inline format
+  // Statistics - Premium inline format
   lines.push("**📊 Marketplace Overview**");
   lines.push("");
-  lines.push(`📂 Categories: **${formatNumber(categories.length)}**`);
-  lines.push(`📦 Products: **${formatNumber(products.length)}**`);
-  lines.push(`💾 Total Stock: **${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}**`);
+  lines.push(`📂 Categories ─ **${formatNumber(categories.length)}**`);
+  lines.push(`📦 Products ── **${formatNumber(products.length)}**`);
+  lines.push(`💾 Stock ───── **${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}**`);
   lines.push("");
   lines.push(DIVIDER);
   lines.push("");
   
-  // Payment Methods
+  // Payment Methods - Clean presentation
   lines.push("**💳 Accepted Payment Methods**");
   lines.push("");
-  lines.push("⚡ PromptPay — พร้อมเพย์");
-  lines.push("💎 TrueMoney Wallet — กระเป๋าอิเล็กทรอนิกส์");
-  lines.push("🏦 Bank Transfer — โอนธนาคาร");
+  lines.push("⚡ PromptPay — Instant bank transfer");
+  lines.push("💎 TrueMoney Wallet — E-wallet payment");
+  lines.push("🏦 Bank Transfer — Direct banking");
   lines.push("");
   lines.push(DIVIDER);
   lines.push("");
   
-  // Features
-  lines.push("**✨ Why Choose Us?**");
+  // Features - Premium benefits display
+  lines.push("**✨ Why Choose ROGT SHOPZZZ?**");
   lines.push("");
   
   const features = shop.marketplaceFeatures || [];
@@ -86,15 +92,17 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
       lines.push(`${feature}`);
     }
   } else {
-    lines.push("⚡ Instant Delivery — จัดส่งอัตโนมัติ");
-    lines.push("🔒 Secure Trading — การค้าที่ปลอดภัย");
-    lines.push("💬 24/7 Support — ซัพพอร์ตตลอด 24 ชม.");
-    lines.push("⭐ Premium Quality — สินค้าคุณภาพพรีเมียม");
+    lines.push("⚡ Instant Delivery — Automated fulfillment");
+    lines.push("🔒 Secure Trading — Protected transactions");
+    lines.push("💬 24/7 Support — Always available help");
+    lines.push("⭐ Premium Quality — Curated products");
   }
   lines.push("");
   lines.push(DIVIDER);
   lines.push("");
-  lines.push(`*Powered by ROGT SHOPZZZ* │ Realm of Gu1tarzzz`);
+  
+  // Footer branding
+  lines.push(`*Powered by ROGT SHOPZZZ* │ *Realm of Gu1tarzzz*`);
   
   const description = lines.join("\n");
   

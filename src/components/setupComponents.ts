@@ -4,14 +4,15 @@ import { formatStock, truncate } from "../utils/formatters.js";
 
 // ═══════════════════════════════════════════════════════════════
 // PREMIUM DASHBOARD COMPONENTS - ROGT SHOPZZZ
-// Modern • Clean • Professional UI
+// Fantasy • Magic • Luxury • Minimal Design
+// Inspired by: Steam Store, Riot Games, Epic Games Store
 // ═══════════════════════════════════════════════════════════════
 
 export function dashboardMenu(): ActionRowBuilder<StringSelectMenuBuilder> {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId("setup:section")
-      .setPlaceholder("Select management section...")
+      .setPlaceholder("⚙️ Select management section...")
       .addOptions(
         { label: "Category Manager", value: "categories", description: "Create, edit, hide & organize categories", emoji: "📂" },
         { label: "Product Manager", value: "products", description: "Manage products, prices, stock & permissions", emoji: "📦" },
@@ -50,7 +51,8 @@ export function categoryManagerMenu(categories: Category[], mode: "edit" | "dele
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
     new StringSelectMenuBuilder().setCustomId(`category:pick:${mode}`).setPlaceholder("Select a category...").addOptions(categories.slice(0, 25).map((category) => ({
       label: truncate(category.name, 100), value: category.id,
-      description: truncate(`${category.hidden ? "Hidden" : "Visible"} • Position ${category.position}`, 100)
+      description: truncate(`${category.hidden ? "Hidden" : "Visible"} • Position ${category.position}`, 100),
+      emoji: category.emoji || "📂"
     })))
   );
 }
@@ -75,30 +77,31 @@ export function productManagerMenu(products: Product[], mode: "edit" | "delete" 
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
     new StringSelectMenuBuilder().setCustomId(`product:pick:${mode}`).setPlaceholder("Select a product...").addOptions(products.slice(0, 25).map((product) => ({
       label: truncate(product.name, 100), value: product.id,
-      description: truncate(`${product.hidden ? "Hidden" : product.status} • Stock ${formatStock(product.stock)}`, 100)
+      description: truncate(`${product.hidden ? "Hidden" : product.status} • Stock ${formatStock(product.stock)}`, 100),
+      emoji: product.emoji || "📦"
     })))
   );
 }
 
 export function productCategoryMenu(categories: Category[]): ActionRowBuilder<StringSelectMenuBuilder> {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-    new StringSelectMenuBuilder().setCustomId("product:pick:create").setPlaceholder("📂 Select category for new product").addOptions(categories.slice(0, 25).map((category) => ({ label: truncate(category.name, 100), value: category.id })))
+    new StringSelectMenuBuilder().setCustomId("product:pick:create").setPlaceholder("📂 Select category for new product").addOptions(categories.slice(0, 25).map((category) => ({ label: truncate(category.name, 100), value: category.id, emoji: category.emoji || "📂" })))
   );
 }
 
 export function sectionButtons(section: "appearance" | "payment" | "tickets" | "bot"): ActionRowBuilder<ButtonBuilder> {
   const map = {
     appearance: [
-      { label: "Basic Info", id: "basic" },
-      { label: "Images & Banner", id: "images" },
-      { label: "Branding & Settings", id: "branding" }
+      { label: "Basic Info", id: "basic", emoji: "📝" },
+      { label: "Images & Banner", id: "images", emoji: "🖼️" },
+      { label: "Branding & Settings", id: "branding", emoji: "✨" }
     ],
-    payment: [{ label: "Edit Payment", id: "payment" }],
+    payment: [{ label: "Edit Payment", id: "payment", emoji: "💳" }],
     tickets: [
-      { label: "Ticket Categories", id: "ticket-categories" },
-      { label: "Staff & Transcripts", id: "ticket-staff" }
+      { label: "Ticket Categories", id: "ticket-categories", emoji: "🎫" },
+      { label: "Staff & Transcripts", id: "ticket-staff", emoji: "👥" }
     ],
-    bot: [{ label: "Edit Bot", id: "bot" }]
+    bot: [{ label: "Edit Bot", id: "bot", emoji: "🤖" }]
   } as const;
   
   const options = map[section];
@@ -106,11 +109,11 @@ export function sectionButtons(section: "appearance" | "payment" | "tickets" | "
   
   for (const opt of options) {
     row.addComponents(
-      new ButtonBuilder().setCustomId(`setup:modal:${section}:${opt.id}`).setLabel(opt.label).setStyle(ButtonStyle.Primary)
+      new ButtonBuilder().setCustomId(`setup:modal:${section}:${opt.id}`).setLabel(opt.label).setStyle(ButtonStyle.Primary).setEmoji(opt.emoji)
     );
   }
   
-  return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("◀ Back to Dashboard").setStyle(ButtonStyle.Secondary));
+  return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("◀ Back to Dashboard").setStyle(ButtonStyle.Secondary).setEmoji("🔙"));
 }
 
 export function stockManagerButtons(): ActionRowBuilder<ButtonBuilder> {
@@ -123,9 +126,9 @@ export function stockManagerButtons(): ActionRowBuilder<ButtonBuilder> {
 
 export function stockActionButtons(productId: string): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(`stock:add:${productId}`).setLabel("+ Add Stock").setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId(`stock:remove:${productId}`).setLabel("- Remove Stock").setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId(`stock:history:${productId}`).setLabel("📜 History").setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder().setCustomId(`stock:add:${productId}`).setLabel("+ Add Stock").setStyle(ButtonStyle.Success).setEmoji("➕"),
+    new ButtonBuilder().setCustomId(`stock:remove:${productId}`).setLabel("- Remove Stock").setStyle(ButtonStyle.Danger).setEmoji("➖"),
+    new ButtonBuilder().setCustomId(`stock:history:${productId}`).setLabel("📜 History").setStyle(ButtonStyle.Secondary).setEmoji("📋")
   );
 }
 
@@ -135,7 +138,8 @@ export function stockHistoryMenu(transactions: StockTransaction[]): ActionRowBui
       transactions.slice(0, 25).map((t) => ({
         label: `${t.type} ${t.quantity > 0 ? "+" : ""}${t.quantity}`,
         value: t.id,
-        description: `${t.previousStock} → ${t.newStock} • By <@${t.performedBy}>`
+        description: `${t.previousStock} → ${t.newStock} • By <@${t.performedBy}>`,
+        emoji: t.type === "purchase" ? "🛒" : t.type === "restock" ? "📦" : "📝"
       }))
     )
   );

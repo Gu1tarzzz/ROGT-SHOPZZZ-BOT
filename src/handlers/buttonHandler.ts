@@ -148,7 +148,10 @@ async function refreshShopMessage(interaction: ButtonInteraction): Promise<void>
       (error as { code: number }).code === 10008;
     
     if (isUnknownMessageError) {
-      await interaction.reply({ content: "❌ Published shop message was not found. Please publish the shop again.", ephemeral: true });
+      await interaction.reply({ 
+        content: "Published shop message was deleted. Please publish the shop again using /shop.", 
+        ephemeral: true 
+      });
       return;
     }
     

@@ -9,14 +9,16 @@ export const shopCommand = {
             return;
         const settings = await settingsRepository.get(interaction.guildId);
         const buttonRows = shopButtons(settings.shop, false);
-        const reply = await interaction.reply({ embeds: [await shopEmbed(interaction.guildId)], components: buttonRows });
+        await interaction.reply({ embeds: [await shopEmbed(interaction.guildId)], components: buttonRows });
+        // Fetch the actual message to get correct ID and channelId
+        const message = await interaction.fetchReply();
         // Save published shop message ID and channel ID
         await settingsRepository.update(interaction.guildId, (currentSettings) => ({
             ...currentSettings,
             shop: {
                 ...currentSettings.shop,
-                publishedMessageId: reply.id,
-                publishedChannelId: interaction.channelId
+                publishedMessageId: message.id,
+                publishedChannelId: message.channelId
             }
         }));
     }

@@ -2,36 +2,37 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder }
 import { formatStock, truncate } from "../utils/formatters.js";
 // ═══════════════════════════════════════════════════════════════
 // PREMIUM DASHBOARD COMPONENTS - ROGT SHOPZZZ
+// Modern • Clean • Professional UI
 // ═══════════════════════════════════════════════════════════════
 export function dashboardMenu() {
     return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
         .setCustomId("setup:section")
-        .setPlaceholder("✧ Select management section ✧")
+        .setPlaceholder("Select management section...")
         .addOptions({ label: "Category Manager", value: "categories", description: "Create, edit, hide & organize categories", emoji: "📂" }, { label: "Product Manager", value: "products", description: "Manage products, prices, stock & permissions", emoji: "📦" }, { label: "Shop Appearance", value: "appearance", description: "Store name, banner, colors & premium styling", emoji: "🏪" }, { label: "Payment Settings", value: "payment", description: "Payment channels and slip configuration", emoji: "💳" }, { label: "Ticket Settings", value: "tickets", description: "Ticket rooms and staff configuration", emoji: "🎫" }, { label: "Bot Settings", value: "bot", description: "Owner, staff roles and system status", emoji: "⚙️" }));
 }
 export function backButton() {
-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("◀ Back to Dashboard").setStyle(ButtonStyle.Secondary));
+    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("Back").setStyle(ButtonStyle.Secondary).setEmoji("◀️"));
 }
 export function refreshButtons(publishedMessageId) {
-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:refresh:shop").setLabel("🔄 Refresh Shop").setStyle(ButtonStyle.Primary).setDisabled(!publishedMessageId), new ButtonBuilder().setCustomId("setup:refresh:dashboard").setLabel("🔄 Refresh Dashboard").setStyle(ButtonStyle.Secondary));
+    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:refresh:shop").setLabel("Refresh Shop").setStyle(ButtonStyle.Primary).setEmoji("🔄").setDisabled(!publishedMessageId), new ButtonBuilder().setCustomId("setup:refresh:dashboard").setLabel("Refresh Dashboard").setStyle(ButtonStyle.Secondary).setEmoji("🔄"));
 }
 export function categoryButtons() {
-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("category:create").setLabel("➕ Create Category").setStyle(ButtonStyle.Success), new ButtonBuilder().setCustomId("category:edit:pick").setLabel("✏️ Edit").setStyle(ButtonStyle.Primary), new ButtonBuilder().setCustomId("category:visibility:pick").setLabel("👁️ Hide / Show").setStyle(ButtonStyle.Secondary), new ButtonBuilder().setCustomId("category:sort:pick").setLabel("📊 Sort Order").setStyle(ButtonStyle.Secondary), new ButtonBuilder().setCustomId("category:delete:pick").setLabel("🗑️ Delete").setStyle(ButtonStyle.Danger));
+    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("category:create").setLabel("Create Category").setStyle(ButtonStyle.Success).setEmoji("➕"), new ButtonBuilder().setCustomId("category:edit:pick").setLabel("Edit").setStyle(ButtonStyle.Primary).setEmoji("✏️"), new ButtonBuilder().setCustomId("category:visibility:pick").setLabel("Hide / Show").setStyle(ButtonStyle.Secondary).setEmoji("👁️"), new ButtonBuilder().setCustomId("category:sort:pick").setLabel("Sort Order").setStyle(ButtonStyle.Secondary).setEmoji("📊"), new ButtonBuilder().setCustomId("category:delete:pick").setLabel("Delete").setStyle(ButtonStyle.Danger).setEmoji("🗑️"));
 }
 export function categoryManagerMenu(categories, mode) {
-    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId(`category:pick:${mode}`).setPlaceholder("📂 Select a category").addOptions(categories.slice(0, 25).map((category) => ({
+    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId(`category:pick:${mode}`).setPlaceholder("Select a category...").addOptions(categories.slice(0, 25).map((category) => ({
         label: truncate(category.name, 100), value: category.id,
         description: truncate(`${category.hidden ? "Hidden" : "Visible"} • Position ${category.position}`, 100)
     }))));
 }
 export function categorySortButtons(categoryId) {
-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`category:move:${categoryId}:up`).setLabel("⬆️ Move Up").setStyle(ButtonStyle.Primary), new ButtonBuilder().setCustomId(`category:move:${categoryId}:down`).setLabel("⬇️ Move Down").setStyle(ButtonStyle.Primary));
+    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`category:move:${categoryId}:up`).setLabel("Move Up").setStyle(ButtonStyle.Primary).setEmoji("⬆️"), new ButtonBuilder().setCustomId(`category:move:${categoryId}:down`).setLabel("Move Down").setStyle(ButtonStyle.Primary).setEmoji("⬇️"));
 }
 export function productButtons() {
-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("product:create:pick").setLabel("➕ Add Product").setStyle(ButtonStyle.Success), new ButtonBuilder().setCustomId("product:edit:pick").setLabel("✏️ Edit").setStyle(ButtonStyle.Primary), new ButtonBuilder().setCustomId("product:visibility:pick").setLabel("👁️ Hide / Show").setStyle(ButtonStyle.Secondary), new ButtonBuilder().setCustomId("product:delete:pick").setLabel("🗑️ Delete").setStyle(ButtonStyle.Danger));
+    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("product:create:pick").setLabel("Add Product").setStyle(ButtonStyle.Success).setEmoji("➕"), new ButtonBuilder().setCustomId("product:edit:pick").setLabel("Edit").setStyle(ButtonStyle.Primary).setEmoji("✏️"), new ButtonBuilder().setCustomId("product:visibility:pick").setLabel("Hide / Show").setStyle(ButtonStyle.Secondary).setEmoji("👁️"), new ButtonBuilder().setCustomId("product:delete:pick").setLabel("Delete").setStyle(ButtonStyle.Danger).setEmoji("🗑️"));
 }
 export function productManagerMenu(products, mode) {
-    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId(`product:pick:${mode}`).setPlaceholder("📦 Select a product").addOptions(products.slice(0, 25).map((product) => ({
+    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId(`product:pick:${mode}`).setPlaceholder("Select a product...").addOptions(products.slice(0, 25).map((product) => ({
         label: truncate(product.name, 100), value: product.id,
         description: truncate(`${product.hidden ? "Hidden" : product.status} • Stock ${formatStock(product.stock)}`, 100)
     }))));

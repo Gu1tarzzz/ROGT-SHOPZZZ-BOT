@@ -3,7 +3,8 @@ import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButt
 import { premiumEmbed } from "../utils/discord.js";
 import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
 // ═══════════════════════════════════════════════════════════════
-// PREMIUM ADMIN DASHBOARD - COMPLETE REDESIGN
+// PREMIUM ADMIN DASHBOARD - ROGT SHOPZZZ
+// Modern • Clean • Professional UI
 // ═══════════════════════════════════════════════════════════════
 export async function showDashboard(interaction) {
     if (!interaction.guildId)
@@ -19,56 +20,53 @@ export async function showDashboard(interaction) {
         totalStock += product.stock;
     }
     const timestamp = Math.floor(Date.now() / 1000);
-    // Build premium dashboard description
+    const statusEmoji = settings.shop.status === "open" ? "🟢" : "🔴";
+    const paymentStatus = settings.payment.enabled ? "🟢 Enabled" : "🔴 Disabled";
+    const ticketStatus = settings.tickets.categoryId ? "✅ Configured" : "⚠️ Not Set";
+    const publishStatus = settings.shop.publishedMessageId ? "✅ Live" : "⚠️ Offline";
+    // Build clean, modern dashboard description
     const lines = [];
+    // Header
+    lines.push(`# 👑 ROGT Admin Dashboard`);
     lines.push("");
-    lines.push("╔═══════════════════════════════════════════════════════╗");
+    lines.push("*Premium Marketplace Management System*");
     lines.push("");
-    lines.push(`# 👑 **ROGT ADMIN DASHBOARD**`);
+    lines.push("━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     lines.push("");
-    lines.push("> Premium Marketplace Management System");
+    // Store Info
+    lines.push("**🏪 Store Information**");
     lines.push("");
-    lines.push("╠═══════════════════════════════════════════════════════╣");
+    lines.push(`**Name:** ${settings.shop.storeName}`);
+    lines.push(`**Status:** ${statusEmoji} ${settings.shop.status === "open" ? "Open" : "Closed"}`);
     lines.push("");
-    // Store Information Section
-    lines.push(`## 🏪 **STORE INFORMATION**`);
+    lines.push("━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     lines.push("");
-    lines.push(`┌─────────────────────────────────────────────┐`);
-    lines.push(`│  Name:   ${truncate(settings.shop.storeName, 35)}`.padEnd(46) + `│`);
-    lines.push(`│  Status: ${settings.shop.status === "open" ? "🟢 OPEN" : "🔴 CLOSED"}${" ".repeat(32)}│`);
-    lines.push(`└─────────────────────────────────────────────┘`);
+    // Statistics
+    lines.push("**📊 Marketplace Statistics**");
     lines.push("");
-    // Statistics Grid
-    lines.push(`## 📊 **MARKETPLACE STATISTICS**`);
+    lines.push(`📂 Categories: **${formatNumber(categories.length)}**`);
+    lines.push(`📦 Products: **${formatNumber(products.length)}**`);
+    lines.push(`💾 Total Stock: **${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}**`);
     lines.push("");
-    lines.push(`┌──────────────────┬──────────────────┬──────────────────┐`);
-    lines.push(`│  📂 Categories   │  📦 Products     │  💾 Total Stock  │`);
-    lines.push(`├──────────────────┼──────────────────┼──────────────────┤`);
-    lines.push(`│  ${String(formatNumber(categories.length)).padStart(14)}  │  ${String(formatNumber(products.length)).padStart(14)}  │  ${totalStock < 0 ? "  UNLIMITED    " : String(formatNumber(totalStock)).padStart(14)}  │`);
-    lines.push(`└──────────────────┴──────────────────┴──────────────────┘`);
+    lines.push("━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     lines.push("");
     // System Status
-    lines.push(`## ⚙️ **SYSTEM STATUS**`);
+    lines.push("**⚙️ System Status**");
     lines.push("");
-    lines.push(`┌─────────────────────────────────────────────┐`);
-    lines.push(`│  💳 Payment:    ${settings.payment.enabled ? "🟢 ENABLED " : "🔴 DISABLED"}${" ".repeat(24)}│`);
-    lines.push(`│  🎫 Tickets:    ${settings.tickets.categoryId ? "✅ CONFIGURED" : "⚠️ NOT SET   "}${" ".repeat(24)}│`);
-    lines.push(`│  🛒 Published:  ${settings.shop.publishedMessageId ? "✅ LIVE     " : "⚠️ OFFLINE   "}${" ".repeat(24)}│`);
+    lines.push(`💳 Payment: ${paymentStatus}`);
+    lines.push(`🎫 Tickets: ${ticketStatus}`);
+    lines.push(`🛒 Published: ${publishStatus}`);
     if (settings.shop.publishedChannelId && settings.shop.publishedMessageId) {
-        lines.push(`│               <#${settings.shop.publishedChannelId}>${" ".repeat(30)}│`);
+        lines.push(`📍 Channel: <#${settings.shop.publishedChannelId}>`);
     }
-    lines.push(`└─────────────────────────────────────────────┘`);
     lines.push("");
-    lines.push("╠═══════════════════════════════════════════════════════╣");
+    lines.push("━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     lines.push("");
-    lines.push(`**Last Refresh:** <t:${timestamp}:R> • <t:${timestamp}:f>`);
+    lines.push(`Last Refresh: <t:${timestamp}:R> • <t:${timestamp}:f>`);
     lines.push("");
-    lines.push("╚═══════════════════════════════════════════════════════╝");
-    lines.push("");
-    lines.push("**Select a management section from the menu below**");
-    lines.push("");
+    lines.push("*Select a management section from the menu below*");
     const description = lines.join("\n");
-    const baseEmbed = await premiumEmbed(interaction.guildId, "ADMIN DASHBOARD", description);
+    const baseEmbed = await premiumEmbed(interaction.guildId, "Admin Dashboard", description);
     const components = [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
     const payload = { embeds: [baseEmbed], components };
     if (interaction.isChatInputCommand()) {

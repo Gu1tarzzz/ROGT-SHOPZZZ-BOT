@@ -2,7 +2,8 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder }
 import { BUTTON_STYLES } from "../config/constants.js";
 import { formatPrice, formatStock, truncate } from "../utils/formatters.js";
 // ═══════════════════════════════════════════════════════════════
-// PREMIUM SHOP COMPONENTS - ROGT SHOPZZZ MARKETPLACE
+// PREMIUM SHOP COMPONENTS - ROGT SHOPZZZ
+// Modern • Clean • Professional UI
 // ═══════════════════════════════════════════════════════════════
 export function shopButtons(shop, allowRefresh = false) {
     const rows = [];
@@ -11,7 +12,7 @@ export function shopButtons(shop, allowRefresh = false) {
     return rows;
 }
 export function shopAdminButtons(hasLiveShop = false) {
-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("shop:preview").setLabel("👁️ Preview").setStyle(ButtonStyle.Primary), new ButtonBuilder().setCustomId("shop:publish").setLabel("📤 Publish Shop").setStyle(ButtonStyle.Success), new ButtonBuilder().setCustomId("shop:appearance").setLabel("🏪 Premium Appearance").setStyle(ButtonStyle.Secondary));
+    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("shop:preview").setLabel("Preview").setStyle(ButtonStyle.Primary).setEmoji("👁️"), new ButtonBuilder().setCustomId("shop:publish").setLabel("Publish Shop").setStyle(ButtonStyle.Success).setEmoji("📤"), new ButtonBuilder().setCustomId("shop:appearance").setLabel("Appearance").setStyle(ButtonStyle.Secondary).setEmoji("🏪"));
 }
 export function categoryMenu(categories, customId = "shop:category") {
     const options = categories.slice(0, 25).map((category) => ({
@@ -21,13 +22,13 @@ export function categoryMenu(categories, customId = "shop:category") {
     }));
     return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
         .setCustomId(customId)
-        .setPlaceholder("✧ Browse categories ✧")
+        .setPlaceholder("Browse categories...")
         .addOptions(options));
 }
 export function productMenu(products, customId = "shop:product") {
     return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
         .setCustomId(customId)
-        .setPlaceholder("✧ Select a product ✧")
+        .setPlaceholder("Select a product...")
         .addOptions(products.slice(0, 25).map((product) => ({
         label: truncate(product.name, 100),
         value: product.id,

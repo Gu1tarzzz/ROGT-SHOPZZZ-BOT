@@ -7,6 +7,10 @@ build/
 # Dependencies
 node_modules/
 
+# Editors
+.vscode/
+.idea/
+
 # Logs and temp files
 *.log
 *.tmp
@@ -15,10 +19,6 @@ node_modules/
 .env
 .env.local
 *.env.*
-
-# Editors
-.vscode/
-.idea/
 
 # Python
 __pycache__/
@@ -40,11 +40,13 @@ coverage/
 htmlcov/
 .coverage
 
-# Testing
+# Cache directories
 .mypy_cache/
 .pytest_cache/
+.gradle/
+target/
 
-# System
+# System files
 .DS_Store
 Thumbs.db
 ```

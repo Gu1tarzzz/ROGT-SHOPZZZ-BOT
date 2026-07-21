@@ -1,8 +1,6 @@
 import { ButtonStyle } from "discord.js";
 export const BRAND = "ROGT SHOPZZZ";
 export const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
-export const SMALL_DIVIDER = "────────────────────";
-export const CORNER_DIVIDER = "╔═══════════════════════════╗";
 export const THEME = {
     primary: "#8B5CF6",
     dark: "#0D0D0D",

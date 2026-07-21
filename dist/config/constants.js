@@ -1,6 +1,13 @@
 import { ButtonStyle } from "discord.js";
 export const BRAND = "ROGT SHOPZZZ";
 export const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+export const SMALL_DIVIDER = "────────────────────";
+export const CORNER_DIVIDER = "╔═══════════════════════════╗";
+export const THEME = {
+    primary: "#8B5CF6",
+    dark: "#0D0D0D",
+    accent: "#A78BFA"
+};
 export const DEFAULT_STOCK_SETTINGS = {
     lowStockThreshold: 5,
     reservationDurationMinutes: 15,
@@ -8,18 +15,23 @@ export const DEFAULT_STOCK_SETTINGS = {
 };
 export const DEFAULT_GUILD_SETTINGS = {
     shop: {
-        storeName: BRAND,
-        description: "ตลาดดิจิทัลพรีเมียมแห่ง Realm of Gu1tarzzz",
-        footer: "Realm of Gu1tarzzz • Secure Marketplace",
-        embedColor: "#9B7BFF",
+        storeName: "✦ ROGT SHOPZZZ ✦",
+        description: "⋆˙⟡ ตลาดดิจิทัลพรีเมียมแห่ง Realm of Gu1tarzzz ⟡˙⋆",
+        footer: "✦ Realm of Gu1tarzzz • Secure Marketplace ✦",
+        embedColor: THEME.primary,
         status: "open",
         supportText: "ติดต่อทีมงานผ่านปุ่ม Support ได้ตลอดเวลา",
-        marketplaceFeatures: ["✅ จัดส่งอัตโนมัติ", "🔒 ปลอดภัย 100%", "💬 ซัพพอร์ตตลอด 24ชม.", "⭐ สินค้าคุณภาพพรีเมียม"],
+        marketplaceFeatures: [
+            "⚡ จัดส่งอัตโนมัติ — รวดเร็ว ทันใจ",
+            "🔒 ปลอดภัย 100% — การค้าที่ไว้ใจได้",
+            "💬 ซัพพอร์ตตลอด 24ชม. — เราพร้อมช่วยเหลือคุณ",
+            "⭐ สินค้าคุณภาพพรีเมียม — คัดสรรเพื่อคุณเท่านั้น"
+        ],
         buttons: {
-            browse: "เลือกชมสินค้า",
-            order: "สร้างคำสั่งซื้อ",
-            support: "ติดต่อทีมงาน",
-            information: "ข้อมูลร้านค้า"
+            browse: "🛒 Browse Store",
+            order: "📦 Orders",
+            support: "🎫 Support",
+            information: "ℹ Information"
         }
     },
     payment: {

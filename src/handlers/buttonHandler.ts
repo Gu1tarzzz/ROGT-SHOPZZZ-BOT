@@ -138,8 +138,20 @@ async function refreshShopMessage(interaction: ButtonInteraction): Promise<void>
     
     await message.edit({ embeds: [await shopEmbed(interaction.guildId)], components: buttonRows });
     
-    await interaction.reply({ content: "✅ รีเฟรชหน้าร้านเรียบร้อยแล้ว!", ephemeral: true });
+    await interaction.reply({ content: "✅ Shop refreshed successfully.", ephemeral: true });
   } catch (error) {
+    // Check if the error is Discord API error 10008 (Unknown Message)
+    const isUnknownMessageError = 
+      typeof error === "object" && 
+      error !== null && 
+      "code" in error && 
+      (error as { code: number }).code === 10008;
+    
+    if (isUnknownMessageError) {
+      await interaction.reply({ content: "❌ Published shop message was not found. Please publish the shop again.", ephemeral: true });
+      return;
+    }
+    
     console.error("Error refreshing shop message:", error);
     await interaction.reply({ content: "❌ เกิดข้อผิดพลาดในการรีเฟรชหน้าร้าน กรุณาลองใหม่อีกครั้ง", ephemeral: true });
   }

@@ -1,19 +1,20 @@
 import { EmbedBuilder, type Guild, type GuildMember, type InteractionReplyOptions } from "discord.js";
-import { DIVIDER, SMALL_DIVIDER, CORNER_DIVIDER, THEME } from "../config/constants.js";
+import { DIVIDER, THEME } from "../config/constants.js";
 import { settingsRepository, categoryRepository, productRepository } from "../database/repositories.js";
 import { truncate, formatNumber } from "./formatters.js";
 
 // ═══════════════════════════════════════════════════════════════
-// PREMIUM EMBED BUILDER - ROGT SHOPZZZ MARKETPLACE
+// PREMIUM MARKETPLACE EMBED - ROGT SHOPZZZ
+// Modern • Clean • Professional • Fantasy Theme
 // ═══════════════════════════════════════════════════════════════
 
 export async function premiumEmbed(guildId: string, title: string, description?: string): Promise<EmbedBuilder> {
   const { shop } = await settingsRepository.get(guildId);
   const embed = new EmbedBuilder()
     .setColor(shop.embedColor)
-    .setTitle(`╔══ ✦ ${title} ✦ ══╗`)
+    .setTitle(title)
     .setDescription(description ?? null)
-    .setFooter({ text: `✧ ${shop.footer} ✧`, iconURL: shop.storeLogo })
+    .setFooter({ text: shop.footer, iconURL: shop.storeLogo })
     .setTimestamp();
   if (shop.thumbnail) embed.setThumbnail(shop.thumbnail);
   if (shop.authorName || shop.authorIcon) embed.setAuthor({ name: shop.authorName || shop.storeName, iconURL: shop.authorIcon });
@@ -38,66 +39,45 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
   }
   
   const statusEmoji = shop.status === "open" ? "🟢" : "🔴";
-  const statusText = shop.status === "open" ? "**OPEN FOR BUSINESS**" : "**CURRENTLY CLOSED**";
+  const statusText = shop.status === "open" ? "Open for Business" : "Currently Closed";
   
-  // Build premium description with box-drawing characters
+  // Build clean, modern description
   const lines: string[] = [];
   
-  // ━━━━━━━━━━━━━━━ MAIN HEADER ━━━━━━━━━━━━━━━
-  lines.push("");
-  lines.push(`${DIVIDER}`);
-  lines.push("");
-  
-  // Store Logo & Name with premium styling
-  if (shop.storeLogo) {
-    lines.push(`# ◈ ${shop.storeName} ◈`);
-  } else {
-    lines.push(`# ✦ ${shop.storeName} ✦`);
-  }
-  lines.push("");
-  
-  // Description with elegant formatting
+  // Store Description
   if (shop.description) {
-    lines.push(`> ${shop.description}`);
+    lines.push(`${shop.description}`);
     lines.push("");
   }
   
-  // ━━━━━━━━━━━━━━━ STATUS BAR ━━━━━━━━━━━━━━━
-  lines.push(`${CORNER_DIVIDER} **STORE STATUS** ${CORNER_DIVIDER.split("").reverse().join("")}`);
+  // Status Indicator
+  lines.push(`${statusEmoji} │ **${statusText}**`);
   lines.push("");
-  lines.push(`${statusEmoji} ┃ ${statusText}`);
-  lines.push("");
-  
-  // ━━━━━━━━━━━━━━━ STATISTICS SECTION ━━━━━━━━━━━━━━━
-  lines.push(`${DIVIDER}`);
-  lines.push("");
-  lines.push(`## 📊 **MARKETPLACE STATISTICS**`);
-  lines.push("");
-  lines.push(`${SMALL_DIVIDER}`);
-  lines.push("");
-  lines.push(`┌─────────────────────────────────────┐`);
-  lines.push(`│  📂 **Categories**     │ ${String(formatNumber(categories.length)).padEnd(2)}          │`);
-  lines.push(`│  📦 **Products**       │ ${String(formatNumber(products.length)).padEnd(2)}          │`);
-  lines.push(`│  💾 **Total Stock**    │ ${totalStock < 0 ? "UNLIMITED   " : String(formatNumber(totalStock)).padEnd(2)}          │`);
-  lines.push(`└─────────────────────────────────────┘`);
+  lines.push(DIVIDER);
   lines.push("");
   
-  // ━━━━━━━━━━━━━━━ PAYMENT METHODS ━━━━━━━━━━━━━━━
-  lines.push(`${SMALL_DIVIDER}`);
+  // Statistics - Clean inline format
+  lines.push("**📊 Marketplace Overview**");
   lines.push("");
-  lines.push(`## 💳 **PAYMENT METHODS**`);
+  lines.push(`📂 Categories: **${formatNumber(categories.length)}**`);
+  lines.push(`📦 Products: **${formatNumber(products.length)}**`);
+  lines.push(`💾 Total Stock: **${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}**`);
   lines.push("");
-  lines.push(`┌─────────────────────────────────────┐`);
-  lines.push(`│  ⚡ PromptPay        │ พร้อมเพย์           │`);
-  lines.push(`│  💎 TrueMoney Wallet │ กระเป๋าอิเล็กทรอนิกส์ │`);
-  lines.push(`│  🏦 Bank Transfer    │ โอนธนาคาร          │`);
-  lines.push(`└─────────────────────────────────────┘`);
+  lines.push(DIVIDER);
   lines.push("");
   
-  // ━━━━━━━━━━━━━━━ FEATURES SECTION ━━━━━━━━━━━━━━━
-  lines.push(`${SMALL_DIVIDER}`);
+  // Payment Methods
+  lines.push("**💳 Accepted Payment Methods**");
   lines.push("");
-  lines.push(`## ✨ **PREMIUM FEATURES**`);
+  lines.push("⚡ PromptPay — พร้อมเพย์");
+  lines.push("💎 TrueMoney Wallet — กระเป๋าอิเล็กทรอนิกส์");
+  lines.push("🏦 Bank Transfer — โอนธนาคาร");
+  lines.push("");
+  lines.push(DIVIDER);
+  lines.push("");
+  
+  // Features
+  lines.push("**✨ Why Choose Us?**");
   lines.push("");
   
   const features = shop.marketplaceFeatures || [];
@@ -106,28 +86,26 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
       lines.push(`${feature}`);
     }
   } else {
-    lines.push(`⚡ Instant Delivery — จัดส่งอัตโนมัติ`);
-    lines.push(`🔒 Secure Trading — การค้าที่ปลอดภัย`);
-    lines.push(`💬 24/7 Support — ซัพพอร์ตตลอด 24 ชม.`);
-    lines.push(`⭐ Premium Quality — สินค้าคุณภาพพรีเมียม`);
+    lines.push("⚡ Instant Delivery — จัดส่งอัตโนมัติ");
+    lines.push("🔒 Secure Trading — การค้าที่ปลอดภัย");
+    lines.push("💬 24/7 Support — ซัพพอร์ตตลอด 24 ชม.");
+    lines.push("⭐ Premium Quality — สินค้าคุณภาพพรีเมียม");
   }
   lines.push("");
-  
-  lines.push(`${DIVIDER}`);
+  lines.push(DIVIDER);
   lines.push("");
-  lines.push(`**Powered by ROGT SHOPZZZ** | Realm of Gu1tarzzz`);
-  lines.push("");
+  lines.push(`*Powered by ROGT SHOPZZZ* │ Realm of Gu1tarzzz`);
   
   const description = lines.join("\n");
   
   const embed = new EmbedBuilder()
     .setColor(shop.embedColor)
     .setAuthor({ 
-      name: shop.authorName || `✦ ${shop.storeName} ✦`, 
+      name: shop.authorName || shop.storeName, 
       iconURL: shop.authorIcon || shop.storeLogo 
     })
     .setDescription(description)
-    .setFooter({ text: `✧ ${shop.footer} ✧`, iconURL: shop.storeLogo })
+    .setFooter({ text: shop.footer, iconURL: shop.storeLogo })
     .setTimestamp();
     
   // Large banner image (priority: GIF > static)

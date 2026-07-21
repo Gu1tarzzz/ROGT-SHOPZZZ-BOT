@@ -3,8 +3,6 @@ import type { ButtonColor, GuildSettings, HexColor } from "../types.js";
 
 export const BRAND = "ROGT SHOPZZZ";
 export const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
-export const SMALL_DIVIDER = "────────────────────";
-export const CORNER_DIVIDER = "╔═══════════════════════════╗";
 
 export const THEME = {
   primary: "#8B5CF6" as HexColor,

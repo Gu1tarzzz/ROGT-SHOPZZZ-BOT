@@ -73,15 +73,28 @@ export function productCategoryMenu(categories: Category[]): ActionRowBuilder<St
 
 export function sectionButtons(section: "appearance" | "payment" | "tickets" | "bot"): ActionRowBuilder<ButtonBuilder> {
   const map = {
-    appearance: ["แก้ไขหน้าตาショップ", "setup:modal:appearance", ButtonStyle.Primary],
-    payment: ["แก้ไขการชำระเงิน", "setup:modal:payment", ButtonStyle.Primary],
-    tickets: ["แก้ไข Ticket", "setup:modal:tickets", ButtonStyle.Primary],
-    bot: ["แก้ไข Bot", "setup:modal:bot", ButtonStyle.Primary]
+    appearance: [
+      { label: "ข้อมูลพื้นฐาน", id: "basic" },
+      { label: "รูปภาพและแบนเนอร์", id: "images" },
+      { label: "แบรนด์และการตั้งค่า", id: "branding" }
+    ],
+    payment: [{ label: "แก้ไขการชำระเงิน", id: "payment" }],
+    tickets: [
+      { label: "หมวดหมู่ Ticket", id: "ticket-categories" },
+      { label: "ทีมงานและ Transcripts", id: "ticket-staff" }
+    ],
+    bot: [{ label: "แก้ไข Bot", id: "bot" }]
   } as const;
-  const [label, customId, style] = map[section];
-  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(customId).setLabel(label).setStyle(style),
-  );
+  
+  const options = map[section];
+  const row = new ActionRowBuilder<ButtonBuilder>();
+  
+  for (const opt of options) {
+    row.addComponents(
+      new ButtonBuilder().setCustomId(`setup:modal:${section}:${opt.id}`).setLabel(opt.label).setStyle(ButtonStyle.Primary)
+    );
+  }
+  
   return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับแดชบอร์ด").setStyle(ButtonStyle.Secondary));
 }
 

@@ -9,25 +9,42 @@ const value = (interaction: ModalSubmitInteraction, id: string): string => inter
 const splitLines = (input: string): string[] => input.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
 const validColor = (input: string): ButtonColor => (["Primary", "Secondary", "Success", "Danger"] as const).includes(input as ButtonColor) ? input as ButtonColor : "Primary";
 
-export async function openModal(interaction: import("discord.js").ButtonInteraction): Promise<unknown> {
+export async function openModal(interaction: import("discord.js").ButtonInteraction, section?: string): Promise<unknown> {
   if (!interaction.guildId) return;
   const settings = await settingsRepository.get(interaction.guildId);
-  const [, , type] = interaction.customId.split(":");
+  const parts = interaction.customId.split(":");
+  const type = parts[2];
+  const subSection = parts[3];
+  
+  // Handle appearance with subsections (basic, images, branding)
   if (type === "appearance") {
-    return interaction.showModal(createModal("settings:appearance", "ตั้งค่าหน้าตา Premium Shop", [
-      { id: "name", label: "ชื่อร้าน", value: settings.shop.storeName, required: true, maxLength: 100 },
-      { id: "description", label: "คำอธิบายร้าน", value: settings.shop.description, required: true, style: TextInputStyle.Paragraph, maxLength: 1000 },
-      { id: "footer", label: "Footer", value: settings.shop.footer, required: true, maxLength: 200 },
-      { id: "color", label: "สี Embed (#RRGGBB)", value: settings.shop.embedColor, required: true, maxLength: 7 },
-      { id: "banner", label: "Banner URL (ภาพปกติ)", value: settings.shop.banner, placeholder: "https://...", maxLength: 1024 },
-      { id: "bannerGif", label: "Banner GIF (ภาพเคลื่อนไหว)", value: settings.shop.bannerGif, placeholder: "https://...", maxLength: 1024 },
-      { id: "thumbnail", label: "Thumbnail URL", value: settings.shop.thumbnail, placeholder: "https://...", maxLength: 1024 },
-      { id: "authorName", label: "Author Name", value: settings.shop.authorName, placeholder: "ชื่อที่แสดงด้านบน", maxLength: 100 },
-      { id: "authorIcon", label: "Author Icon URL", value: settings.shop.authorIcon, placeholder: "https://...", maxLength: 1024 },
-      { id: "storeLogo", label: "Store Logo URL", value: settings.shop.storeLogo, placeholder: "https://...", maxLength: 1024 },
-      { id: "status", label: "สถานะ (open / closed)", value: settings.shop.status, required: true, maxLength: 10 }
-    ]));
+    if (subSection === "basic") {
+      return interaction.showModal(createModal("settings:appearance:basic", "ตั้งค่าหน้าตา Premium Shop - ข้อมูลพื้นฐาน", [
+        { id: "name", label: "ชื่อร้าน", value: settings.shop.storeName, required: true, maxLength: 100 },
+        { id: "description", label: "คำอธิบายร้าน", value: settings.shop.description, required: true, style: TextInputStyle.Paragraph, maxLength: 1000 },
+        { id: "footer", label: "Footer", value: settings.shop.footer, required: true, maxLength: 200 },
+        { id: "status", label: "สถานะ (open / closed)", value: settings.shop.status, required: true, maxLength: 10 }
+      ]));
+    }
+    if (subSection === "images") {
+      return interaction.showModal(createModal("settings:appearance:images", "ตั้งค่าหน้าตา Premium Shop - รูปภาพ", [
+        { id: "banner", label: "Banner URL (ภาพปกติ)", value: settings.shop.banner, placeholder: "https://...", maxLength: 1024 },
+        { id: "bannerGif", label: "Banner GIF (ภาพเคลื่อนไหว)", value: settings.shop.bannerGif, placeholder: "https://...", maxLength: 1024 },
+        { id: "thumbnail", label: "Thumbnail URL", value: settings.shop.thumbnail, placeholder: "https://...", maxLength: 1024 },
+        { id: "storeLogo", label: "Store Logo URL", value: settings.shop.storeLogo, placeholder: "https://...", maxLength: 1024 }
+      ]));
+    }
+    if (subSection === "branding") {
+      return interaction.showModal(createModal("settings:appearance:branding", "ตั้งค่าหน้าตา Premium Shop - แบรนด์", [
+        { id: "color", label: "สี Embed (#RRGGBB)", value: settings.shop.embedColor, required: true, maxLength: 7 },
+        { id: "authorName", label: "Author Name", value: settings.shop.authorName, placeholder: "ชื่อที่แสดงด้านบน", maxLength: 100 },
+        { id: "authorIcon", label: "Author Icon URL", value: settings.shop.authorIcon, placeholder: "https://...", maxLength: 1024 }
+      ]));
+    }
+    // Fallback for old format
+    return openAppearanceModal(interaction, settings);
   }
+  
   if (type === "labels") {
     return interaction.showModal(createModal("settings:labels", "ข้อความบนปุ่มหน้าร้าน", [
       { id: "browse", label: "ปุ่ม Browse", value: settings.shop.buttons.browse, required: true, maxLength: 80 },
@@ -43,11 +60,25 @@ export async function openModal(interaction: import("discord.js").ButtonInteract
       { id: "enabled", label: "เปิดรับชำระเงิน (yes / no)", value: settings.payment.enabled ? "yes" : "no", required: true, maxLength: 3 },
       { id: "wallet", label: "TrueMoney Wallet", value: settings.payment.trueMoneyWallet, placeholder: "เบอร์โทร หรือ -", maxLength: 100 },
       { id: "promptpay", label: "PromptPay", value: settings.payment.promptPay, placeholder: "เบอร์โทร/เลขบัตร หรือ -", maxLength: 100 },
-      { id: "bank", label: "ธนาคาร (ชื่อธนาคาร / ชื่อบัญชี / เลขบัญชี)", value: bank, style: TextInputStyle.Paragraph, maxLength: 400 },
-      { id: "details", label: "รายละเอียดการชำระเงิน", value: details, placeholder: "QR URL / Payment Channel ID / Slip Channel ID / คำแนะนำ (บรรทัดละ 1)", style: TextInputStyle.Paragraph, maxLength: 1024 }
+      { id: "bank", label: "ธนาคาร (ชื่อ / ชื่อบัญชี / เลข)", value: bank, style: TextInputStyle.Paragraph, maxLength: 400 }
     ]));
   }
   if (type === "tickets") {
+    const subSection = parts[3];
+    if (subSection === "ticket-categories") {
+      return interaction.showModal(createModal("settings:tickets:categories", "ตั้งค่า Ticket - หมวดหมู่", [
+        { id: "category", label: "Order Category ID", value: settings.tickets.categoryId, placeholder: "ใส่ - เพื่อล้าง", maxLength: 30 },
+        { id: "supportCategory", label: "Support Category ID", value: settings.tickets.supportCategoryId, placeholder: "ใส่ - เพื่อใช้ Order Category", maxLength: 30 }
+      ]));
+    }
+    if (subSection === "ticket-staff") {
+      return interaction.showModal(createModal("settings:tickets:staff", "ตั้งค่า Ticket - ทีมงาน", [
+        { id: "roles", label: "Staff Role ID (คั่นด้วย ,)", value: settings.tickets.staffRoleIds.join(","), maxLength: 500 },
+        { id: "transcript", label: "Transcript Channel ID", value: settings.tickets.transcriptChannelId, placeholder: "ใส่ - เพื่อล้าง", maxLength: 30 },
+        { id: "prefix", label: "Ticket Prefix", value: settings.tickets.ticketPrefix, required: true, maxLength: 20 }
+      ]));
+    }
+    // Fallback for old format
     return interaction.showModal(createModal("settings:tickets", "ตั้งค่า Ticket", [
       { id: "category", label: "Order Category ID", value: settings.tickets.categoryId, placeholder: "ใส่ - เพื่อล้าง", maxLength: 30 },
       { id: "supportCategory", label: "Support Category ID", value: settings.tickets.supportCategoryId, placeholder: "ใส่ - เพื่อใช้ Order Category", maxLength: 30 },
@@ -63,6 +94,22 @@ export async function openModal(interaction: import("discord.js").ButtonInteract
       { id: "maintenance", label: "Maintenance Mode (yes / no)", value: settings.bot.maintenanceMode ? "yes" : "no", required: true, maxLength: 3 }
     ]));
   }
+}
+
+async function openAppearanceModal(interaction: import("discord.js").ButtonInteraction, settings: Awaited<ReturnType<typeof settingsRepository.get>>): Promise<unknown> {
+  return interaction.showModal(createModal("settings:appearance", "ตั้งค่าหน้าตา Premium Shop", [
+    { id: "name", label: "ชื่อร้าน", value: settings.shop.storeName, required: true, maxLength: 100 },
+    { id: "description", label: "คำอธิบายร้าน", value: settings.shop.description, required: true, style: TextInputStyle.Paragraph, maxLength: 1000 },
+    { id: "footer", label: "Footer", value: settings.shop.footer, required: true, maxLength: 200 },
+    { id: "color", label: "สี Embed (#RRGGBB)", value: settings.shop.embedColor, required: true, maxLength: 7 },
+    { id: "banner", label: "Banner URL (ภาพปกติ)", value: settings.shop.banner, placeholder: "https://...", maxLength: 1024 },
+    { id: "bannerGif", label: "Banner GIF (ภาพเคลื่อนไหว)", value: settings.shop.bannerGif, placeholder: "https://...", maxLength: 1024 },
+    { id: "thumbnail", label: "Thumbnail URL", value: settings.shop.thumbnail, placeholder: "https://...", maxLength: 1024 },
+    { id: "authorName", label: "Author Name", value: settings.shop.authorName, placeholder: "ชื่อที่แสดงด้านบน", maxLength: 100 },
+    { id: "authorIcon", label: "Author Icon URL", value: settings.shop.authorIcon, placeholder: "https://...", maxLength: 1024 },
+    { id: "storeLogo", label: "Store Logo URL", value: settings.shop.storeLogo, placeholder: "https://...", maxLength: 1024 },
+    { id: "status", label: "สถานะ (open / closed)", value: settings.shop.status, required: true, maxLength: 10 }
+  ]));
 }
 
 export async function openCategoryModal(interaction: import("discord.js").ButtonInteraction, categoryId?: string): Promise<unknown> {
@@ -130,32 +177,59 @@ console.log("Guild ID =", interaction.guildId);
     return interaction.reply({ content: `บันทึกสินค้า **${product.name}** แล้ว`, ephemeral: true });
   }
   if (scope !== "settings") return;
+  const subAction = parts[2]; // e.g., "appearance:basic" -> "basic"
+  
+  // Handle appearance subsections
   if (action === "appearance") {
-    const color = value(interaction, "color");
-    if (!isValidHex(color)) return interaction.reply({ content: "สี Embed ต้องอยู่ในรูปแบบ #RRGGBB", ephemeral: true });
+    const currentSettings = await settingsRepository.get(interaction.guildId);
+    const colorField = subAction === "branding" ? value(interaction, "color") : 
+                       subAction === "basic" ? "#FFFFFF" : currentSettings.shop.embedColor;
+    
+    if (subAction === "branding" && !isValidHex(colorField)) {
+      return interaction.reply({ content: "สี Embed ต้องอยู่ในรูปแบบ #RRGGBB", ephemeral: true });
+    }
+    
     await settingsRepository.update(interaction.guildId, (settings) => ({ 
       ...settings, 
       shop: { 
         ...settings.shop, 
-        storeName: value(interaction, "name"), 
-        description: value(interaction, "description"), 
-        footer: value(interaction, "footer"), 
-        embedColor: color, 
-        banner: parseOptional(value(interaction, "banner")),
-        bannerGif: parseOptional(value(interaction, "bannerGif")),
-        thumbnail: parseOptional(value(interaction, "thumbnail")),
-        authorName: parseOptional(value(interaction, "authorName")),
-        authorIcon: parseOptional(value(interaction, "authorIcon")),
-        storeLogo: parseOptional(value(interaction, "storeLogo")),
-        status: value(interaction, "status").toLowerCase() === "closed" ? "closed" : "open" 
+        storeName: subAction === "basic" ? value(interaction, "name") : settings.shop.storeName,
+        description: subAction === "basic" ? value(interaction, "description") : settings.shop.description,
+        footer: subAction === "basic" ? value(interaction, "footer") : settings.shop.footer,
+        status: subAction === "basic" ? (value(interaction, "status").toLowerCase() === "closed" ? "closed" : "open") : settings.shop.status,
+        banner: subAction === "images" ? parseOptional(value(interaction, "banner")) : settings.shop.banner,
+        bannerGif: subAction === "images" ? parseOptional(value(interaction, "bannerGif")) : settings.shop.bannerGif,
+        thumbnail: subAction === "images" ? parseOptional(value(interaction, "thumbnail")) : settings.shop.thumbnail,
+        storeLogo: subAction === "images" ? parseOptional(value(interaction, "storeLogo")) : settings.shop.storeLogo,
+        embedColor: (subAction === "branding" ? colorField : settings.shop.embedColor) as `#${string}`,
+        authorName: subAction === "branding" ? parseOptional(value(interaction, "authorName")) : settings.shop.authorName,
+        authorIcon: subAction === "branding" ? parseOptional(value(interaction, "authorIcon")) : settings.shop.authorIcon
+      } 
+    }));
+  } else if (action === "tickets:categories") {
+    await settingsRepository.update(interaction.guildId, (settings) => ({ 
+      ...settings, 
+      tickets: { 
+        ...settings.tickets, 
+        categoryId: parseOptional(value(interaction, "category")), 
+        supportCategoryId: parseOptional(value(interaction, "supportCategory")) 
+      } 
+    }));
+  } else if (action === "tickets:staff") {
+    await settingsRepository.update(interaction.guildId, (settings) => ({ 
+      ...settings, 
+      tickets: { 
+        ...settings.tickets, 
+        staffRoleIds: value(interaction, "roles").split(",").map((r) => r.trim()).filter(Boolean), 
+        transcriptChannelId: parseOptional(value(interaction, "transcript")), 
+        ticketPrefix: value(interaction, "prefix") 
       } 
     }));
   } else if (action === "labels") {
     await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, shop: { ...settings.shop, buttons: { browse: value(interaction, "browse"), order: value(interaction, "order"), support: value(interaction, "support"), information: value(interaction, "information") } } }));
   } else if (action === "payment") {
     const bank = splitLines(value(interaction, "bank"));
-    const details = splitLines(value(interaction, "details"));
-    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, payment: { ...settings.payment, enabled: value(interaction, "enabled").toLowerCase() === "yes", trueMoneyWallet: parseOptional(value(interaction, "wallet")), promptPay: parseOptional(value(interaction, "promptpay")), bankName: parseOptional(bank[0]), accountName: parseOptional(bank[1]), bankAccount: parseOptional(bank[2]), qrImage: parseOptional(details[0]), paymentChannelId: parseOptional(details[1]), slipChannelId: parseOptional(details[2]), instructions: details.slice(3).join("\n") || settings.payment.instructions } }));
+    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, payment: { ...settings.payment, enabled: value(interaction, "enabled").toLowerCase() === "yes", trueMoneyWallet: parseOptional(value(interaction, "wallet")), promptPay: parseOptional(value(interaction, "promptpay")), bankName: parseOptional(bank[0]), accountName: parseOptional(bank[1]), bankAccount: parseOptional(bank[2]) } }));
   } else if (action === "tickets") {
     await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, tickets: { categoryId: parseOptional(value(interaction, "category")), supportCategoryId: parseOptional(value(interaction, "supportCategory")), staffRoleIds: value(interaction, "roles").split(",").map((item) => item.trim()).filter(Boolean), transcriptChannelId: parseOptional(value(interaction, "transcript")), ticketPrefix: value(interaction, "prefix").replace(/[^a-z0-9-]/gi, "").toLowerCase() || "order" }, }));
   } else if (action === "bot") {

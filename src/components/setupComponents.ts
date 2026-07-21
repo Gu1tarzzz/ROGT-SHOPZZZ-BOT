@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from "discord.js";
-import type { Category, Product, StockTransaction } from "../types.js";
+import type { Category, Product, StockTransaction, ShopSettings } from "../types.js";
 import { formatStock, truncate } from "../utils/formatters.js";
 
 export function dashboardMenu(): ActionRowBuilder<StringSelectMenuBuilder> {
@@ -18,6 +18,13 @@ export function dashboardMenu(): ActionRowBuilder<StringSelectMenuBuilder> {
 export function backButton(): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId("setup:home").setLabel("กลับแดชบอร์ด").setStyle(ButtonStyle.Secondary)
+  );
+}
+
+export function refreshButtons(publishedMessageId?: string): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId("setup:refresh:shop").setLabel("🔄 Refresh Shop").setStyle(ButtonStyle.Primary).setDisabled(!publishedMessageId),
+    new ButtonBuilder().setCustomId("setup:refresh:dashboard").setLabel("🔄 Refresh Dashboard").setStyle(ButtonStyle.Secondary)
   );
 }
 

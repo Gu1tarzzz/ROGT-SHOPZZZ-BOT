@@ -1,6 +1,6 @@
 import type { ButtonInteraction, ChatInputCommandInteraction, StringSelectMenuInteraction } from "discord.js";
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
-import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons } from "../components/setupComponents.js";
+import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons } from "../components/setupComponents.js";
 import { premiumEmbed } from "../utils/discord.js";
 import { formatPrice, truncate } from "../utils/formatters.js";
 
@@ -9,15 +9,37 @@ type SetupInteraction = ChatInputCommandInteraction | ButtonInteraction | String
 export async function showDashboard(interaction: SetupInteraction): Promise<void> {
   if (!interaction.guildId) return;
   const settings = await settingsRepository.get(interaction.guildId);
-  const embed = await premiumEmbed(interaction.guildId, "ROGT ADMIN DASHBOARD", [
-    "จัดการ Marketplace ของคุณจาก Discord ได้ทั้งหมด",
+  const categories = await categoryRepository.list(interaction.guildId, false);
+  const products = await productRepository.list(interaction.guildId, false);
+  
+  // Calculate total stock
+  let totalStock = 0;
+  for (const product of products) {
+    if (product.stock === -1) continue; // Unlimited stock
+    totalStock += product.stock;
+  }
+  
+  const embed = await premiumEmbed(interaction.guildId, "🏆 ROGT ADMIN DASHBOARD", [
+    "**จัดการ Marketplace ของคุณจาก Discord ได้ทั้งหมด**",
     "",
     `**ร้านค้า:** ${settings.shop.storeName}`,
-    `**สถานะ:** ${settings.shop.status === "open" ? "เปิดให้บริการ" : "ปิดปรับปรุง"}`,
+    `**สถานะ:** ${settings.shop.status === "open" ? "🟢 เปิดให้บริการ" : "🔴 ปิดปรับปรุง"}`,
+    "",
+    "**📊 สถิติร้านค้า**",
+    `• หมวดหมู่: **${categories.length}**`,
+    `• สินค้า: **${products.length}**`,
+    `• สต็อกรวม: **${totalStock.toLocaleString()}**`,
+    "",
+    "**💳 การชำระเงิน:** " + (settings.payment.enabled ? "🟢 เปิดใช้งาน" : "🔴 ปิดใช้งาน"),
+    "**🎫 Tickets:** " + (settings.tickets.categoryId ? "✅ ตั้งค่าแล้ว" : "⚠️ ยังไม่ได้ตั้งค่า"),
+    "",
+    settings.shop.publishedMessageId ? `**🛒 Shop Published:** <#${settings.shop.publishedChannelId}>` : "**🛒 Shop:** ยังไม่ได้เผยแพร่",
     "",
     "เลือกหมวดการตั้งค่าจากเมนูด้านล่าง"
   ].join("\n"));
-  const payload = { embeds: [embed], components: [dashboardMenu()] };
+  
+  const components = [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
+  const payload = { embeds: [embed], components };
   if (interaction.isChatInputCommand()) await interaction.reply({ ...payload, ephemeral: true });
   else await interaction.update(payload);
 }

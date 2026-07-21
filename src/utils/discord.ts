@@ -3,11 +3,11 @@ import { DIVIDER, SMALL_DIVIDER, THEME } from "../config/constants.js";
 import { settingsRepository, categoryRepository, productRepository } from "../database/repositories.js";
 import { truncate, formatNumber } from "./formatters.js";
 
-// ═══════════════════════════════════════════════════════════════
-// PREMIUM MARKETPLACE EMBED - ROGT SHOPZZZ
-// Fantasy • Magic • Luxury • Dark Mode
-// Inspired by: Steam Store, Riot Games, Epic Games Store
-// ═══════════════════════════════════════════════════════════════
+// ╭──────────────────────────────────────────────────────────────╮
+// │  PREMIUM MARKETPLACE EMBED - ROGT SHOPZZZ                    │
+// │  Style: Luxury • Fantasy • Minimal • Dark                    │
+// │  Reference: Dapex Boost, Mickey Boost, Steam Store           │
+// ╰──────────────────────────────────────────────────────────────╯
 
 export async function premiumEmbed(guildId: string, title: string, description?: string): Promise<EmbedBuilder> {
   const { shop } = await settingsRepository.get(guildId);
@@ -39,70 +39,65 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     totalStock += product.stock;
   }
   
-  const statusEmoji = shop.status === "open" ? "🟢" : "🔴";
-  const statusText = shop.status === "open" ? "Open for Business" : "Currently Closed";
+  const statusEmoji = shop.status === "open" ? "●" : "○";
+  const statusText = shop.status === "open" ? "Open" : "Closed";
   
   // Build premium, modern description with clean hierarchy
   const lines: string[] = [];
   
   // Hero Section - Store branding
-  lines.push(`# ✦ ${shop.storeName} ✦`);
+  lines.push(`# ✦ ${shop.storeName}`);
+  lines.push("");
+  lines.push(`${shop.description || "Premium Digital Marketplace"}`);
   lines.push("");
   
-  // Store Description
-  if (shop.description) {
-    lines.push(`*${shop.description}*`);
-    lines.push("");
-  }
-  
-  // Status Indicator with visual separator
-  lines.push(`${SMALL_DIVIDER}`);
-  lines.push(`${statusEmoji} │ **${statusText}**`);
+  // Status Indicator
+  lines.push(`${statusEmoji} ${statusText}`);
   lines.push("");
-  lines.push(DIVIDER);
+  lines.push(SMALL_DIVIDER);
   lines.push("");
   
-  // Statistics - Premium inline format
-  lines.push("**📊 Marketplace Overview**");
+  // Statistics - Clean inline format
+  lines.push(`**◆ Store Overview**`);
   lines.push("");
-  lines.push(`📂 Categories ─ **${formatNumber(categories.length)}**`);
-  lines.push(`📦 Products ── **${formatNumber(products.length)}**`);
-  lines.push(`💾 Stock ───── **${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}**`);
+  lines.push(`▸ Categories ─ ${formatNumber(categories.length)}`);
+  lines.push(`▸ Products ── ${formatNumber(products.length)}`);
+  lines.push(`▸ Stock ───── ${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}`);
   lines.push("");
-  lines.push(DIVIDER);
+  lines.push(SMALL_DIVIDER);
   lines.push("");
   
-  // Payment Methods - Clean presentation
-  lines.push("**💳 Accepted Payment Methods**");
+  // Payment Methods - Minimal presentation
+  lines.push(`**◆ Payment**`);
   lines.push("");
-  lines.push("⚡ PromptPay — Instant bank transfer");
-  lines.push("💎 TrueMoney Wallet — E-wallet payment");
-  lines.push("🏦 Bank Transfer — Direct banking");
+  lines.push("▸ PromptPay");
+  lines.push("▸ TrueMoney");
+  lines.push("▸ Bank Transfer");
   lines.push("");
-  lines.push(DIVIDER);
+  lines.push(SMALL_DIVIDER);
   lines.push("");
   
   // Features - Premium benefits display
-  lines.push("**✨ Why Choose ROGT SHOPZZZ?**");
+  lines.push(`**◆ Features**`);
   lines.push("");
   
   const features = shop.marketplaceFeatures || [];
   if (features.length > 0) {
     for (const feature of features.slice(0, 4)) {
-      lines.push(`${feature}`);
+      lines.push(`✔ ${feature}`);
     }
   } else {
-    lines.push("⚡ Instant Delivery — Automated fulfillment");
-    lines.push("🔒 Secure Trading — Protected transactions");
-    lines.push("💬 24/7 Support — Always available help");
-    lines.push("⭐ Premium Quality — Curated products");
+    lines.push("✔ Instant Delivery");
+    lines.push("✔ Secure Trade");
+    lines.push("✔ 24/7 Support");
+    lines.push("✔ Premium Quality");
   }
   lines.push("");
-  lines.push(DIVIDER);
+  lines.push(SMALL_DIVIDER);
   lines.push("");
   
   // Footer branding
-  lines.push(`*Powered by ROGT SHOPZZZ* │ *Realm of Gu1tarzzz*`);
+  lines.push(`*${shop.footer}*`);
   
   const description = lines.join("\n");
   

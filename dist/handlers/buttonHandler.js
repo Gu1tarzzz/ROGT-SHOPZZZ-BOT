@@ -149,6 +149,42 @@ async function refreshShopMessage(interaction) {
         await interaction.reply({ content: "✅ รีเฟรชหน้าร้านเรียบร้อยแล้ว!", ephemeral: true });
     }
     catch (error) {
+        // Check if the error is Discord API error 10008 (Unknown Message)
+        const isUnknownMessageError = typeof error === "object" &&
+            error !== null &&
+            "code" in error &&
+            error.code === 10008;
+        if (isUnknownMessageError) {
+            // The published message was deleted, create a new one
+            try {
+                const channel = await interaction.guild.channels.fetch(publishedChannelId);
+                if (!channel?.isTextBased()) {
+                    await interaction.reply({ content: "❌ ไม่พบช่องที่เผยแพร่หน้าร้าน", ephemeral: true });
+                    return;
+                }
+                const buttonRows = shopButtons(settings.shop, false);
+                const reply = await channel.send({ embeds: [await shopEmbed(interaction.guildId)], components: buttonRows });
+                // Save the new published message ID and channel ID
+                await settingsRepository.update(interaction.guildId, (currentSettings) => ({
+                    ...currentSettings,
+                    shop: {
+                        ...currentSettings.shop,
+                        publishedMessageId: reply.id,
+                        publishedChannelId: channel.id
+                    }
+                }));
+                await interaction.reply({
+                    content: "✅ ข้อความหน้าร้านเดิมถูกลบไปแล้ว จึงได้สร้างข้อความใหม่โดยอัตโนมัติ พร้อมบันทึกข้อมูลใหม่แล้ว",
+                    ephemeral: true
+                });
+                return;
+            }
+            catch (createError) {
+                console.error("Error creating new shop message:", createError);
+                await interaction.reply({ content: "❌ เกิดข้อผิดพลาดในการสร้างหน้าร้านใหม่ กรุณาลองใหม่อีกครั้ง", ephemeral: true });
+                return;
+            }
+        }
         console.error("Error refreshing shop message:", error);
         await interaction.reply({ content: "❌ เกิดข้อผิดพลาดในการรีเฟรชหน้าร้าน กรุณาลองใหม่อีกครั้ง", ephemeral: true });
     }

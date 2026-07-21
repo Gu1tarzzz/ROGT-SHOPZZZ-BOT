@@ -6,6 +6,9 @@ export function dashboardMenu() {
 export function backButton() {
     return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับแดชบอร์ด").setStyle(ButtonStyle.Secondary));
 }
+export function refreshButtons(publishedMessageId) {
+    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:refresh:shop").setLabel("🔄 Refresh Shop").setStyle(ButtonStyle.Primary).setDisabled(!publishedMessageId), new ButtonBuilder().setCustomId("setup:refresh:dashboard").setLabel("🔄 Refresh Dashboard").setStyle(ButtonStyle.Secondary));
+}
 export function categoryButtons() {
     return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("category:create").setLabel("สร้างหมวดหมู่").setStyle(ButtonStyle.Success), new ButtonBuilder().setCustomId("category:edit:pick").setLabel("แก้ไข").setStyle(ButtonStyle.Primary), new ButtonBuilder().setCustomId("category:visibility:pick").setLabel("ซ่อน / แสดง").setStyle(ButtonStyle.Secondary), new ButtonBuilder().setCustomId("category:sort:pick").setLabel("เรียงลำดับ").setStyle(ButtonStyle.Secondary), new ButtonBuilder().setCustomId("category:delete:pick").setLabel("ลบ").setStyle(ButtonStyle.Danger));
 }

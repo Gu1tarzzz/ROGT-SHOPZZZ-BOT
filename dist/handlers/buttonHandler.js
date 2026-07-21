@@ -1,11 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { categoryManagerMenu, categorySortButtons, productCategoryMenu, productManagerMenu, stockActionButtons } from "../components/setupComponents.js";
-import { categoryMenu } from "../components/shopComponents.js";
-import { categoryRepository, productRepository, stockRepository } from "../database/repositories.js";
+import { categoryMenu, shopButtons } from "../components/shopComponents.js";
+import { categoryRepository, productRepository, settingsRepository, stockRepository } from "../database/repositories.js";
 import { openCategoryModal, openModal, openProductModal } from "./modalHandler.js";
 import { showDashboard } from "./setupHandler.js";
 import { cancelTicket, closeTicket, createOrderTicket, promptSlip, reviewSlip } from "./ticketHandler.js";
-import { premiumEmbed } from "../utils/discord.js";
+import { premiumEmbed, shopEmbed } from "../utils/discord.js";
 import { hasAdminAccess } from "../utils/permissions.js";
 import { formatStock } from "../utils/formatters.js";
 async function assertAdmin(interaction) {
@@ -58,7 +58,14 @@ export async function handleButton(interaction) {
         if (action === "home")
             return showDashboard(interaction);
         if (action === "modal")
-            return openModal(interaction);
+            return openModal(interaction, id);
+        if (action === "refresh") {
+            if (id === "dashboard")
+                return showDashboard(interaction);
+            if (id === "shop") {
+                return refreshShopMessage(interaction);
+            }
+        }
     }
     if (scope === "category") {
         const categories = await categoryRepository.list(interaction.guildId);
@@ -118,6 +125,32 @@ export async function handleButton(interaction) {
                 ephemeral: true
             });
         }
+    }
+}
+async function refreshShopMessage(interaction) {
+    if (!interaction.guildId || !interaction.guild)
+        return;
+    const settings = await settingsRepository.get(interaction.guildId);
+    const publishedMessageId = settings.shop.publishedMessageId;
+    const publishedChannelId = settings.shop.publishedChannelId;
+    if (!publishedMessageId || !publishedChannelId) {
+        await interaction.reply({ content: "❌ ยังไม่ได้เผยแพร่หน้าร้าน กรุณาใช้คำสั่ง `/shop` ก่อน", ephemeral: true });
+        return;
+    }
+    try {
+        const channel = await interaction.guild.channels.fetch(publishedChannelId);
+        if (!channel?.isTextBased()) {
+            await interaction.reply({ content: "❌ ไม่พบช่องที่เผยแพร่หน้าร้าน", ephemeral: true });
+            return;
+        }
+        const message = await channel.messages.fetch(publishedMessageId);
+        const buttonRows = shopButtons(settings.shop, false);
+        await message.edit({ embeds: [await shopEmbed(interaction.guildId)], components: buttonRows });
+        await interaction.reply({ content: "✅ รีเฟรชหน้าร้านเรียบร้อยแล้ว!", ephemeral: true });
+    }
+    catch (error) {
+        console.error("Error refreshing shop message:", error);
+        await interaction.reply({ content: "❌ เกิดข้อผิดพลาดในการรีเฟรชหน้าร้าน กรุณาลองใหม่อีกครั้ง", ephemeral: true });
     }
 }
 export async function handleCategoryPick(interaction, action) {

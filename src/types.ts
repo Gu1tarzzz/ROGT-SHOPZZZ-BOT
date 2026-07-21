@@ -56,6 +56,8 @@ export interface ShopSettings {
     support: string;
     information: string;
   };
+  publishedMessageId?: string;
+  publishedChannelId?: string;
 }
 
 export interface PaymentSettings {

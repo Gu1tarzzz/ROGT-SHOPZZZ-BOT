@@ -2,9 +2,13 @@ import type { ButtonInteraction, ChatInputCommandInteraction, StringSelectMenuIn
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
 import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons } from "../components/setupComponents.js";
 import { premiumEmbed } from "../utils/discord.js";
-import { formatPrice, truncate } from "../utils/formatters.js";
+import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
 
 type SetupInteraction = ChatInputCommandInteraction | ButtonInteraction | StringSelectMenuInteraction;
+
+// ═══════════════════════════════════════════════════════════════
+// PREMIUM ADMIN DASHBOARD - COMPLETE REDESIGN
+// ═══════════════════════════════════════════════════════════════
 
 export async function showDashboard(interaction: SetupInteraction): Promise<void> {
   if (!interaction.guildId) return;
@@ -15,33 +19,78 @@ export async function showDashboard(interaction: SetupInteraction): Promise<void
   // Calculate total stock
   let totalStock = 0;
   for (const product of products) {
-    if (product.stock === -1) continue; // Unlimited stock
+    if (product.stock === -1) continue;
     totalStock += product.stock;
   }
   
-  const embed = await premiumEmbed(interaction.guildId, "🏆 ROGT ADMIN DASHBOARD", [
-    "**จัดการ Marketplace ของคุณจาก Discord ได้ทั้งหมด**",
-    "",
-    `**ร้านค้า:** ${settings.shop.storeName}`,
-    `**สถานะ:** ${settings.shop.status === "open" ? "🟢 เปิดให้บริการ" : "🔴 ปิดปรับปรุง"}`,
-    "",
-    "**📊 สถิติร้านค้า**",
-    `• หมวดหมู่: **${categories.length}**`,
-    `• สินค้า: **${products.length}**`,
-    `• สต็อกรวม: **${totalStock.toLocaleString()}**`,
-    "",
-    "**💳 การชำระเงิน:** " + (settings.payment.enabled ? "🟢 เปิดใช้งาน" : "🔴 ปิดใช้งาน"),
-    "**🎫 Tickets:** " + (settings.tickets.categoryId ? "✅ ตั้งค่าแล้ว" : "⚠️ ยังไม่ได้ตั้งค่า"),
-    "",
-    settings.shop.publishedMessageId ? `**🛒 Shop Published:** <#${settings.shop.publishedChannelId}>` : "**🛒 Shop:** ยังไม่ได้เผยแพร่",
-    "",
-    "เลือกหมวดการตั้งค่าจากเมนูด้านล่าง"
-  ].join("\n"));
+  const timestamp = Math.floor(Date.now() / 1000);
+  
+  // Build premium dashboard description
+  const lines: string[] = [];
+  
+  lines.push("");
+  lines.push("╔═══════════════════════════════════════════════════════╗");
+  lines.push("");
+  lines.push(`# 👑 **ROGT ADMIN DASHBOARD**`);
+  lines.push("");
+  lines.push("> Premium Marketplace Management System");
+  lines.push("");
+  lines.push("╠═══════════════════════════════════════════════════════╣");
+  lines.push("");
+  
+  // Store Information Section
+  lines.push(`## 🏪 **STORE INFORMATION**`);
+  lines.push("");
+  lines.push(`┌─────────────────────────────────────────────┐`);
+  lines.push(`│  Name:   ${truncate(settings.shop.storeName, 35)}`.padEnd(46) + `│`);
+  lines.push(`│  Status: ${settings.shop.status === "open" ? "🟢 OPEN" : "🔴 CLOSED"}${" ".repeat(32)}│`);
+  lines.push(`└─────────────────────────────────────────────┘`);
+  lines.push("");
+  
+  // Statistics Grid
+  lines.push(`## 📊 **MARKETPLACE STATISTICS**`);
+  lines.push("");
+  lines.push(`┌──────────────────┬──────────────────┬──────────────────┐`);
+  lines.push(`│  📂 Categories   │  📦 Products     │  💾 Total Stock  │`);
+  lines.push(`├──────────────────┼──────────────────┼──────────────────┤`);
+  lines.push(`│  ${String(formatNumber(categories.length)).padStart(14)}  │  ${String(formatNumber(products.length)).padStart(14)}  │  ${totalStock < 0 ? "  UNLIMITED    " : String(formatNumber(totalStock)).padStart(14)}  │`);
+  lines.push(`└──────────────────┴──────────────────┴──────────────────┘`);
+  lines.push("");
+  
+  // System Status
+  lines.push(`## ⚙️ **SYSTEM STATUS**`);
+  lines.push("");
+  lines.push(`┌─────────────────────────────────────────────┐`);
+  lines.push(`│  💳 Payment:    ${settings.payment.enabled ? "🟢 ENABLED " : "🔴 DISABLED"}${" ".repeat(24)}│`);
+  lines.push(`│  🎫 Tickets:    ${settings.tickets.categoryId ? "✅ CONFIGURED" : "⚠️ NOT SET   "}${" ".repeat(24)}│`);
+  lines.push(`│  🛒 Published:  ${settings.shop.publishedMessageId ? "✅ LIVE     " : "⚠️ OFFLINE   "}${" ".repeat(24)}│`);
+  if (settings.shop.publishedChannelId && settings.shop.publishedMessageId) {
+    lines.push(`│               <#${settings.shop.publishedChannelId}>${" ".repeat(30)}│`);
+  }
+  lines.push(`└─────────────────────────────────────────────┘`);
+  lines.push("");
+  
+  lines.push("╠═══════════════════════════════════════════════════════╣");
+  lines.push("");
+  lines.push(`**Last Refresh:** <t:${timestamp}:R> • <t:${timestamp}:f>`);
+  lines.push("");
+  lines.push("╚═══════════════════════════════════════════════════════╝");
+  lines.push("");
+  lines.push("**Select a management section from the menu below**");
+  lines.push("");
+  
+  const description = lines.join("\n");
+  
+  const baseEmbed = await premiumEmbed(interaction.guildId, "ADMIN DASHBOARD", description);
   
   const components = [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
-  const payload = { embeds: [embed], components };
-  if (interaction.isChatInputCommand()) await interaction.reply({ ...payload, ephemeral: true });
-  else await interaction.update(payload);
+  const payload = { embeds: [baseEmbed], components };
+  
+  if (interaction.isChatInputCommand()) {
+    await interaction.reply({ ...payload, ephemeral: false });
+  } else {
+    await interaction.update(payload);
+  }
 }
 
 export async function showSetupSection(interaction: StringSelectMenuInteraction, section: string): Promise<void> {

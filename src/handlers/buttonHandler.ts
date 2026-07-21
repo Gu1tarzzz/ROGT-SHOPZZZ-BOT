@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type ButtonInteraction } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type ButtonInteraction, DiscordAPIError } from "discord.js";
 import { categoryManagerMenu, categorySortButtons, productCategoryMenu, productManagerMenu, stockActionButtons } from "../components/setupComponents.js";
 import { categoryMenu, shopButtons } from "../components/shopComponents.js";
 import { categoryRepository, productRepository, settingsRepository, stockRepository } from "../database/repositories.js";
@@ -121,35 +121,38 @@ async function refreshShopMessage(interaction: ButtonInteraction): Promise<void>
   const publishedMessageId = settings.shop.publishedMessageId;
   const publishedChannelId = settings.shop.publishedChannelId;
   
+  console.log("DEBUG refreshShopMessage:", { publishedMessageId, publishedChannelId, guildId: interaction.guildId });
+  
   if (!publishedMessageId || !publishedChannelId) {
     await interaction.reply({ content: "❌ ยังไม่ได้เผยแพร่หน้าร้าน กรุณาใช้คำสั่ง `/shop` ก่อน", ephemeral: true });
     return;
   }
   
   try {
-    const channel = await interaction.guild.channels.fetch(publishedChannelId);
+    const channel = await interaction.guild.channels.fetch(publishedChannelId).catch(() => null);
+    console.log("DEBUG channel fetch:", channel ? channel.id : "null");
     if (!channel?.isTextBased()) {
       await interaction.reply({ content: "❌ ไม่พบช่องที่เผยแพร่หน้าร้าน", ephemeral: true });
       return;
     }
     
     const message = await channel.messages.fetch(publishedMessageId);
+    console.log("DEBUG message fetch:", message.id);
     const buttonRows = shopButtons(settings.shop, false);
     
     await message.edit({ embeds: [await shopEmbed(interaction.guildId)], components: buttonRows });
     
     await interaction.reply({ content: "✅ Shop refreshed successfully.", ephemeral: true });
   } catch (error) {
+    console.log("DEBUG error in refreshShopMessage:", error);
     // Check if the error is Discord API error 10008 (Unknown Message)
     const isUnknownMessageError = 
-      typeof error === "object" && 
-      error !== null && 
-      "code" in error && 
-      (error as { code: number }).code === 10008;
+      error instanceof DiscordAPIError && 
+      error.code === 10008;
     
     if (isUnknownMessageError) {
       await interaction.reply({ 
-        content: "Published shop message was deleted. Please publish the shop again using /shop.", 
+        content: "Published shop message was not found. Please publish the shop again.", 
         ephemeral: true 
       });
       return;

@@ -20,9 +20,25 @@ export async function handleSelectMenu(interaction) {
         return;
     const [scope, action, extra] = interaction.customId.split(":");
     if (scope === "shop") {
-        if (action === "category") {
-            const category = await categoryRepository.find(interaction.values[0]);
-            const products = (await productRepository.list(interaction.guildId, false)).filter((product) => product.categoryId === category?.id && (product.stock !== 0));
+        if (action === "catalog") {
+            const value = interaction.values[0];
+            // Handle "All Products" or specific category
+            if (value === "cat:all") {
+                const allProducts = (await productRepository.list(interaction.guildId, false)).filter((product) => product.stock !== 0);
+                if (!allProducts.length)
+                    return interaction.update({ content: "○ ยังไม่มีสินค้าที่พร้อมจำหน่าย", components: [] });
+                const embed = await premiumEmbed(interaction.guildId, "ALL PRODUCTS", [
+                    "*สินค้าทั้งหมดที่พร้อมจำหน่าย*",
+                    "",
+                    DIVIDER,
+                    "▸ เลือกสินค้าที่ต้องการจากเมนูด้านล่าง"
+                ].join("\n"));
+                return interaction.update({ embeds: [embed], components: [productMenu(allProducts)] });
+            }
+            // Handle specific category (cat:{categoryId})
+            const categoryId = value.replace("cat:", "");
+            const category = await categoryRepository.find(categoryId);
+            const products = (await productRepository.list(interaction.guildId, false)).filter((product) => product.categoryId === categoryId && (product.stock !== 0));
             if (!products.length)
                 return interaction.update({ content: "○ หมวดหมู่นี้ยังไม่มีสินค้าที่พร้อมจำหน่าย", components: [] });
             const embed = await premiumEmbed(interaction.guildId, category?.name ?? "PRODUCTS", [
@@ -48,6 +64,27 @@ export async function handleSelectMenu(interaction) {
             if (product.imageUrl)
                 embed.setImage(product.imageUrl);
             return interaction.update({ embeds: [embed], components: [productOrderButton(product)] });
+        }
+        // Handle topup and credit buttons
+        if (action === "topup") {
+            const embed = await premiumEmbed(interaction.guildId, "TOP UP CREDIT", [
+                "*เติมเครดิตเพื่อซื้อสินค้า*",
+                "",
+                DIVIDER,
+                "▸ ติดต่อทีมงานเพื่อเติมเครดิต",
+                "▸ หรือใช้คำสั่งซื้อเพื่อชำระเงิน"
+            ].join("\n"));
+            return interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+        if (action === "credit") {
+            const embed = await premiumEmbed(interaction.guildId, "CHECK CREDIT", [
+                "*ตรวจสอบยอดเครดิตของคุณ*",
+                "",
+                DIVIDER,
+                "▸ ระบบเครดิตกำลังพัฒนา",
+                "▸ ติดต่อทีมงานสำหรับข้อมูลเพิ่มเติม"
+            ].join("\n"));
+            return interaction.reply({ embeds: [embed], ephemeral: true });
         }
     }
     if (!(await admin(interaction)))

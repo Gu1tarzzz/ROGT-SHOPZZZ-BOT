@@ -46,20 +46,32 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
   const features = shop.marketplaceFeatures?.length
     ? shop.marketplaceFeatures.slice(0, 4)
     : ["จัดส่งรวดเร็ว", "ชำระเงินปลอดภัย", "ดูแลโดยทีมงาน"];
+    
+  const availableProducts = products.filter((product) => product.stock !== 0).length;
+  
+  // Premium storefront layout with hero, stats, and info
   const description = [
+    `**${UI_EMOJI.text.brand} ${shop.storeName}**`,
     `*${shop.description || "Premium marketplace of Realm of Gu1tarzzz"}*`,
     "",
     statusMark(shop.status === "open", "เปิดให้บริการ", "ปิดปรับปรุง"),
     "",
     DIVIDER,
-    `**${UI_EMOJI.text.section} Marketplace Essentials**`,
-    `${metric("สต็อกรวม", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}`,
     "",
-    `**${UI_EMOJI.text.section} ช่องทางชำระเงิน**`,
-    "PromptPay  •  TrueMoney  •  Bank Transfer",
+    "**◆ Store Statistics**",
+    "",
+    `┌──────────────┬──────────────┬──────────────┬──────────────`,
+    `│  ${metric("สินค้า", formatNumber(products.length))}  │  ${metric("หมวดหมู่", formatNumber(categories.length))}  │  ${metric("พร้อมขาย", formatNumber(availableProducts))}  │  ${metric("สต็อก", totalStock < 0 ? "∞" : formatNumber(totalStock))}`,
+    `└──────────────┴──────────────┴──────────────┴──────────────`,
+    "",
+    "**◆ Payment Methods**",
+    "💳 PromptPay  •  TrueMoney  •  Bank Transfer",
+    "",
+    "**◆ Store Features**",
+    `${UI_EMOJI.text.bullet} ${features.join("  •  ")}`,
     "",
     SMALL_DIVIDER,
-    `${UI_EMOJI.text.bullet} ${features.join("  •  ")}`
+    "▸ เลือกหมวดหมู่จากเมนูด้านล่างเพื่อดูสินค้า"
   ].join("\n");
   
   const embed = new EmbedBuilder()
@@ -72,13 +84,7 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     .setDescription(description)
     .setFooter({ text: uiFooter(shop.footer), iconURL: shop.storeLogo })
     .setTimestamp();
-  const availableProducts = products.filter((product) => product.stock !== 0).length;
-  embed.addFields(
-    { name: `${UI_EMOJI.component.category} หมวดหมู่`, value: `**${formatNumber(categories.length)}**`, inline: true },
-    { name: `${UI_EMOJI.component.product} สินค้า`, value: `**${formatNumber(products.length)}**`, inline: true },
-    { name: `${UI_EMOJI.component.catalog} พร้อมขาย`, value: `**${formatNumber(availableProducts)}**`, inline: true }
-  );
-    
+  
   // Large banner image (priority: GIF > static)
   if (shop.bannerGif) {
     embed.setImage(shop.bannerGif);

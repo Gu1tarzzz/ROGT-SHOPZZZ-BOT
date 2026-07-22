@@ -1,10 +1,10 @@
 import { EmbedBuilder } from "discord.js";
-import { DIVIDER, SMALL_DIVIDER } from "../config/constants.js";
+import { DIVIDER, SMALL_DIVIDER, UI_EMOJI } from "../config/constants.js";
 import { settingsRepository, categoryRepository, productRepository } from "../database/repositories.js";
 import { truncate, formatNumber } from "./formatters.js";
-const uiTitle = (title) => title.startsWith("✦") ? title : `✦ ${title}`;
-const uiFooter = (footer) => `✦ ${footer}`;
-export const statusMark = (isPositive, positive, negative) => `${isPositive ? "●" : "○"} ${isPositive ? positive : negative}`;
+const uiTitle = (title) => title.startsWith(UI_EMOJI.text.brand) ? title : `${UI_EMOJI.text.brand} ${title}`;
+const uiFooter = (footer) => `${UI_EMOJI.text.brand} ${footer}`;
+export const statusMark = (isPositive, positive, negative) => `${isPositive ? UI_EMOJI.text.active : UI_EMOJI.text.inactive} ${isPositive ? positive : negative}`;
 export const metric = (label, value) => "`" + label + "`  **" + value + "**";
 export async function premiumEmbed(guildId, title, description) {
     const { shop } = await settingsRepository.get(guildId);
@@ -16,8 +16,10 @@ export async function premiumEmbed(guildId, title, description) {
         .setTimestamp();
     if (shop.thumbnail)
         embed.setThumbnail(shop.thumbnail);
-    if (shop.authorName || shop.authorIcon)
-        embed.setAuthor({ name: shop.authorName || shop.storeName, iconURL: shop.authorIcon });
+    embed.setAuthor({
+        name: shop.authorName || "Realm of Gu1tarzzz  •  Premium Marketplace",
+        iconURL: shop.authorIcon || shop.storeLogo
+    });
     return embed;
 }
 export async function shopEmbed(guildId, showAdminControls = false) {
@@ -37,21 +39,30 @@ export async function shopEmbed(guildId, showAdminControls = false) {
     const features = shop.marketplaceFeatures?.length
         ? shop.marketplaceFeatures.slice(0, 4)
         : ["จัดส่งรวดเร็ว", "ชำระเงินปลอดภัย", "ดูแลโดยทีมงาน"];
+    const availableProducts = products.filter((product) => product.stock !== 0).length;
+    // Premium storefront layout with hero, stats, and info
     const description = [
+        `**${UI_EMOJI.text.brand} ${shop.storeName}**`,
         `*${shop.description || "Premium marketplace of Realm of Gu1tarzzz"}*`,
         "",
         statusMark(shop.status === "open", "เปิดให้บริการ", "ปิดปรับปรุง"),
         "",
         DIVIDER,
-        "**◆ ภาพรวมร้านค้า**",
-        `${metric("หมวดหมู่", formatNumber(categories.length))}  •  ${metric("สินค้า", formatNumber(products.length))}`,
-        metric("สต็อก", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock)),
         "",
-        "**◆ ช่องทางชำระเงิน**",
-        "PromptPay  •  TrueMoney  •  Bank Transfer",
+        "**◆ Store Statistics**",
+        "",
+        `┌──────────────┬──────────────┬──────────────┬──────────────`,
+        `│  ${metric("สินค้า", formatNumber(products.length))}  │  ${metric("หมวดหมู่", formatNumber(categories.length))}  │  ${metric("พร้อมขาย", formatNumber(availableProducts))}  │  ${metric("สต็อก", totalStock < 0 ? "∞" : formatNumber(totalStock))}`,
+        `└──────────────┴──────────────┴──────────────┴──────────────`,
+        "",
+        "**◆ Payment Methods**",
+        "💳 PromptPay  •  TrueMoney  •  Bank Transfer",
+        "",
+        "**◆ Store Features**",
+        `${UI_EMOJI.text.bullet} ${features.join("  •  ")}`,
         "",
         SMALL_DIVIDER,
-        `▸ ${features.join("  •  ")}`
+        "▸ เลือกหมวดหมู่จากเมนูด้านล่างเพื่อดูสินค้า"
     ].join("\n");
     const embed = new EmbedBuilder()
         .setColor(shop.embedColor)

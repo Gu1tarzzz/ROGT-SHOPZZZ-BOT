@@ -2,7 +2,7 @@ import { categoryRepository, productRepository, settingsRepository } from "../da
 import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons } from "../components/setupComponents.js";
 import { metric, premiumEmbed, statusMark } from "../utils/discord.js";
 import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
-import { SMALL_DIVIDER, DIVIDER } from "../config/constants.js";
+import { SMALL_DIVIDER, DIVIDER, UI_EMOJI } from "../config/constants.js";
 export async function showDashboard(interaction) {
     if (!interaction.guildId)
         return;
@@ -20,25 +20,34 @@ export async function showDashboard(interaction) {
     const paymentStatus = statusMark(settings.payment.enabled, "พร้อมรับชำระ", "ยังไม่เปิด");
     const ticketStatus = statusMark(Boolean(settings.tickets.categoryId), "พร้อมใช้งาน", "ต้องตั้งค่า");
     const publishStatus = statusMark(Boolean(settings.shop.publishedMessageId), "เผยแพร่แล้ว", "ยังไม่เผยแพร่");
-    const lines = [
-        `**◆ ${settings.shop.storeName}**`,
+    // Premium metric cards layout
+    const description = [
+        `**${UI_EMOJI.text.brand} ${settings.shop.storeName}**`,
         statusMark(settings.shop.status === "open", "เปิดให้บริการ", "ปิดปรับปรุง"),
         "",
         DIVIDER,
-        "**◆ ภาพรวม Marketplace**",
-        `${metric("หมวดหมู่", formatNumber(categories.length))}  •  ${metric("สินค้า", formatNumber(products.length))}`,
-        metric("สต็อก", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock)),
         "",
-        "**◆ สถานะระบบ**",
-        `💳 ชำระเงิน  ${paymentStatus}`,
-        `◆ Ticket  ${ticketStatus}`,
-        `🛒 หน้าร้าน  ${publishStatus}`
-    ];
-    if (settings.shop.publishedChannelId && settings.shop.publishedMessageId) {
-        lines.push(`▸ เผยแพร่ใน <#${settings.shop.publishedChannelId}>`);
-    }
-    lines.push("", SMALL_DIVIDER, `▸ อัปเดต <t:${timestamp}:R>  •  เลือกส่วนจัดการด้านล่าง`);
-    const description = lines.join("\n");
+        "**◆ Marketplace Metrics**",
+        "",
+        `┌─────────────────────────────────────`,
+        `│  ${metric("หมวดหมู่", formatNumber(categories.length))}  │  ${metric("สินค้า", formatNumber(products.length))}`,
+        `├─────────────────────────────────────`,
+        `│  ${metric("สต็อกรวม", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}  │  ${metric("สถานะ", settings.shop.status === "open" ? "🟢 เปิด" : "🔴 ปิด")}`,
+        `└─────────────────────────────────────`,
+        "",
+        "**◆ System Status**",
+        "",
+        `${UI_EMOJI.component.payment}  **ชำระเงิน**  ${paymentStatus}`,
+        `${UI_EMOJI.component.ticket}  **Ticket**  ${ticketStatus}`,
+        `${UI_EMOJI.component.catalog}  **หน้าร้าน**  ${publishStatus}`,
+        "",
+        settings.shop.publishedChannelId && settings.shop.publishedMessageId
+            ? `▸ เผยแพร่ใน <#${settings.shop.publishedChannelId}>`
+            : "",
+        "",
+        SMALL_DIVIDER,
+        `▸ อัปเดต <t:${timestamp}:R>  •  เลือกส่วนจัดการด้านล่าง`
+    ].filter(line => line !== "").join("\n");
     const baseEmbed = await premiumEmbed(interaction.guildId, "ROGT COMMAND CENTER", description);
     const components = [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
     const payload = { embeds: [baseEmbed], components };

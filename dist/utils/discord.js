@@ -36,30 +36,32 @@ export async function shopEmbed(guildId, showAdminControls = false) {
         }
         totalStock += product.stock;
     }
+    // Calculate total orders (from stock transactions or use a placeholder)
+    const totalOrders = 0; // Would need order repository for real count
     const statusEmoji = shop.status === "open" ? "●" : "○";
     const statusText = shop.status === "open" ? "Open" : "Closed";
-    // Build premium, modern description with clean hierarchy
+    // Build premium storefront description
     const lines = [];
-    // Hero Section - Store branding
+    // Hero Section
     lines.push(`# ✦ ${shop.storeName}`);
     lines.push("");
     lines.push(`${shop.description || "Premium Digital Marketplace"}`);
     lines.push("");
-    // Status Indicator
     lines.push(`${statusEmoji} ${statusText}`);
     lines.push("");
     lines.push(SMALL_DIVIDER);
     lines.push("");
-    // Statistics - Clean inline format
-    lines.push(`**◆ Store Overview**`);
+    // Statistics Cards - 4 metrics in clean format
+    lines.push(`**◆ Statistics**`);
     lines.push("");
+    lines.push(`▸ Products ──── ${formatNumber(products.length)}`);
     lines.push(`▸ Categories ─ ${formatNumber(categories.length)}`);
-    lines.push(`▸ Products ── ${formatNumber(products.length)}`);
-    lines.push(`▸ Stock ───── ${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}`);
+    lines.push(`▸ Orders ────── ${formatNumber(totalOrders)}`);
+    lines.push(`▸ Stock ─────── ${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}`);
     lines.push("");
     lines.push(SMALL_DIVIDER);
     lines.push("");
-    // Payment Methods - Minimal presentation
+    // Payment Methods
     lines.push(`**◆ Payment**`);
     lines.push("");
     lines.push("▸ PromptPay");
@@ -68,7 +70,7 @@ export async function shopEmbed(guildId, showAdminControls = false) {
     lines.push("");
     lines.push(SMALL_DIVIDER);
     lines.push("");
-    // Features - Premium benefits display
+    // Features
     lines.push(`**◆ Features**`);
     lines.push("");
     const features = shop.marketplaceFeatures || [];
@@ -84,10 +86,6 @@ export async function shopEmbed(guildId, showAdminControls = false) {
         lines.push("✔ Premium Quality");
     }
     lines.push("");
-    lines.push(SMALL_DIVIDER);
-    lines.push("");
-    // Footer branding
-    lines.push(`*${shop.footer}*`);
     const description = lines.join("\n");
     const embed = new EmbedBuilder()
         .setColor(shop.embedColor)

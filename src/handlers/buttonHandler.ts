@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type ButtonInteraction, DiscordAPIError } from "discord.js";
 import { categoryManagerMenu, categorySortButtons, productCategoryMenu, productManagerMenu, stockActionButtons } from "../components/setupComponents.js";
-import { categoryMenu, shopButtons } from "../components/shopComponents.js";
+import { browseMenu, categoryMenu, shopButtons } from "../components/shopComponents.js";
 import { categoryRepository, productRepository, settingsRepository, stockRepository } from "../database/repositories.js";
 import { openCategoryModal, openModal, openProductModal } from "./modalHandler.js";
 import { showDashboard } from "./setupHandler.js";
@@ -21,11 +21,22 @@ export async function handleButton(interaction: ButtonInteraction): Promise<unkn
   if (!interaction.guildId) return;
   const [scope, action, id, extra] = interaction.customId.split(":");
   if (scope === "shop") {
-    if (action === "browse" || action === "order") {
+    if (action === "browse") {
+      // Show browse select menu
       const categories = await categoryRepository.list(interaction.guildId, false);
-      if (!categories.length) return interaction.reply({ content: "❌ No categories available yet.", ephemeral: true });
-      const embed = await premiumEmbed(interaction.guildId, action === "order" ? "✨ Create Order" : "🛒 Browse Store", "Select a category, then choose your desired product.");
-      return interaction.reply({ embeds: [embed], components: [categoryMenu(categories)], ephemeral: true });
+      const products = await productRepository.list(interaction.guildId, false);
+      if (!categories.length && !products.length) return interaction.reply({ content: "❌ No products available yet.", ephemeral: true });
+      const embed = await shopEmbed(interaction.guildId);
+      const shopSettings = await settingsRepository.get(interaction.guildId).then(s => s.shop);
+      return interaction.update({ embeds: [embed], components: [browseMenu(categories, products), ...shopButtons(shopSettings)] });
+    }
+    if (action === "topup") {
+      // Top Up Credit button - placeholder for now
+      return interaction.reply({ content: "💳 Top Up feature coming soon!", ephemeral: true });
+    }
+    if (action === "credit") {
+      // Check Credit button - placeholder for now
+      return interaction.reply({ content: "🍎 Your credit balance will be displayed here.", ephemeral: true });
     }
     if (action === "support") return createOrderTicket(interaction);
     if (action === "info") {

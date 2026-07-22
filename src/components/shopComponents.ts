@@ -12,15 +12,54 @@ import { formatPrice, formatStock, truncate } from "../utils/formatters.js";
 export function shopButtons(shop: ShopSettings, allowRefresh = false): ActionRowBuilder<ButtonBuilder>[] {
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
   
-  const mainRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId("shop:browse").setLabel("Browse").setStyle(ButtonStyle.Primary).setEmoji("🛒"),
-    new ButtonBuilder().setCustomId("shop:order").setLabel("Orders").setStyle(ButtonStyle.Success).setEmoji("📦"),
-    new ButtonBuilder().setCustomId("shop:support").setLabel("Support").setStyle(ButtonStyle.Secondary).setEmoji("🎫"),
-    new ButtonBuilder().setCustomId("shop:info").setLabel("Info").setStyle(ButtonStyle.Secondary).setEmoji("ℹ️")
+  // Only two action buttons: Top Up & Check Credit
+  const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId("shop:topup").setLabel("Top Up Credit").setStyle(ButtonStyle.Primary).setEmoji("🪙"),
+    new ButtonBuilder().setCustomId("shop:credit").setLabel("Check Credit").setStyle(ButtonStyle.Secondary).setEmoji("🍎")
   );
-  rows.push(mainRow);
+  rows.push(actionRow);
   
   return rows;
+}
+
+export function browseMenu(categories: Category[], products: Product[]): ActionRowBuilder<StringSelectMenuBuilder> {
+  const options: APISelectMenuOption[] = [];
+  
+  // Add categories first (with folder emoji)
+  for (const category of categories.slice(0, 20)) {
+    const categoryProducts = products.filter(p => p.categoryId === category.id && p.stock !== 0);
+    if (categoryProducts.length > 0) {
+      options.push({
+        label: truncate(category.name, 100),
+        value: `cat:${category.id}`,
+        description: truncate(`${categoryProducts.length} products`, 100),
+        emoji: parseEmoji(category.emoji || "📂")
+      });
+    }
+  }
+  
+  // Add individual products (if space remains)
+  const remainingSlots = 25 - options.length;
+  if (remainingSlots > 0) {
+    for (const product of products.slice(0, remainingSlots)) {
+      if (!product.hidden && product.status === "active" && product.stock !== 0) {
+        const stockStatus = product.stock > 0 ? `${product.stock} left` : "Unlimited";
+        options.push({
+          label: truncate(product.name, 100),
+          value: `prod:${product.id}`,
+          description: truncate(`${formatPrice(product.price)} • ${stockStatus}`, 100),
+          emoji: parseEmoji(product.emoji || "📦")
+        });
+      }
+    }
+  }
+  
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId("shop:browse")
+      .setPlaceholder("✦ Browse Products")
+      .addOptions(options)
+  );
 }
 
 export function shopAdminButtons(hasLiveShop: boolean = false): ActionRowBuilder<ButtonBuilder> {

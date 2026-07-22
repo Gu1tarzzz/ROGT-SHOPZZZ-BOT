@@ -19,6 +19,31 @@ export async function handleSelectMenu(interaction) {
         return;
     const [scope, action, extra] = interaction.customId.split(":");
     if (scope === "shop") {
+        if (action === "browse") {
+            const selectedValue = interaction.values[0];
+            // Handle category selection (cat:categoryId)
+            if (selectedValue.startsWith("cat:")) {
+                const categoryId = selectedValue.replace("cat:", "");
+                const category = await categoryRepository.find(categoryId);
+                const products = (await productRepository.list(interaction.guildId, false)).filter((product) => product.categoryId === categoryId && product.stock !== 0);
+                if (!products.length)
+                    return interaction.update({ content: "This category has no available products.", components: [] });
+                const embed = await premiumEmbed(interaction.guildId, category?.name ?? "Products", category?.description || "Select a product to view details.");
+                return interaction.update({ embeds: [embed], components: [productMenu(products)] });
+            }
+            // Handle direct product selection (prod:productId)
+            if (selectedValue.startsWith("prod:")) {
+                const productId = selectedValue.replace("prod:", "");
+                const product = await productRepository.find(productId);
+                if (!product || product.hidden || product.status !== "active")
+                    return interaction.update({ content: "This product is not available.", components: [] });
+                const embed = await premiumEmbed(interaction.guildId, product.name, `${product.description}\n\n**Price:** ${formatPrice(product.price)}\n**Stock:** ${product.stock < 0 ? "Unlimited" : product.stock}`);
+                if (product.imageUrl)
+                    embed.setImage(product.imageUrl);
+                return interaction.update({ embeds: [embed], components: [productOrderButton(product)] });
+            }
+            return interaction.update({ content: "Invalid selection.", components: [] });
+        }
         if (action === "category") {
             const category = await categoryRepository.find(interaction.values[0]);
             const products = (await productRepository.list(interaction.guildId, false)).filter((product) => product.categoryId === category?.id && (product.stock !== 0));

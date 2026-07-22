@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "data": {
+    "1384198541760532603": {
+      "storeName": "ROGT SHOPZZZzzzzzz",
+      "description": "ตลาดดิจิทัลพรีเมียมแห่ง Realm of Gu1tarzzz",
+      "footer": "Realm of Gu1tarzzz • Secure Marketplace",
+      "embedColor": "#FFFFFF",
+      "status": "closed",
+      "supportText": "ติดต่อทีมงานผ่านปุ่ม Support ได้ตลอดเวลา",
+      "buttons": {
+        "browse": "เลือกชมสินค้า",
+        "order": "สร้างคำสั่งซื้อ",
+        "support": "ติดต่อทีมงาน",
+        "information": "ข้อมูลร้านค้า"
+      },
+      "bannerGif": "https://i.pinimg.com/originals/6a/18/6d/6a186dab83d02fadbfd189cb72933c47.gif",
+      "publishedMessageId": "1529168520414232697",
+      "publishedChannelId": "1525919408135077978"
+    }
+  }
+}

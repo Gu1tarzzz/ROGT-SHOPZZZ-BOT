@@ -1,13 +1,8 @@
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
 import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons } from "../components/setupComponents.js";
-import { premiumEmbed } from "../utils/discord.js";
+import { metric, premiumEmbed, statusMark } from "../utils/discord.js";
 import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
 import { SMALL_DIVIDER, DIVIDER } from "../config/constants.js";
-// ═══════════════════════════════════════════════════════════════
-// PREMIUM ADMIN DASHBOARD - ROGT SHOPZZZ
-// Fantasy • Magic • Luxury • Minimal Design
-// Inspired by: Steam Store, Riot Games, Epic Games Store
-// ═══════════════════════════════════════════════════════════════
 export async function showDashboard(interaction) {
     if (!interaction.guildId)
         return;
@@ -22,53 +17,29 @@ export async function showDashboard(interaction) {
         totalStock += product.stock;
     }
     const timestamp = Math.floor(Date.now() / 1000);
-    const statusEmoji = settings.shop.status === "open" ? "🟢" : "🔴";
-    const paymentStatus = settings.payment.enabled ? "🟢 Enabled" : "🔴 Disabled";
-    const ticketStatus = settings.tickets.categoryId ? "✅ Configured" : "⚠️ Not Set";
-    const publishStatus = settings.shop.publishedMessageId ? "✅ Live" : "⚠️ Offline";
-    // Build premium, modern dashboard description
-    const lines = [];
-    // Header
-    lines.push(`# 👑 ROGT Admin Dashboard`);
-    lines.push("");
-    lines.push("*Premium Marketplace Management System*");
-    lines.push("");
-    lines.push(SMALL_DIVIDER);
-    lines.push("");
-    // Store Info
-    lines.push("**🏪 Store Information**");
-    lines.push("");
-    lines.push(`**Name:** ${settings.shop.storeName}`);
-    lines.push(`**Status:** ${statusEmoji} ${settings.shop.status === "open" ? "Open" : "Closed"}`);
-    lines.push("");
-    lines.push(DIVIDER);
-    lines.push("");
-    // Statistics
-    lines.push("**📊 Marketplace Statistics**");
-    lines.push("");
-    lines.push(`📂 Categories ─ **${formatNumber(categories.length)}**`);
-    lines.push(`📦 Products ── **${formatNumber(products.length)}**`);
-    lines.push(`💾 Stock ───── **${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}**`);
-    lines.push("");
-    lines.push(DIVIDER);
-    lines.push("");
-    // System Status
-    lines.push("**⚙️ System Status**");
-    lines.push("");
-    lines.push(`💳 Payment: ${paymentStatus}`);
-    lines.push(`🎫 Tickets: ${ticketStatus}`);
-    lines.push(`🛒 Published: ${publishStatus}`);
+    const paymentStatus = statusMark(settings.payment.enabled, "พร้อมรับชำระ", "ยังไม่เปิด");
+    const ticketStatus = statusMark(Boolean(settings.tickets.categoryId), "พร้อมใช้งาน", "ต้องตั้งค่า");
+    const publishStatus = statusMark(Boolean(settings.shop.publishedMessageId), "เผยแพร่แล้ว", "ยังไม่เผยแพร่");
+    const lines = [
+        `**◆ ${settings.shop.storeName}**`,
+        statusMark(settings.shop.status === "open", "เปิดให้บริการ", "ปิดปรับปรุง"),
+        "",
+        DIVIDER,
+        "**◆ ภาพรวม Marketplace**",
+        `${metric("หมวดหมู่", formatNumber(categories.length))}  •  ${metric("สินค้า", formatNumber(products.length))}`,
+        metric("สต็อก", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock)),
+        "",
+        "**◆ สถานะระบบ**",
+        `💳 ชำระเงิน  ${paymentStatus}`,
+        `◆ Ticket  ${ticketStatus}`,
+        `🛒 หน้าร้าน  ${publishStatus}`
+    ];
     if (settings.shop.publishedChannelId && settings.shop.publishedMessageId) {
-        lines.push(`📍 Channel: <#${settings.shop.publishedChannelId}>`);
+        lines.push(`▸ เผยแพร่ใน <#${settings.shop.publishedChannelId}>`);
     }
-    lines.push("");
-    lines.push(DIVIDER);
-    lines.push("");
-    lines.push(`Last Refresh: <t:${timestamp}:R> • <t:${timestamp}:f>`);
-    lines.push("");
-    lines.push("*Select a management section from the menu below*");
+    lines.push("", SMALL_DIVIDER, `▸ อัปเดต <t:${timestamp}:R>  •  เลือกส่วนจัดการด้านล่าง`);
     const description = lines.join("\n");
-    const baseEmbed = await premiumEmbed(interaction.guildId, "Admin Dashboard", description);
+    const baseEmbed = await premiumEmbed(interaction.guildId, "ROGT COMMAND CENTER", description);
     const components = [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
     const payload = { embeds: [baseEmbed], components };
     if (interaction.isChatInputCommand()) {
@@ -84,33 +55,72 @@ export async function showSetupSection(interaction, section) {
     const guildId = interaction.guildId;
     if (section === "categories") {
         const categories = await categoryRepository.list(guildId);
-        const summary = categories.length ? categories.map((c) => `• **${truncate(c.name, 40)}** — ${c.hidden ? "ซ่อน" : "แสดง"} · ลำดับ ${c.position}`).join("\n") : "ยังไม่มีหมวดหมู่สินค้า";
-        const embed = await premiumEmbed(guildId, "CATEGORY MANAGER", `จัดการหมวดหมู่ที่แสดงในหน้าร้าน\n\n${summary}`);
+        const summary = categories.length
+            ? categories.map((c) => `▸ **${truncate(c.name, 40)}**  ${c.hidden ? "○ ซ่อน" : "● แสดง"}  •  ลำดับ ${c.position}`).join("\n")
+            : "○ ยังไม่มีหมวดหมู่สินค้า";
+        const embed = await premiumEmbed(guildId, "CATEGORY MANAGER", [
+            "*โครงสร้างหน้าร้านและการแสดงผล*",
+            "",
+            DIVIDER,
+            `**◆ ทั้งหมด ${formatNumber(categories.length)} หมวดหมู่**`,
+            summary
+        ].join("\n"));
         await interaction.update({ embeds: [embed], components: [categoryButtons(), backButton()] });
         return;
     }
     if (section === "products") {
         const products = await productRepository.list(guildId);
-        const summary = products.length ? products.slice(0, 15).map((p) => `• **${truncate(p.name, 35)}** — ${formatPrice(p.price)} · สต็อก ${p.stock}`).join("\n") : "ยังไม่มีสินค้า";
-        const embed = await premiumEmbed(guildId, "PRODUCT MANAGER", `สินค้าทั้งหมด ${products.length} รายการ\n\n${summary}`);
+        const summary = products.length
+            ? products.slice(0, 15).map((p) => `▸ **${truncate(p.name, 35)}**  ${formatPrice(p.price)}  •  ${p.stock < 0 ? "ไม่จำกัด" : `สต็อก ${p.stock}`}`).join("\n")
+            : "○ ยังไม่มีสินค้า";
+        const embed = await premiumEmbed(guildId, "PRODUCT MANAGER", [
+            "*สินค้า ราคา และสต็อกของร้าน*",
+            "",
+            DIVIDER,
+            `**◆ ทั้งหมด ${formatNumber(products.length)} รายการ**`,
+            summary
+        ].join("\n"));
         await interaction.update({ embeds: [embed], components: [productButtons(), backButton()] });
         return;
     }
     const settings = await settingsRepository.get(guildId);
     const sectionContent = {
         appearance: { title: "SHOP APPEARANCE", key: "appearance", text: [
-                `**ชื่อร้าน:** ${settings.shop.storeName}`,
-                `**คำอธิบาย:** ${truncate(settings.shop.description, 200)}`,
-                `**สี Embed:** ${settings.shop.embedColor}`,
-                `**Banner:** ${settings.shop.bannerGif || settings.shop.banner || "ยังไม่ได้ตั้งค่า"}`,
-                `**Thumbnail:** ${settings.shop.thumbnail || "ยังไม่ได้ตั้งค่า"}`,
-                `**Author:** ${settings.shop.authorName || "-"}`,
-                `**Store Logo:** ${settings.shop.storeLogo || "-"}`,
-                `**สถานะ:** ${settings.shop.status}`
+                `**◆ ${settings.shop.storeName}**`,
+                `*${truncate(settings.shop.description, 200)}*`,
+                "",
+                DIVIDER,
+                `${metric("สี", settings.shop.embedColor)}  •  ${statusMark(settings.shop.status === "open", "เปิด", "ปิด")}`,
+                `▸ Banner  ${settings.shop.bannerGif || settings.shop.banner ? "● ตั้งค่าแล้ว" : "○ ยังไม่ได้ตั้งค่า"}`,
+                `▸ Thumbnail  ${settings.shop.thumbnail ? "● ตั้งค่าแล้ว" : "○ ยังไม่ได้ตั้งค่า"}`,
+                `▸ Branding  ${settings.shop.authorName || "ค่าเริ่มต้น"}`
             ].join("\n") },
-        payment: { title: "PAYMENT SETTINGS", key: "payment", text: `**เปิดรับชำระเงิน:** ${settings.payment.enabled ? "ใช่" : "ไม่"}\n**TrueMoney:** ${settings.payment.trueMoneyWallet || "-"}\n**PromptPay:** ${settings.payment.promptPay || "-"}\n**ธนาคาร:** ${settings.payment.bankAccount || "-"}\n**Slip Channel:** ${settings.payment.slipChannelId ? `<#${settings.payment.slipChannelId}>` : "ยังไม่ได้ตั้งค่า"}` },
-        tickets: { title: "TICKET SETTINGS", key: "tickets", text: `**หมวด Order:** ${settings.tickets.categoryId ? `<#${settings.tickets.categoryId}>` : "ยังไม่ได้ตั้งค่า"}\n**หมวด Support:** ${settings.tickets.supportCategoryId ? `<#${settings.tickets.supportCategoryId}>` : "ใช้หมวด Order"}\n**Prefix:** ${settings.tickets.ticketPrefix}\n**ทีมงาน:** ${settings.tickets.staffRoleIds.length || 0} Role` },
-        bot: { title: "BOT SETTINGS", key: "bot", text: `**Owner override:** ${settings.bot.ownerId ? `<@${settings.bot.ownerId}>` : "Guild Owner"}\n**Staff Roles:** ${settings.bot.staffRoleIds.length || 0} Role\n**Maintenance:** ${settings.bot.maintenanceMode ? "เปิด" : "ปิด"}` }
+        payment: { title: "PAYMENT SETTINGS", key: "payment", text: [
+                statusMark(settings.payment.enabled, "เปิดรับชำระเงิน", "ยังไม่เปิดรับชำระเงิน"),
+                "",
+                DIVIDER,
+                "**◆ ช่องทางชำระเงิน**",
+                `▸ TrueMoney  ${settings.payment.trueMoneyWallet || "—"}`,
+                `▸ PromptPay  ${settings.payment.promptPay || "—"}`,
+                `▸ Bank  ${settings.payment.bankAccount || "—"}`,
+                `▸ Slip Channel  ${settings.payment.slipChannelId ? `<#${settings.payment.slipChannelId}>` : "—"}`
+            ].join("\n") },
+        tickets: { title: "TICKET SETTINGS", key: "tickets", text: [
+                "*พื้นที่ดูแลคำสั่งซื้อและการช่วยเหลือ*",
+                "",
+                DIVIDER,
+                `▸ Order Category  ${settings.tickets.categoryId ? `<#${settings.tickets.categoryId}>` : "—"}`,
+                `▸ Support Category  ${settings.tickets.supportCategoryId ? `<#${settings.tickets.supportCategoryId}>` : "ใช้ Order Category"}`,
+                `${metric("Prefix", settings.tickets.ticketPrefix)}  •  ${metric("ทีมงาน", settings.tickets.staffRoleIds.length)}`
+            ].join("\n") },
+        bot: { title: "BOT SETTINGS", key: "bot", text: [
+                "*สิทธิ์ผู้ดูแลและสถานะการให้บริการ*",
+                "",
+                DIVIDER,
+                `▸ Owner  ${settings.bot.ownerId ? `<@${settings.bot.ownerId}>` : "Guild Owner"}`,
+                metric("Staff Roles", settings.bot.staffRoleIds.length),
+                statusMark(!settings.bot.maintenanceMode, "ระบบพร้อมให้บริการ", "กำลังปิดปรับปรุง")
+            ].join("\n") }
     };
     const view = sectionContent[section];
     if (!view)

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "data": {
+    "4d462938-82b1-4c52-a71d-d27520dec19b": {
+      "guildId": "1384198541760532603",
+      "channelId": "1528840088585506999",
+      "customerId": "1442163370223730789",
+      "productName": "support",
+      "price": 0,
+      "status": "closed",
+      "type": "support",
+      "id": "4d462938-82b1-4c52-a71d-d27520dec19b",
+      "createdAt": "2026-07-20T19:04:41.798Z",
+      "updatedAt": "2026-07-20T19:05:07.043Z"
+    }
+  }
+}

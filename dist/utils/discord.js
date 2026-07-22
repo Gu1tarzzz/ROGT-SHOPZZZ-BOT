@@ -1,19 +1,18 @@
 import { EmbedBuilder } from "discord.js";
-import { SMALL_DIVIDER } from "../config/constants.js";
+import { DIVIDER, SMALL_DIVIDER } from "../config/constants.js";
 import { settingsRepository, categoryRepository, productRepository } from "../database/repositories.js";
 import { truncate, formatNumber } from "./formatters.js";
-// ╭──────────────────────────────────────────────────────────────╮
-// │  PREMIUM MARKETPLACE EMBED - ROGT SHOPZZZ                    │
-// │  Style: Luxury • Fantasy • Minimal • Dark                    │
-// │  Reference: Dapex Boost, Mickey Boost, Steam Store           │
-// ╰──────────────────────────────────────────────────────────────╯
+const uiTitle = (title) => title.startsWith("✦") ? title : `✦ ${title}`;
+const uiFooter = (footer) => `✦ ${footer}`;
+export const statusMark = (isPositive, positive, negative) => `${isPositive ? "●" : "○"} ${isPositive ? positive : negative}`;
+export const metric = (label, value) => "`" + label + "`  **" + value + "**";
 export async function premiumEmbed(guildId, title, description) {
     const { shop } = await settingsRepository.get(guildId);
     const embed = new EmbedBuilder()
         .setColor(shop.embedColor)
-        .setTitle(title)
+        .setTitle(uiTitle(title))
         .setDescription(description ?? null)
-        .setFooter({ text: shop.footer, iconURL: shop.storeLogo })
+        .setFooter({ text: uiFooter(shop.footer), iconURL: shop.storeLogo })
         .setTimestamp();
     if (shop.thumbnail)
         embed.setThumbnail(shop.thumbnail);
@@ -27,7 +26,6 @@ export async function shopEmbed(guildId, showAdminControls = false) {
         categoryRepository.list(guildId, false),
         productRepository.list(guildId, false)
     ]);
-    // Calculate total stock
     let totalStock = 0;
     for (const product of products) {
         if (product.stock < 0) {
@@ -36,67 +34,34 @@ export async function shopEmbed(guildId, showAdminControls = false) {
         }
         totalStock += product.stock;
     }
-    const statusEmoji = shop.status === "open" ? "●" : "○";
-    const statusText = shop.status === "open" ? "Open" : "Closed";
-    // Build premium, modern description with clean hierarchy
-    const lines = [];
-    // Hero Section - Store branding
-    lines.push(`# ✦ ${shop.storeName}`);
-    lines.push("");
-    lines.push(`${shop.description || "Premium Digital Marketplace"}`);
-    lines.push("");
-    // Status Indicator
-    lines.push(`${statusEmoji} ${statusText}`);
-    lines.push("");
-    lines.push(SMALL_DIVIDER);
-    lines.push("");
-    // Statistics - Clean inline format
-    lines.push(`**◆ Store Overview**`);
-    lines.push("");
-    lines.push(`▸ Categories ─ ${formatNumber(categories.length)}`);
-    lines.push(`▸ Products ── ${formatNumber(products.length)}`);
-    lines.push(`▸ Stock ───── ${totalStock < 0 ? "Unlimited" : formatNumber(totalStock)}`);
-    lines.push("");
-    lines.push(SMALL_DIVIDER);
-    lines.push("");
-    // Payment Methods - Minimal presentation
-    lines.push(`**◆ Payment**`);
-    lines.push("");
-    lines.push("▸ PromptPay");
-    lines.push("▸ TrueMoney");
-    lines.push("▸ Bank Transfer");
-    lines.push("");
-    lines.push(SMALL_DIVIDER);
-    lines.push("");
-    // Features - Premium benefits display
-    lines.push(`**◆ Features**`);
-    lines.push("");
-    const features = shop.marketplaceFeatures || [];
-    if (features.length > 0) {
-        for (const feature of features.slice(0, 4)) {
-            lines.push(`✔ ${feature}`);
-        }
-    }
-    else {
-        lines.push("✔ Instant Delivery");
-        lines.push("✔ Secure Trade");
-        lines.push("✔ 24/7 Support");
-        lines.push("✔ Premium Quality");
-    }
-    lines.push("");
-    lines.push(SMALL_DIVIDER);
-    lines.push("");
-    // Footer branding
-    lines.push(`*${shop.footer}*`);
-    const description = lines.join("\n");
+    const features = shop.marketplaceFeatures?.length
+        ? shop.marketplaceFeatures.slice(0, 4)
+        : ["จัดส่งรวดเร็ว", "ชำระเงินปลอดภัย", "ดูแลโดยทีมงาน"];
+    const description = [
+        `*${shop.description || "Premium marketplace of Realm of Gu1tarzzz"}*`,
+        "",
+        statusMark(shop.status === "open", "เปิดให้บริการ", "ปิดปรับปรุง"),
+        "",
+        DIVIDER,
+        "**◆ ภาพรวมร้านค้า**",
+        `${metric("หมวดหมู่", formatNumber(categories.length))}  •  ${metric("สินค้า", formatNumber(products.length))}`,
+        metric("สต็อก", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock)),
+        "",
+        "**◆ ช่องทางชำระเงิน**",
+        "PromptPay  •  TrueMoney  •  Bank Transfer",
+        "",
+        SMALL_DIVIDER,
+        `▸ ${features.join("  •  ")}`
+    ].join("\n");
     const embed = new EmbedBuilder()
         .setColor(shop.embedColor)
+        .setTitle(uiTitle(shop.storeName))
         .setAuthor({
-        name: shop.authorName || shop.storeName,
+        name: shop.authorName || "Realm of Gu1tarzzz  •  Premium Marketplace",
         iconURL: shop.authorIcon || shop.storeLogo
     })
         .setDescription(description)
-        .setFooter({ text: shop.footer, iconURL: shop.storeLogo })
+        .setFooter({ text: uiFooter(shop.footer), iconURL: shop.storeLogo })
         .setTimestamp();
     // Large banner image (priority: GIF > static)
     if (shop.bannerGif) {

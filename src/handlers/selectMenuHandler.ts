@@ -4,14 +4,15 @@ import { categoryRepository, productRepository } from "../database/repositories.
 import { handleCategoryPick, handleProductPick } from "./buttonHandler.js";
 import { showSetupSection } from "./setupHandler.js";
 import { premiumEmbed } from "../utils/discord.js";
-import { formatPrice } from "../utils/formatters.js";
+import { formatPrice, formatStock } from "../utils/formatters.js";
 import { hasAdminAccess } from "../utils/permissions.js";
+import { DIVIDER } from "../config/constants.js";
 
 async function admin(interaction: StringSelectMenuInteraction): Promise<boolean> {
   if (!interaction.guild) return false;
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (await hasAdminAccess(member)) return true;
-  await interaction.reply({ content: "คุณไม่มีสิทธิ์เข้าถึง Admin Panel", ephemeral: true });
+  await interaction.reply({ content: "○ คุณไม่มีสิทธิ์เข้าถึง Admin Panel", ephemeral: true });
   return false;
 }
 
@@ -22,14 +23,26 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
     if (action === "category") {
       const category = await categoryRepository.find(interaction.values[0]);
       const products = (await productRepository.list(interaction.guildId, false)).filter((product) => product.categoryId === category?.id && (product.stock !== 0));
-      if (!products.length) return interaction.update({ content: "หมวดหมู่นี้ยังไม่มีสินค้าที่พร้อมจำหน่าย", components: [] });
-      const embed = await premiumEmbed(interaction.guildId, category?.name ?? "สินค้า", category?.description || "เลือกสินค้าที่ต้องการ");
+      if (!products.length) return interaction.update({ content: "○ หมวดหมู่นี้ยังไม่มีสินค้าที่พร้อมจำหน่าย", components: [] });
+      const embed = await premiumEmbed(interaction.guildId, category?.name ?? "PRODUCTS", [
+        `*${category?.description || "สินค้าที่คัดสรรสำหรับคุณ"}*`,
+        "",
+        DIVIDER,
+        "▸ เลือกสินค้าที่ต้องการจากเมนูด้านล่าง"
+      ].join("\n"));
       return interaction.update({ embeds: [embed], components: [productMenu(products)] });
     }
     if (action === "product") {
       const product = await productRepository.find(interaction.values[0]);
-      if (!product || product.hidden || product.status !== "active") return interaction.update({ content: "สินค้านี้ไม่พร้อมจำหน่าย", components: [] });
-      const embed = await premiumEmbed(interaction.guildId, product.name, `${product.description}\n\n**ราคา:** ${formatPrice(product.price)}\n**สต็อก:** ${product.stock < 0 ? "ไม่จำกัด" : product.stock}`);
+      if (!product || product.hidden || product.status !== "active") return interaction.update({ content: "○ สินค้านี้ไม่พร้อมจำหน่าย", components: [] });
+      const embed = await premiumEmbed(interaction.guildId, product.name, [
+        `*${product.description}*`,
+        "",
+        DIVIDER,
+        "**◆ รายละเอียดสินค้า**",
+        `\`ราคา\`  **${formatPrice(product.price)}**  •  \`สต็อก\`  **${product.stock < 0 ? "ไม่จำกัด" : formatStock(product.stock)}**`,
+        product.requiredRoleId ? `▸ ต้องมี Role <@&${product.requiredRoleId}>` : "▸ พร้อมสำหรับลูกค้าทุกคน"
+      ].join("\n"));
       if (product.imageUrl) embed.setImage(product.imageUrl);
       return interaction.update({ embeds: [embed], components: [productOrderButton(product)] });
     }

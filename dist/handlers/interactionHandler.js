@@ -12,10 +12,10 @@ export function registerInteractionHandler(client) {
                     return;
                 if (interaction.commandName === "setup") {
                     if (!interaction.guild)
-                        return interaction.reply({ content: "คำสั่งนี้ใช้ได้เฉพาะในเซิร์ฟเวอร์", ephemeral: true });
+                        return interaction.reply({ content: "○ คำสั่งนี้ใช้ได้เฉพาะในเซิร์ฟเวอร์", ephemeral: true });
                     const member = await interaction.guild.members.fetch(interaction.user.id);
                     if (!(await hasAdminAccess(member)))
-                        return interaction.reply({ content: "เฉพาะ Owner, Administrator หรือ Staff Role ที่ตั้งค่าไว้เท่านั้น", ephemeral: true });
+                        return interaction.reply({ content: "○ เฉพาะ Owner, Administrator หรือ Staff Role ที่ตั้งค่าไว้", ephemeral: true });
                 }
                 await command.execute(interaction);
             }
@@ -28,13 +28,13 @@ export function registerInteractionHandler(client) {
             else if (interaction.isModalSubmit()) {
                 const member = interaction.guild ? await interaction.guild.members.fetch(interaction.user.id) : undefined;
                 if (!member || !(await hasAdminAccess(member)))
-                    return interaction.reply({ content: "คุณไม่มีสิทธิ์แก้ไขการตั้งค่า", ephemeral: true });
+                    return interaction.reply({ content: "○ คุณไม่มีสิทธิ์แก้ไขการตั้งค่า", ephemeral: true });
                 await handleModal(interaction);
             }
         }
         catch (error) {
             console.error("Interaction handler error", error);
-            const message = "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
+            const message = "○ เกิดข้อผิดพลาด  •  กรุณาลองใหม่อีกครั้ง";
             if (interaction.isRepliable()) {
                 if (interaction.replied || interaction.deferred)
                     await interaction.followUp({ content: message, ephemeral: true }).catch(() => undefined);

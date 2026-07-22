@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "data": {
+    "1384198541760532603:e1c0222e-0687-45b9-bf32-4fdce991ae3a": {
+      "name": "test",
+      "description": "test",
+      "price": 1000,
+      "stock": 899999999,
+      "buttonColor": "Primary",
+      "status": "active",
+      "categoryId": "1384198541760532603:7d982c28-7a7c-446d-a1aa-9b6cc2e0b519",
+      "hidden": false,
+      "id": "1384198541760532603:e1c0222e-0687-45b9-bf32-4fdce991ae3a",
+      "createdAt": "2026-07-19T13:42:55.313Z",
+      "updatedAt": "2026-07-19T13:42:55.313Z"
+    },
+    "1384198541760532603:ea10a07e-0c58-49fa-9cbc-f94c96e539c4": {
+      "name": "ะะะะะะะะะะะะะ",
+      "description": "พพพพพพพพพพพพพ",
+      "price": 23333,
+      "stock": 999999999,
+      "buttonColor": "Primary",
+      "status": "active",
+      "categoryId": "1384198541760532603:7d982c28-7a7c-446d-a1aa-9b6cc2e0b519",
+      "hidden": false,
+      "id": "1384198541760532603:ea10a07e-0c58-49fa-9cbc-f94c96e539c4",
+      "createdAt": "2026-07-20T19:04:02.708Z",
+      "updatedAt": "2026-07-20T19:04:02.708Z"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "data": {
+    "1384198541760532603": {
+      "tickets": {
+        "staffRoleIds": [],
+        "ticketPrefix": "order"
+      },
+      "bot": {
+        "staffRoleIds": [],
+        "locale": "th",
+        "maintenanceMode": false
+      }
+    }
+  }
+}

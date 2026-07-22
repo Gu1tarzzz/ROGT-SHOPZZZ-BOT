@@ -1,6 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from "discord.js";
 import type { Category, Product, StockTransaction, ShopSettings } from "../types.js";
 import { formatStock, truncate } from "../utils/formatters.js";
+import { componentEmoji } from "../utils/componentEmoji.js";
 
 // ╭──────────────────────────────────────────────────────────────╮
 // │  PREMIUM DASHBOARD COMPONENTS - ROGT SHOPZZZ                 │
@@ -12,96 +13,96 @@ export function dashboardMenu(): ActionRowBuilder<StringSelectMenuBuilder> {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId("setup:section")
-      .setPlaceholder("✦ Select Section")
+      .setPlaceholder("◆ เลือกส่วนจัดการ")
       .addOptions(
-        { label: "Categories", value: "categories", description: "Manage shop categories", emoji: "📂" },
-        { label: "Products", value: "products", description: "Manage products & stock", emoji: "📦" },
-        { label: "Appearance", value: "appearance", description: "Store branding & style", emoji: "✨" },
-        { label: "Payment", value: "payment", description: "Payment channels", emoji: "💳" },
-        { label: "Tickets", value: "tickets", description: "Support settings", emoji: "🎫" },
-        { label: "Settings", value: "bot", description: "System configuration", emoji: "⚙️" }
+        { label: "หมวดหมู่", value: "categories", description: "สร้าง • เรียงลำดับ • แสดงผล", emoji: "📁" },
+        { label: "สินค้า", value: "products", description: "ราคา • สต็อก • สถานะ", emoji: "📦" },
+        { label: "ดีไซน์ร้าน", value: "appearance", description: "แบรนด์ • สี • ภาพ", emoji: "💎" },
+        { label: "การชำระเงิน", value: "payment", description: "ช่องทางและบัญชีรับเงิน", emoji: "💳" },
+        { label: "Ticket", value: "tickets", description: "หมวดหมู่และทีมงาน", emoji: "🎫" },
+        { label: "ตั้งค่าระบบ", value: "bot", description: "สิทธิ์และสถานะบอต", emoji: "⚡" }
       )
   );
 }
 
 export function backButton(): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId("setup:home").setLabel("Back").setStyle(ButtonStyle.Secondary).setEmoji("◀️")
+    new ButtonBuilder().setCustomId("setup:home").setLabel("กลับแดชบอร์ด").setStyle(ButtonStyle.Secondary).setEmoji("🔙")
   );
 }
 
 export function refreshButtons(publishedMessageId?: string): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId("setup:refresh:shop").setLabel("Refresh").setStyle(ButtonStyle.Primary).setEmoji("🔄").setDisabled(!publishedMessageId),
-    new ButtonBuilder().setCustomId("setup:refresh:dashboard").setLabel("Refresh Dashboard").setStyle(ButtonStyle.Secondary).setEmoji("🔄")
+    new ButtonBuilder().setCustomId("setup:refresh:shop").setLabel("อัปเดตหน้าร้าน").setStyle(ButtonStyle.Primary).setEmoji("🔄").setDisabled(!publishedMessageId),
+    new ButtonBuilder().setCustomId("setup:refresh:dashboard").setLabel("รีเฟรชสรุป").setStyle(ButtonStyle.Secondary).setEmoji("📈")
   );
 }
 
 export function categoryButtons(): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId("category:create").setLabel("Create").setStyle(ButtonStyle.Success).setEmoji("➕"),
-    new ButtonBuilder().setCustomId("category:edit:pick").setLabel("Edit").setStyle(ButtonStyle.Primary).setEmoji("✏️"),
-    new ButtonBuilder().setCustomId("category:visibility:pick").setLabel("Toggle").setStyle(ButtonStyle.Secondary).setEmoji("👁️"),
-    new ButtonBuilder().setCustomId("category:sort:pick").setLabel("Sort").setStyle(ButtonStyle.Secondary).setEmoji("📊"),
-    new ButtonBuilder().setCustomId("category:delete:pick").setLabel("Delete").setStyle(ButtonStyle.Danger).setEmoji("🗑️")
+    new ButtonBuilder().setCustomId("category:create").setLabel("สร้าง").setStyle(ButtonStyle.Success).setEmoji("📂"),
+    new ButtonBuilder().setCustomId("category:edit:pick").setLabel("แก้ไข").setStyle(ButtonStyle.Primary).setEmoji("📝"),
+    new ButtonBuilder().setCustomId("category:visibility:pick").setLabel("แสดงผล").setStyle(ButtonStyle.Secondary).setEmoji("⭐"),
+    new ButtonBuilder().setCustomId("category:sort:pick").setLabel("เรียงลำดับ").setStyle(ButtonStyle.Secondary).setEmoji("📈"),
+    new ButtonBuilder().setCustomId("category:delete:pick").setLabel("ลบ").setStyle(ButtonStyle.Danger).setEmoji("🗑️")
   );
 }
 
 export function categoryManagerMenu(categories: Category[], mode: "edit" | "delete" | "visibility" | "sort"): ActionRowBuilder<StringSelectMenuBuilder> {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-    new StringSelectMenuBuilder().setCustomId(`category:pick:${mode}`).setPlaceholder("✦ Select Category").addOptions(categories.slice(0, 25).map((category) => ({
+    new StringSelectMenuBuilder().setCustomId(`category:pick:${mode}`).setPlaceholder("📁 เลือกหมวดหมู่").addOptions(categories.slice(0, 25).map((category) => ({
       label: truncate(category.name, 100), value: category.id,
-      description: truncate(`${category.hidden ? "Hidden" : "Visible"} • Pos ${category.position}`, 100),
-      emoji: category.emoji || "📂"
+      description: truncate(`${category.hidden ? "○ ซ่อน" : "● แสดง"}  •  ลำดับ ${category.position}`, 100),
+      emoji: componentEmoji(category.emoji, "📁")
     })))
   );
 }
 
 export function categorySortButtons(categoryId: string): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(`category:move:${categoryId}:up`).setLabel("Up").setStyle(ButtonStyle.Primary).setEmoji("⬆️"),
-    new ButtonBuilder().setCustomId(`category:move:${categoryId}:down`).setLabel("Down").setStyle(ButtonStyle.Primary).setEmoji("⬇️")
+    new ButtonBuilder().setCustomId(`category:move:${categoryId}:up`).setLabel("เลื่อนขึ้น").setStyle(ButtonStyle.Primary).setEmoji("📈"),
+    new ButtonBuilder().setCustomId(`category:move:${categoryId}:down`).setLabel("เลื่อนลง").setStyle(ButtonStyle.Primary).setEmoji("📉")
   );
 }
 
 export function productButtons(): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId("product:create:pick").setLabel("Add").setStyle(ButtonStyle.Success).setEmoji("➕"),
-    new ButtonBuilder().setCustomId("product:edit:pick").setLabel("Edit").setStyle(ButtonStyle.Primary).setEmoji("✏️"),
-    new ButtonBuilder().setCustomId("product:visibility:pick").setLabel("Toggle").setStyle(ButtonStyle.Secondary).setEmoji("👁️"),
-    new ButtonBuilder().setCustomId("product:delete:pick").setLabel("Delete").setStyle(ButtonStyle.Danger).setEmoji("🗑️")
+    new ButtonBuilder().setCustomId("product:create:pick").setLabel("เพิ่มสินค้า").setStyle(ButtonStyle.Success).setEmoji("📦"),
+    new ButtonBuilder().setCustomId("product:edit:pick").setLabel("แก้ไข").setStyle(ButtonStyle.Primary).setEmoji("📝"),
+    new ButtonBuilder().setCustomId("product:visibility:pick").setLabel("แสดงผล").setStyle(ButtonStyle.Secondary).setEmoji("⭐"),
+    new ButtonBuilder().setCustomId("product:delete:pick").setLabel("ลบ").setStyle(ButtonStyle.Danger).setEmoji("🗑️")
   );
 }
 
 export function productManagerMenu(products: Product[], mode: "edit" | "delete" | "visibility"): ActionRowBuilder<StringSelectMenuBuilder> {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-    new StringSelectMenuBuilder().setCustomId(`product:pick:${mode}`).setPlaceholder("✦ Select Product").addOptions(products.slice(0, 25).map((product) => ({
+    new StringSelectMenuBuilder().setCustomId(`product:pick:${mode}`).setPlaceholder("📦 เลือกสินค้า").addOptions(products.slice(0, 25).map((product) => ({
       label: truncate(product.name, 100), value: product.id,
-      description: truncate(`${product.hidden ? "Hidden" : product.status} • ${formatStock(product.stock)}`, 100),
-      emoji: product.emoji || "📦"
+      description: truncate(`${product.hidden ? "○ ซ่อน" : product.status === "active" ? "● พร้อมขาย" : "○ ปิดขาย"}  •  ${formatStock(product.stock)}`, 100),
+      emoji: componentEmoji(product.emoji, "📦")
     })))
   );
 }
 
 export function productCategoryMenu(categories: Category[]): ActionRowBuilder<StringSelectMenuBuilder> {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-    new StringSelectMenuBuilder().setCustomId("product:pick:create").setPlaceholder("✦ Select Category").addOptions(categories.slice(0, 25).map((category) => ({ label: truncate(category.name, 100), value: category.id, emoji: category.emoji || "📂" })))
+    new StringSelectMenuBuilder().setCustomId("product:pick:create").setPlaceholder("📁 เลือกหมวดหมู่").addOptions(categories.slice(0, 25).map((category) => ({ label: truncate(category.name, 100), value: category.id, emoji: componentEmoji(category.emoji, "📁") })))
   );
 }
 
 export function sectionButtons(section: "appearance" | "payment" | "tickets" | "bot"): ActionRowBuilder<ButtonBuilder> {
   const map = {
     appearance: [
-      { label: "Basic", id: "basic", emoji: "📝" },
-      { label: "Images", id: "images", emoji: "🖼️" },
-      { label: "Branding", id: "branding", emoji: "✨" }
+      { label: "ข้อมูลร้าน", id: "basic", emoji: "📝" },
+      { label: "รูปภาพ", id: "images", emoji: "🖼️" },
+      { label: "แบรนด์", id: "branding", emoji: "💎" }
     ],
-    payment: [{ label: "Payment", id: "payment", emoji: "💳" }],
+    payment: [{ label: "การชำระเงิน", id: "payment", emoji: "💳" }],
     tickets: [
-      { label: "Categories", id: "ticket-categories", emoji: "🎫" },
-      { label: "Staff", id: "ticket-staff", emoji: "👥" }
+      { label: "หมวดหมู่", id: "ticket-categories", emoji: "📂" },
+      { label: "ทีมงาน", id: "ticket-staff", emoji: "👑" }
     ],
-    bot: [{ label: "Bot", id: "bot", emoji: "🤖" }]
+    bot: [{ label: "ตั้งค่าบอต", id: "bot", emoji: "⚡" }]
   } as const;
   
   const options = map[section];
@@ -113,32 +114,32 @@ export function sectionButtons(section: "appearance" | "payment" | "tickets" | "
     );
   }
   
-  return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("Back").setStyle(ButtonStyle.Secondary).setEmoji("🔙"));
+  return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji("🔙"));
 }
 
 export function stockManagerButtons(): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId("stock:view:all").setLabel("View Stock").setStyle(ButtonStyle.Primary).setEmoji("📦"),
-    new ButtonBuilder().setCustomId("stock:alerts").setLabel("Alerts").setStyle(ButtonStyle.Danger).setEmoji("⚠️"),
-    new ButtonBuilder().setCustomId("stock:restock").setLabel("Restock").setStyle(ButtonStyle.Success).setEmoji("➕")
+    new ButtonBuilder().setCustomId("stock:view:all").setLabel("ดูสต็อก").setStyle(ButtonStyle.Primary).setEmoji("📦"),
+    new ButtonBuilder().setCustomId("stock:alerts").setLabel("แจ้งเตือน").setStyle(ButtonStyle.Danger).setEmoji("🔥"),
+    new ButtonBuilder().setCustomId("stock:restock").setLabel("เติมสต็อก").setStyle(ButtonStyle.Success).setEmoji("📦")
   );
 }
 
 export function stockActionButtons(productId: string): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(`stock:add:${productId}`).setLabel("Add").setStyle(ButtonStyle.Success).setEmoji("➕"),
-    new ButtonBuilder().setCustomId(`stock:remove:${productId}`).setLabel("Remove").setStyle(ButtonStyle.Danger).setEmoji("➖"),
-    new ButtonBuilder().setCustomId(`stock:history:${productId}`).setLabel("History").setStyle(ButtonStyle.Secondary).setEmoji("📜")
+    new ButtonBuilder().setCustomId(`stock:add:${productId}`).setLabel("เพิ่ม").setStyle(ButtonStyle.Success).setEmoji("📦"),
+    new ButtonBuilder().setCustomId(`stock:remove:${productId}`).setLabel("ตัดออก").setStyle(ButtonStyle.Danger).setEmoji("🗑️"),
+    new ButtonBuilder().setCustomId(`stock:history:${productId}`).setLabel("ประวัติ").setStyle(ButtonStyle.Secondary).setEmoji("📊")
   );
 }
 
 export function stockHistoryMenu(transactions: StockTransaction[]): ActionRowBuilder<StringSelectMenuBuilder> {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-    new StringSelectMenuBuilder().setCustomId("stock:history:view").setPlaceholder("✦ View Transactions").addOptions(
+    new StringSelectMenuBuilder().setCustomId("stock:history:view").setPlaceholder("📊 ดูรายการเคลื่อนไหว").addOptions(
       transactions.slice(0, 25).map((t) => ({
         label: `${t.type} ${t.quantity > 0 ? "+" : ""}${t.quantity}`,
         value: t.id,
-        description: `${t.previousStock} → ${t.newStock} • By <@${t.performedBy}>`,
+        description: `${t.previousStock} → ${t.newStock}  •  <@${t.performedBy}>`,
         emoji: t.type === "purchase" ? "🛒" : t.type === "restock" ? "📦" : "📝"
       }))
     )

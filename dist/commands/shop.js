@@ -3,7 +3,7 @@ import { shopButtons } from "../components/shopComponents.js";
 import { settingsRepository } from "../database/repositories.js";
 import { shopEmbed } from "../utils/discord.js";
 export const shopCommand = {
-    data: new SlashCommandBuilder().setName("shop").setDescription("เปิดหน้าร้าน ROGT SHOPZZZ"),
+    data: new SlashCommandBuilder().setName("shop").setDescription("เปิดหน้าร้านพรีเมียม ROGT SHOPZZZ"),
     async execute(interaction) {
         if (!interaction.guildId)
             return;

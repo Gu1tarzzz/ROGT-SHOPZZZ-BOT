@@ -1,6 +1,6 @@
 import { purchaseButton, productBrowserComponents } from "../components/shopComponents.js";
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
-import { premiumEmbed, metric } from "../utils/discord.js";
+import { premiumEmbed, premiumMetric, statusIndicator } from "../utils/discord.js";
 import { formatPrice, formatStock, formatNumber } from "../utils/formatters.js";
 import { hasAdminAccess } from "../utils/permissions.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
@@ -39,16 +39,16 @@ async function buildMainShopEmbed(guildId) {
         `**${UI_EMOJI.text.brand} ${settings.shop.storeName}**`,
         `${settings.shop.description || "Premium marketplace"}`,
         "",
-        `${settings.shop.status === "open" ? "🟢" : "🔴"} **${settings.shop.status === "open" ? "เปิดให้บริการ" : "ปิดปรับปรุง"}**`,
+        statusIndicator(settings.shop.status),
         "",
         DIVIDER,
         "",
         `**${UI_EMOJI.text.section} Store Statistics**`,
         "",
-        `${metric("สินค้า", formatNumber(products.length))}`,
-        `${metric("หมวดหมู่", formatNumber(categories.length))}`,
-        `${metric("พร้อมขาย", formatNumber(availableProducts))}`,
-        `${metric("สต็อกทั้งหมด", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}`,
+        premiumMetric("📦", "Products", formatNumber(products.length)),
+        premiumMetric("📁", "Categories", formatNumber(categories.length)),
+        premiumMetric("✨", "Available", formatNumber(availableProducts)),
+        premiumMetric("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
         "",
         `**${UI_EMOJI.text.section} Payment Methods**`,
         "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",
@@ -88,7 +88,7 @@ async function buildProductBrowserEmbed(guildId, categoryName, products) {
         ...products.slice(0, 10).map((p, i) => `**${i + 1}. ${p.name}**\n   ${formatPrice(p.price)} • ${p.stock < 0 ? "ไม่จำกัด" : `สต็อก ${p.stock}`}`),
         products.length > 10 ? `\n${UI_EMOJI.text.bullet} และอีก ${products.length - 10} รายการ...` : ""
     ].filter(line => line !== "").join("\n");
-    return premiumEmbed(guildId, "PRODUCT BROWSER", description);
+    return premiumEmbed(guildId, "🛍️ PRODUCT BROWSER", description);
 }
 /**
  * Builds the ephemeral Product Preview shown when a product is selected.
@@ -103,9 +103,9 @@ async function buildProductPreviewEmbed(guildId, product) {
         "",
         DIVIDER,
         "",
-        `${metric("ราคา", formatPrice(product.price))}`,
-        `${metric("สต็อก", stockStatus)}`,
-        product.requiredRoleId ? `${metric("Role", `<@&${product.requiredRoleId}>`)}` : "",
+        premiumMetric("💰", "Price", formatPrice(product.price)),
+        premiumMetric("📦", "Stock", stockStatus),
+        product.requiredRoleId ? premiumMetric("🎭", "Role", `<@&${product.requiredRoleId}>`) : "",
         "",
         DIVIDER,
         `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อสั่งซื้อ`
@@ -127,9 +127,9 @@ async function buildCheckoutEmbed(guildId, product) {
         "",
         DIVIDER,
         "",
-        `${metric("สินค้า", product.name)}`,
-        `${metric("ราคา", formatPrice(product.price))}`,
-        `${metric("จำนวน", "1")}`,
+        premiumMetric("🛒", "Product", product.name),
+        premiumMetric("💰", "Price", formatPrice(product.price)),
+        premiumMetric("🔢", "Quantity", "1"),
         "",
         `**${UI_EMOJI.text.section} ช่องทางชำระเงิน**`,
         "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",
@@ -137,7 +137,7 @@ async function buildCheckoutEmbed(guildId, product) {
         DIVIDER,
         `${UI_EMOJI.text.bullet} ยืนยันการสั่งซื้อหรือยกเลิก`
     ].join("\n");
-    return premiumEmbed(guildId, "CONFIRM ORDER", description);
+    return premiumEmbed(guildId, "📦 CONFIRM ORDER", description);
 }
 export async function handleSelectMenu(interaction) {
     if (!interaction.guildId)

@@ -4,7 +4,7 @@ import { formatPrice, formatStock, truncate } from "../utils/formatters.js";
 // ╭──────────────────────────────────────────────────────────────╮
 // │  PREMIUM SHOP COMPONENTS - ROGT SHOPZZZ                     │
 // │  Style: Luxury • Fantasy • Minimal • Dark                   │
-// │  Reference: Dapex Boost, Mickey Boost, Steam Store          │
+// │  Reference: Discord Marketplace UI                          │
 // ╰──────────────────────────────────────────────────────────────╯
 /**
  * Safely resolves an emoji for select menu options.
@@ -27,46 +27,23 @@ function resolveEmoji(value, fallback) {
     // Fallback to default Unicode emoji
     return fallback;
 }
+/**
+ * Main shop components: Category Select Menu + Three Utility Buttons
+ * Used on the permanent Main Shop Embed message
+ */
 export function shopButtons(shop, allowRefresh = false, categories = []) {
     const rows = [];
-    // Single catalog select menu row
+    // Single category select menu row
     if (categories.length)
-        rows.push(catalogMenu(categories));
-    // Only TWO action buttons: Top Up Credit and Check Credit
-    const actionRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("shop:topup").setLabel("เติมเครดิต").setStyle(ButtonStyle.Primary).setEmoji("🪙"), new ButtonBuilder().setCustomId("shop:credit").setLabel("ตรวจสอบเครดิต").setStyle(ButtonStyle.Secondary).setEmoji("🍎"));
+        rows.push(categoryMenu(categories));
+    // Three utility buttons: Top Up / Credit / History
+    const actionRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("shop:topup").setLabel("เติมเครดิต").setStyle(ButtonStyle.Primary).setEmoji("🪙"), new ButtonBuilder().setCustomId("shop:credit").setLabel("ตรวจสอบเครดิต").setStyle(ButtonStyle.Secondary).setEmoji("💎"), new ButtonBuilder().setCustomId("shop:history").setLabel("ประวัติการซื้อ").setStyle(ButtonStyle.Secondary).setEmoji("📜"));
     rows.push(actionRow);
     return rows;
 }
 /**
- * Unified catalog menu for browsing all products by category
+ * Category select menu for the Main Shop Embed
  */
-export function catalogMenu(categories, customId = "shop:catalog") {
-    const options = categories.slice(0, 25).map((category) => {
-        const emoji = resolveEmoji(category.emoji, UI_EMOJI.component.category);
-        const option = {
-            label: truncate(category.name, 100),
-            value: `cat:${category.id}`,
-            description: truncate(category.description || "เลือกเพื่อดูสินค้า", 100)
-        };
-        if (emoji)
-            option.emoji = emoji;
-        return option;
-    });
-    // Add an "All Products" option at the top
-    options.unshift({
-        label: "สินค้าทั้งหมด",
-        value: "cat:all",
-        description: "ดูสินค้าทุกหมวดหมู่",
-        emoji: UI_EMOJI.component.catalog
-    });
-    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
-        .setCustomId(customId)
-        .setPlaceholder(`${UI_EMOJI.component.catalog} เลือกหมวดหมู่สินค้า`)
-        .addOptions(options));
-}
-export function shopAdminButtons(hasLiveShop = false) {
-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("shop:preview").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.catalog), new ButtonBuilder().setCustomId("shop:publish").setLabel("เผยแพร่").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.star), new ButtonBuilder().setCustomId("shop:appearance").setLabel("ดีไซน์ร้าน").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.gem));
-}
 export function categoryMenu(categories, customId = "shop:category") {
     const options = categories.slice(0, 25).map((category) => {
         const emoji = resolveEmoji(category.emoji, UI_EMOJI.component.category);
@@ -81,9 +58,24 @@ export function categoryMenu(categories, customId = "shop:category") {
     });
     return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
         .setCustomId(customId)
-        .setPlaceholder(`${UI_EMOJI.component.category} เลือกหมวดหมู่สินค้า`)
+        .setPlaceholder(`${UI_EMOJI.component.catalog} เลือกหมวดหมู่สินค้า`)
         .addOptions(options));
 }
+/**
+ * Product browser components for ephemeral Product Browser message
+ * Contains: Product Select Menu + Product List with Price/Stock
+ */
+export function productBrowserComponents(products) {
+    const rows = [];
+    // Product select menu
+    if (products.length) {
+        rows.push(productMenu(products));
+    }
+    return rows;
+}
+/**
+ * Product select menu for Product Browser
+ */
 export function productMenu(products, customId = "shop:product") {
     return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
         .setCustomId(customId)
@@ -105,10 +97,22 @@ export function productMenu(products, customId = "shop:product") {
         return option;
     })));
 }
-export function productOrderButton(product) {
+/**
+ * Purchase button for Product Preview ephemeral
+ */
+export function purchaseButton(product) {
     return new ActionRowBuilder().addComponents(new ButtonBuilder()
-        .setCustomId(`order:create:${product.id}`)
-        .setLabel("ยืนยันคำสั่งซื้อ")
+        .setCustomId(`purchase:${product.id}`)
+        .setLabel("ซื้อสินค้า")
         .setStyle(BUTTON_STYLES[product.buttonColor])
         .setEmoji(UI_EMOJI.component.browse));
+}
+/**
+ * Checkout confirmation buttons (Confirm / Cancel)
+ */
+export function checkoutButtons(productId) {
+    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`checkout:confirm:${productId}`).setLabel("ยืนยันการซื้อ").setStyle(ButtonStyle.Success).setEmoji("✅"), new ButtonBuilder().setCustomId(`checkout:cancel:${productId}`).setLabel("ยกเลิก").setStyle(ButtonStyle.Danger).setEmoji("❌"));
+}
+export function shopAdminButtons(hasLiveShop = false) {
+    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("shop:preview").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.catalog), new ButtonBuilder().setCustomId("shop:publish").setLabel("เผยแพร่").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.star), new ButtonBuilder().setCustomId("shop:appearance").setLabel("ดีไซน์ร้าน").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.gem));
 }

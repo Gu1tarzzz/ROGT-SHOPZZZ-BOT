@@ -1,12 +1,11 @@
 import type { StringSelectMenuInteraction } from "discord.js";
-import { productOrderButton, catalogMenu } from "../components/shopComponents.js";
-import { categoryRepository, productRepository } from "../database/repositories.js";
-import { handleCategoryPick, handleProductPick } from "./buttonHandler.js";
-import { showSetupSection } from "./setupHandler.js";
+import { categoryMenu, productMenu, purchaseButton, productBrowserComponents } from "../components/shopComponents.js";
+import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
 import { premiumEmbed } from "../utils/discord.js";
 import { formatPrice, formatStock } from "../utils/formatters.js";
 import { hasAdminAccess } from "../utils/permissions.js";
-import { DIVIDER } from "../config/constants.js";
+import { DIVIDER, SMALL_DIVIDER, UI_EMOJI } from "../config/constants.js";
+import { showSetupSection } from "./setupHandler.js";
 
 async function admin(interaction: StringSelectMenuInteraction): Promise<boolean> {
   if (!interaction.guild) return false;
@@ -17,140 +16,211 @@ async function admin(interaction: StringSelectMenuInteraction): Promise<boolean>
 }
 
 /**
- * Builds the main shop embed that should always remain visible
+ * Builds the permanent Main Shop Embed that should NEVER be edited during browsing.
+ * Contains ONLY: Store Name, Subtitle, Store Statistics, Payment Methods, Store Features, Banner
  */
-async function buildMainShopEmbed(guildId: string, guildName: string): Promise<any> {
-  const categories = await categoryRepository.list(guildId);
+async function buildMainShopEmbed(guildId: string) {
+  const settings = await settingsRepository.get(guildId);
+  const categories = await categoryRepository.list(guildId, false);
   const products = await productRepository.list(guildId, false);
-  const enabledProducts = products.filter(p => p.stock !== 0);
-  // Category doesn't have status property, use hidden instead
-  const activeCategories = categories.filter(c => !c.hidden);
   
-  const baseEmbed = await premiumEmbed(guildId, `🛒 ${guildName}`, [
-    "*Welcome to our premium marketplace.*",
-    "*Browse categories below to view products.*",
+  let totalStock = 0;
+  for (const product of products) {
+    if (product.stock < 0) {
+      totalStock = -1;
+      break;
+    }
+    totalStock += product.stock;
+  }
+  
+  const features = settings.shop.marketplaceFeatures?.length
+    ? settings.shop.marketplaceFeatures.slice(0, 4)
+    : ["จัดส่งรวดเร็ว", "ชำระเงินปลอดภัย", "ดูแลโดยทีมงาน"];
+    
+  const availableProducts = products.filter((product) => product.stock !== 0).length;
+  
+  const description = [
+    `**${UI_EMOJI.text.brand} ${settings.shop.storeName}**`,
+    `*${settings.shop.description || "Premium marketplace"}*`,
+    "",
+    `${UI_EMOJI.text.active} **${settings.shop.status === "open" ? "เปิดให้บริการ" : "ปิดปรับปรุง"}**`,
     "",
     DIVIDER,
+    "",
     "**◆ Store Statistics**",
-    "┌──────────────┬──────────────┬──────────────┬──────────────",
-    `│  \`Products\` **${enabledProducts.length}**  │  \`Categories\` **${activeCategories.length}**  │  \`Available\` **${enabledProducts.length}**  │  \`Stock\` **∞**`,
-    "└──────────────┴──────────────┴──────────────┴──────────────",
+    "",
+    `┌──────────────┬──────────────┬──────────────┬──────────────`,
+    `│  \`สินค้า\` **${products.length}**  │  \`หมวดหมู่\` **${categories.length}**  │  \`พร้อมขาย\` **${availableProducts}**  │  \`สต็อก\` **${totalStock < 0 ? "∞" : totalStock}**`,
+    `└──────────────┴──────────────┴──────────────┴──────────────`,
     "",
     "**◆ Payment Methods**",
     "💳 PromptPay  •  TrueMoney  •  Bank Transfer",
     "",
     "**◆ Store Features**",
-    "• Instant Delivery  •  Secure Payments  •  24/7 Support"
-  ].join("\n"));
+    `${UI_EMOJI.text.bullet} ${features.join("  •  ")}`,
+    "",
+    DIVIDER,
+    "▸ เลือกหมวดหมู่จากเมนูด้านล่างเพื่อดูสินค้า"
+  ].join("\n");
   
-  return baseEmbed;
+  const embed = await premiumEmbed(guildId, settings.shop.storeName, description);
+  
+  // Large banner image (priority: GIF > static)
+  if (settings.shop.bannerGif) {
+    embed.setImage(settings.shop.bannerGif);
+  } else if (settings.shop.banner) {
+    embed.setImage(settings.shop.banner);
+  }
+  
+  // Thumbnail for branding
+  if (settings.shop.thumbnail) {
+    embed.setThumbnail(settings.shop.thumbnail);
+  }
+  
+  return embed;
 }
 
 /**
- * Builds the product preview embed shown alongside the main shop embed
+ * Builds the ephemeral Product Browser shown when a category is selected.
+ * Contains: Product Select Menu, Product List with Price and Stock
  */
-async function buildProductPreviewEmbed(guildId: string, product: any): Promise<any> {
-  const stockStatus = product.stock < 0 ? "ไม่จำกัด" : formatStock(product.stock);
-  const baseEmbed = await premiumEmbed(guildId, `📦 ${product.name}`, [
-    `*${product.description || "No description available."}*`,
+async function buildProductBrowserEmbed(guildId: string, categoryName: string, products: any[]) {
+  const description = [
+    `**${UI_EMOJI.component.category} ${categoryName}**`,
     "",
     DIVIDER,
+    "",
+    `**◆ สินค้าทั้งหมด ${products.length} รายการ**`,
+    "",
+    ...products.slice(0, 10).map((p, i) => 
+      `**${i + 1}. ${p.name}**\n   └ ${formatPrice(p.price)} • ${p.stock < 0 ? "ไม่จำกัด" : `สต็อก ${p.stock}`}`
+    ),
+    products.length > 10 ? `\n▸ และอีก ${products.length - 10} รายการ...` : ""
+  ].filter(line => line !== "").join("\n");
+  
+  return premiumEmbed(guildId, "📦 PRODUCT BROWSER", description);
+}
+
+/**
+ * Builds the ephemeral Product Preview shown when a product is selected.
+ * Contains: Product Image, Product Name, Description, Price, Stock, Purchase Button
+ */
+async function buildProductPreviewEmbed(guildId: string, product: any) {
+  const stockStatus = product.stock < 0 ? "ไม่จำกัด" : formatStock(product.stock);
+  
+  const description = [
+    `**${UI_EMOJI.component.product} ${product.name}**`,
+    "",
+    `*${product.description || "ไม่มีรายละเอียด"}*`,
+    "",
+    DIVIDER,
+    "",
     "**◆ รายละเอียดสินค้า**",
-    `\`ราคา\`  **${formatPrice(product.price)}**  •  \`สต็อก\`  **${stockStatus}**`,
-    product.requiredRoleId ? `▸ ต้องมี Role <@&${product.requiredRoleId}>` : "▸ พร้อมสำหรับลูกค้าทุกคน"
-  ].join("\n"));
+    "",
+    `\`ราคา\`  **${formatPrice(product.price)}**`,
+    `\`สต็อก\`  **${stockStatus}**`,
+    product.requiredRoleId ? `\`Role\`  <@&${product.requiredRoleId}>` : "",
+    "",
+    SMALL_DIVIDER,
+    "▸ กดปุ่มด้านล่างเพื่อสั่งซื้อ"
+  ].filter(line => line !== "").join("\n");
+  
+  const embed = await premiumEmbed(guildId, `🛒 ${product.name}`, description);
   
   // Add image if available
   if (product.imageUrl) {
-    baseEmbed.setImage(product.imageUrl);
+    embed.setImage(product.imageUrl);
   }
   
-  return baseEmbed;
+  return embed;
 }
 
-export async function handleSelectMenu(interaction: StringSelectMenuInteraction): Promise<unknown> {
+/**
+ * Builds the ephemeral Checkout Embed shown when Purchase is clicked.
+ * Contains: Product, Quantity, Payment Method, Confirm, Cancel
+ */
+async function buildCheckoutEmbed(guildId: string, product: any) {
+  const description = [
+    `**${UI_EMOJI.component.payment} CHECKOUT**`,
+    "",
+    DIVIDER,
+    "",
+    "**◆ คำสั่งซื้อ**",
+    "",
+    `\`สินค้า\`  **${product.name}**`,
+    `\`ราคา\`  **${formatPrice(product.price)}**`,
+    `\`จำนวน\`  **1**`,
+    "",
+    "**◆ ช่องทางชำระเงิน**",
+    "💳 PromptPay  •  TrueMoney  •  Bank Transfer",
+    "",
+    SMALL_DIVIDER,
+    "▸ ยืนยันการสั่งซื้อหรือยกเลิก"
+  ].join("\n");
+  
+  return premiumEmbed(guildId, "✅ CONFIRM ORDER", description);
+}
+
+export async function handleSelectMenu(interaction: StringSelectMenuInteraction) {
   if (!interaction.guildId) return;
   const [scope, action, extra] = interaction.customId.split(":");
   
   if (scope === "shop") {
-    // Always build the main shop embed first
-    const mainShopEmbed = await buildMainShopEmbed(interaction.guildId, interaction.guild?.name || "Store");
-    
-    if (action === "catalog") {
-      const value = interaction.values[0];
+    if (action === "category") {
+      const categoryId = interaction.values[0];
+      const category = await categoryRepository.find(categoryId);
       
-      // Handle "All Products" or specific category
-      if (value === "cat:all") {
-        const allProducts = (await productRepository.list(interaction.guildId, false)).filter((product) => product.stock !== 0);
-        if (!allProducts.length) {
-          return interaction.update({ 
-            embeds: [mainShopEmbed], 
-            components: [catalogMenu(await categoryRepository.list(interaction.guildId))] 
-          });
-        }
-        
-        // Show first product as preview
-        const firstProduct = allProducts[0];
-        const productPreviewEmbed = await buildProductPreviewEmbed(interaction.guildId, firstProduct);
-        
-        return interaction.update({ 
-          embeds: [mainShopEmbed, productPreviewEmbed], 
-          components: [
-            catalogMenu(await categoryRepository.list(interaction.guildId)),
-            productOrderButton(firstProduct)
-          ] 
+      if (!category) {
+        return interaction.reply({ 
+          content: "○ ไม่พบหมวดหมู่นี้", 
+          ephemeral: true 
         });
       }
       
-      // Handle specific category (cat:{categoryId})
-      const categoryId = value.replace("cat:", "");
-      const category = await categoryRepository.find(categoryId);
-      const products = (await productRepository.list(interaction.guildId, false)).filter((product) => product.categoryId === categoryId && (product.stock !== 0));
+      // Get products in this category
+      const allProducts = await productRepository.list(interaction.guildId, false);
+      const products = allProducts.filter((p) => p.categoryId === categoryId && p.stock !== 0 && !p.hidden);
       
       if (!products.length) {
-        return interaction.update({ 
-          embeds: [mainShopEmbed], 
-          components: [catalogMenu(await categoryRepository.list(interaction.guildId))] 
+        return interaction.reply({ 
+          content: "○ ไม่มีสินค้าในหมวดหมู่นี้", 
+          ephemeral: true 
         });
       }
       
-      // Show first product as preview
-      const firstProduct = products[0];
-      const productPreviewEmbed = await buildProductPreviewEmbed(interaction.guildId, firstProduct);
+      // Create NEW EPHEMERAL Product Browser
+      const productBrowserEmbed = await buildProductBrowserEmbed(interaction.guildId, category.name, products);
       
-      return interaction.update({ 
-        embeds: [mainShopEmbed, productPreviewEmbed], 
-        components: [
-          catalogMenu(await categoryRepository.list(interaction.guildId)),
-          productOrderButton(firstProduct)
-        ] 
+      return interaction.reply({ 
+        embeds: [productBrowserEmbed], 
+        components: productBrowserComponents(products),
+        ephemeral: true 
       });
     }
     
     if (action === "product") {
       const product = await productRepository.find(interaction.values[0]);
+      
       if (!product || product.hidden || product.status !== "active") {
-        return interaction.update({ 
-          embeds: [mainShopEmbed], 
-          components: [catalogMenu(await categoryRepository.list(interaction.guildId))] 
+        return interaction.reply({ 
+          content: "○ สินค้านี้ไม่พร้อมจำหน่าย", 
+          ephemeral: true 
         });
       }
       
-      // Keep main shop embed, update only product preview
+      // Create NEW EPHEMERAL Product Preview
       const productPreviewEmbed = await buildProductPreviewEmbed(interaction.guildId, product);
       
-      return interaction.update({ 
-        embeds: [mainShopEmbed, productPreviewEmbed], 
-        components: [
-          catalogMenu(await categoryRepository.list(interaction.guildId)),
-          productOrderButton(product)
-        ] 
+      return interaction.reply({ 
+        embeds: [productPreviewEmbed], 
+        components: [purchaseButton(product)],
+        ephemeral: true 
       });
     }
     
-    // Handle topup and credit buttons - show only main shop embed in reply
+    // Handle utility buttons - show only ephemeral replies
     if (action === "topup") {
-      const embed = await premiumEmbed(interaction.guildId, "TOP UP CREDIT", [
+      const embed = await premiumEmbed(interaction.guildId, "🪙 TOP UP CREDIT", [
         "*เติมเครดิตเพื่อซื้อสินค้า*",
         "",
         DIVIDER,
@@ -161,7 +231,7 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
     }
     
     if (action === "credit") {
-      const embed = await premiumEmbed(interaction.guildId, "CHECK CREDIT", [
+      const embed = await premiumEmbed(interaction.guildId, "💎 CHECK CREDIT", [
         "*ตรวจสอบยอดเครดิตของคุณ*",
         "",
         DIVIDER,
@@ -170,10 +240,60 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
       ].join("\n"));
       return interaction.reply({ embeds: [embed], ephemeral: true });
     }
+    
+    if (action === "history") {
+      const embed = await premiumEmbed(interaction.guildId, "📜 PURCHASE HISTORY", [
+        "*ประวัติการสั่งซื้อของคุณ*",
+        "",
+        DIVIDER,
+        "▸ ระบบประวัติการซื้อกำลังพัฒนา",
+        "▸ ติดต่อทีมงานสำหรับข้อมูลเพิ่มเติม"
+      ].join("\n"));
+      return interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+  }
+  
+  if (scope === "purchase") {
+    const product = await productRepository.find(action);
+    
+    if (!product || product.hidden || product.status !== "active") {
+      return interaction.reply({ 
+        content: "○ สินค้านี้ไม่พร้อมจำหน่าย", 
+        ephemeral: true 
+      });
+    }
+    
+    // Create NEW EPHEMERAL Checkout Embed
+    const checkoutEmbed = await buildCheckoutEmbed(interaction.guildId, product);
+    
+    return interaction.reply({ 
+      embeds: [checkoutEmbed], 
+      components: [],
+      ephemeral: true 
+    });
+  }
+  
+  if (scope === "checkout") {
+    if (action === "confirm") {
+      const product = await productRepository.find(extra);
+      if (!product) return interaction.reply({ content: "○ ไม่พบสินค้า", ephemeral: true });
+      
+      // TODO: Implement actual purchase logic here
+      return interaction.reply({ 
+        content: "✔ คำสั่งซื้อของคุณถูกสร้างแล้ว  •  ทีมงานจะติดต่อคุณเร็วๆ นี้", 
+        ephemeral: true 
+      });
+    }
+    
+    if (action === "cancel") {
+      return interaction.update({ 
+        content: "○ ยกเลิกการสั่งซื้อแล้ว", 
+        embeds: [], 
+        components: [] 
+      });
+    }
   }
   
   if (!(await admin(interaction))) return;
   if (scope === "setup" && action === "section") return showSetupSection(interaction, interaction.values[0]);
-  if (scope === "category" && action === "pick") return handleCategoryPick(interaction, extra as "edit" | "delete" | "visibility" | "sort");
-  if (scope === "product" && action === "pick") return handleProductPick(interaction, extra as "create" | "edit" | "delete" | "visibility");
 }

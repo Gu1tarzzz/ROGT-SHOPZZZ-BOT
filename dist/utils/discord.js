@@ -5,12 +5,18 @@ import { truncate, formatNumber } from "./formatters.js";
 const uiTitle = (title) => title.startsWith(UI_EMOJI.text.brand) ? title : `${UI_EMOJI.text.brand} ${title}`;
 const uiFooter = (footer) => `${UI_EMOJI.text.brand} ${footer}`;
 export const statusMark = (isPositive, positive, negative) => `${isPositive ? UI_EMOJI.text.active : UI_EMOJI.text.inactive} ${isPositive ? positive : negative}`;
-export const metric = (label, value) => "`" + label + "`  **" + value + "**";
 /**
- * Premium metric card with icon, title, and value
- * Format: `icon` **title**  value
+ * Premium metric block with visually separated title and value
+ * Format: icon
+         **title**
+         `value`
  */
-export const premiumMetric = (icon, label, value) => `${icon} **${label}**  ${value}`;
+export const premiumMetricBlock = (icon, label, value) => `${icon}\n**${label}**\n\`${value}\``;
+/**
+ * Compact premium metric for inline display
+ * Format: `icon` **label**  `value`
+ */
+export const premiumMetric = (icon, label, value) => `\`${value}\` **${label}**`;
 /**
  * Status indicator with modern premium icons
  */
@@ -56,7 +62,7 @@ export async function shopEmbed(guildId, showAdminControls = false) {
         ? shop.marketplaceFeatures.slice(0, 4)
         : ["จัดส่งรวดเร็ว", "ชำระเงินปลอดภัย", "ดูแลโดยทีมงาน"];
     const availableProducts = products.filter((product) => product.stock !== 0).length;
-    // Premium storefront layout matching reference image
+    // Premium storefront layout matching reference image with metric blocks
     const description = [
         `**${UI_EMOJI.text.brand} ${shop.storeName}**`,
         `${shop.description || "Premium marketplace"}`,
@@ -67,13 +73,17 @@ export async function shopEmbed(guildId, showAdminControls = false) {
         "",
         `**${UI_EMOJI.text.section} Store Statistics**`,
         "",
-        premiumMetric("📦", "Products", formatNumber(products.length)),
-        premiumMetric("📁", "Categories", formatNumber(categories.length)),
-        premiumMetric("✨", "Available", formatNumber(availableProducts)),
-        premiumMetric("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
+        premiumMetricBlock("📦", "Products", formatNumber(products.length)),
+        premiumMetricBlock("📁", "Categories", formatNumber(categories.length)),
+        premiumMetricBlock("✨", "Available", formatNumber(availableProducts)),
+        premiumMetricBlock("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
+        "",
+        DIVIDER,
         "",
         `**${UI_EMOJI.text.section} Payment Methods**`,
         "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",
+        "",
+        DIVIDER,
         "",
         `**${UI_EMOJI.text.section} Store Features**`,
         features.map((f) => `${UI_EMOJI.text.bullet} ${f}`).join("\n"),

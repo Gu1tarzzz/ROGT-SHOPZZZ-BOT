@@ -1,6 +1,6 @@
 import { purchaseButton, productBrowserComponents } from "../components/shopComponents.js";
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
-import { premiumEmbed, premiumMetric, statusIndicator } from "../utils/discord.js";
+import { premiumEmbed, premiumMetricBlock, statusIndicator } from "../utils/discord.js";
 import { formatPrice, formatStock, formatNumber } from "../utils/formatters.js";
 import { hasAdminAccess } from "../utils/permissions.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
@@ -34,7 +34,7 @@ async function buildMainShopEmbed(guildId) {
         ? settings.shop.marketplaceFeatures.slice(0, 4)
         : ["จัดส่งรวดเร็ว", "ชำระเงินปลอดภัย", "ดูแลโดยทีมงาน"];
     const availableProducts = products.filter((product) => product.stock !== 0).length;
-    // Premium storefront layout matching reference image
+    // Premium storefront layout matching reference image with metric blocks
     const description = [
         `**${UI_EMOJI.text.brand} ${settings.shop.storeName}**`,
         `${settings.shop.description || "Premium marketplace"}`,
@@ -45,13 +45,17 @@ async function buildMainShopEmbed(guildId) {
         "",
         `**${UI_EMOJI.text.section} Store Statistics**`,
         "",
-        premiumMetric("📦", "Products", formatNumber(products.length)),
-        premiumMetric("📁", "Categories", formatNumber(categories.length)),
-        premiumMetric("✨", "Available", formatNumber(availableProducts)),
-        premiumMetric("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
+        premiumMetricBlock("📦", "Products", formatNumber(products.length)),
+        premiumMetricBlock("📁", "Categories", formatNumber(categories.length)),
+        premiumMetricBlock("✨", "Available", formatNumber(availableProducts)),
+        premiumMetricBlock("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
+        "",
+        DIVIDER,
         "",
         `**${UI_EMOJI.text.section} Payment Methods**`,
         "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",
+        "",
+        DIVIDER,
         "",
         `**${UI_EMOJI.text.section} Store Features**`,
         features.map((f) => `${UI_EMOJI.text.bullet} ${f}`).join("\n"),
@@ -103,9 +107,9 @@ async function buildProductPreviewEmbed(guildId, product) {
         "",
         DIVIDER,
         "",
-        premiumMetric("💰", "Price", formatPrice(product.price)),
-        premiumMetric("📦", "Stock", stockStatus),
-        product.requiredRoleId ? premiumMetric("🎭", "Role", `<@&${product.requiredRoleId}>`) : "",
+        premiumMetricBlock("💰", "Price", formatPrice(product.price)),
+        premiumMetricBlock("📦", "Stock", stockStatus),
+        product.requiredRoleId ? premiumMetricBlock("🎭", "Role", `<@&${product.requiredRoleId}>`) : "",
         "",
         DIVIDER,
         `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อสั่งซื้อ`
@@ -127,9 +131,9 @@ async function buildCheckoutEmbed(guildId, product) {
         "",
         DIVIDER,
         "",
-        premiumMetric("🛒", "Product", product.name),
-        premiumMetric("💰", "Price", formatPrice(product.price)),
-        premiumMetric("🔢", "Quantity", "1"),
+        premiumMetricBlock("🛒", "Product", product.name),
+        premiumMetricBlock("💰", "Price", formatPrice(product.price)),
+        premiumMetricBlock("🔢", "Quantity", "1"),
         "",
         `**${UI_EMOJI.text.section} ช่องทางชำระเงิน**`,
         "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",

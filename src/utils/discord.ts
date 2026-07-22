@@ -1,5 +1,5 @@
 import { EmbedBuilder, type Guild, type GuildMember, type InteractionReplyOptions } from "discord.js";
-import { DIVIDER, UI_EMOJI } from "../config/constants.js";
+import { DIVIDER, SECTION_SPACER, UI_EMOJI } from "../config/constants.js";
 import { settingsRepository, categoryRepository, productRepository } from "../database/repositories.js";
 import { truncate, formatNumber } from "./formatters.js";
 
@@ -9,14 +9,21 @@ const uiFooter = (footer: string): string => `${UI_EMOJI.text.brand} ${footer}`;
 export const statusMark = (isPositive: boolean, positive: string, negative: string): string =>
   `${isPositive ? UI_EMOJI.text.active : UI_EMOJI.text.inactive} ${isPositive ? positive : negative}`;
 
-export const metric = (label: string, value: string | number): string => "`" + label + "`  **" + value + "**";
+/**
+ * Premium metric block with visually separated title and value
+ * Format: icon
+         **title**
+         `value`
+ */
+export const premiumMetricBlock = (icon: string, label: string, value: string | number): string => 
+  `${icon}\n**${label}**\n\`${value}\``;
 
 /**
- * Premium metric card with icon, title, and value
- * Format: `icon` **title**  value
+ * Compact premium metric for inline display
+ * Format: `icon` **label**  `value`
  */
 export const premiumMetric = (icon: string, label: string, value: string | number): string => 
-  `${icon} **${label}**  ${value}`;
+  `\`${value}\` **${label}**`;
 
 /**
  * Status indicator with modern premium icons
@@ -68,7 +75,7 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     
   const availableProducts = products.filter((product) => product.stock !== 0).length;
   
-  // Premium storefront layout matching reference image
+  // Premium storefront layout matching reference image with metric blocks
   const description = [
     `**${UI_EMOJI.text.brand} ${shop.storeName}**`,
     `${shop.description || "Premium marketplace"}`,
@@ -79,13 +86,17 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     "",
     `**${UI_EMOJI.text.section} Store Statistics**`,
     "",
-    premiumMetric("📦", "Products", formatNumber(products.length)),
-    premiumMetric("📁", "Categories", formatNumber(categories.length)),
-    premiumMetric("✨", "Available", formatNumber(availableProducts)),
-    premiumMetric("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
+    premiumMetricBlock("📦", "Products", formatNumber(products.length)),
+    premiumMetricBlock("📁", "Categories", formatNumber(categories.length)),
+    premiumMetricBlock("✨", "Available", formatNumber(availableProducts)),
+    premiumMetricBlock("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
+    "",
+    DIVIDER,
     "",
     `**${UI_EMOJI.text.section} Payment Methods**`,
     "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",
+    "",
+    DIVIDER,
     "",
     `**${UI_EMOJI.text.section} Store Features**`,
     features.map((f) => `${UI_EMOJI.text.bullet} ${f}`).join("\n"),

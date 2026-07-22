@@ -34,28 +34,31 @@ async function buildMainShopEmbed(guildId) {
         ? settings.shop.marketplaceFeatures.slice(0, 4)
         : ["จัดส่งรวดเร็ว", "ชำระเงินปลอดภัย", "ดูแลโดยทีมงาน"];
     const availableProducts = products.filter((product) => product.stock !== 0).length;
+    // Premium storefront layout matching reference image
     const description = [
         `**${UI_EMOJI.text.brand} ${settings.shop.storeName}**`,
-        `*${settings.shop.description || "Premium marketplace"}*`,
+        `${settings.shop.description || "Premium marketplace"}`,
         "",
-        `${UI_EMOJI.text.active} **${settings.shop.status === "open" ? "เปิดให้บริการ" : "ปิดปรับปรุง"}**`,
-        "",
-        DIVIDER,
-        "",
-        "**◆ Store Statistics**",
-        "",
-        `┌──────────────┬──────────────┬──────────────┬──────────────`,
-        `│  \`สินค้า\` **${products.length}**  │  \`หมวดหมู่\` **${categories.length}**  │  \`พร้อมขาย\` **${availableProducts}**  │  \`สต็อก\` **${totalStock < 0 ? "∞" : totalStock}**`,
-        `└──────────────┴──────────────┴──────────────┴──────────────`,
-        "",
-        "**◆ Payment Methods**",
-        "💳 PromptPay  •  TrueMoney  •  Bank Transfer",
-        "",
-        "**◆ Store Features**",
-        `${UI_EMOJI.text.bullet} ${features.join("  •  ")}`,
+        `${settings.shop.status === "open" ? "🟢" : "🔴"} **${settings.shop.status === "open" ? "เปิดให้บริการ" : "ปิดปรับปรุง"}**`,
         "",
         DIVIDER,
-        "▸ เลือกหมวดหมู่จากเมนูด้านล่างเพื่อดูสินค้า"
+        "",
+        "**✦ Store Statistics**",
+        "",
+        "```┌──────────────┬──────────────┬──────────────┬──────────────┐",
+        "│  สินค้า     │  หมวดหมู่   │  พร้อมขาย    │  สต็อก       │",
+        "├──────────────┼──────────────┼──────────────┼──────────────┤",
+        `│  ${String(products.length).padEnd(10)} │  ${String(categories.length).padEnd(10)} │  ${String(availableProducts).padEnd(10)} │  ${String(totalStock < 0 ? "∞" : totalStock).padEnd(10)} │`,
+        "└──────────────┴──────────────┴──────────────┴──────────────┘```",
+        "",
+        "**✦ Payment Methods**",
+        "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",
+        "",
+        "**✦ Store Features**",
+        features.map((f, i) => `${i === 0 ? "▸" : " "} ${f}`).join("\n"),
+        "",
+        DIVIDER,
+        "เลือกหมวดหมู่จากเมนูด้านล่างเพื่อดูสินค้า"
     ].join("\n");
     const embed = await premiumEmbed(guildId, settings.shop.storeName, description);
     // Large banner image (priority: GIF > static)

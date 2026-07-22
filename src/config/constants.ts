@@ -44,6 +44,7 @@ export const UI_EMOJI = {
 
 export const DIVIDER = `${UI_EMOJI.text.brand}━━━━━━━━━━━━━━━━━━━━${UI_EMOJI.text.brand}`;
 export const SMALL_DIVIDER = `${UI_EMOJI.text.section}────────────${UI_EMOJI.text.section}`;
+export const TINY_DIVIDER = `─·─·─·─·─·─·─·─·─`;
 
 // ═══════════════════════════════════════════════════════════════
 // PREMIUM THEME - ROGT SHOPZZZ

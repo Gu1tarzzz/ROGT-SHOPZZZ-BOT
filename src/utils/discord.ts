@@ -49,40 +49,42 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     
   const availableProducts = products.filter((product) => product.stock !== 0).length;
   
-  // Premium storefront layout with hero, stats, and info
+  // Premium storefront layout matching reference image
   const description = [
     `**${UI_EMOJI.text.brand} ${shop.storeName}**`,
-    `*${shop.description || "Premium marketplace of Realm of Gu1tarzzz"}*`,
+    `${shop.description || "Premium marketplace"}`,
     "",
-    statusMark(shop.status === "open", "เปิดให้บริการ", "ปิดปรับปรุง"),
+    `${shop.status === "open" ? "🟢" : "🔴"} **${shop.status === "open" ? "เปิดให้บริการ" : "ปิดปรับปรุง"}**`,
     "",
     DIVIDER,
     "",
-    "**◆ Store Statistics**",
+    "**✦ Store Statistics**",
     "",
-    `┌──────────────┬──────────────┬──────────────┬──────────────`,
-    `│  ${metric("สินค้า", formatNumber(products.length))}  │  ${metric("หมวดหมู่", formatNumber(categories.length))}  │  ${metric("พร้อมขาย", formatNumber(availableProducts))}  │  ${metric("สต็อก", totalStock < 0 ? "∞" : formatNumber(totalStock))}`,
-    `└──────────────┴──────────────┴──────────────┴──────────────`,
+    `\`\`\`┌──────────────┬──────────────┬──────────────┬──────────────┐`,
+    `│  สินค้า     │  หมวดหมู่   │  พร้อมขาย    │  สต็อก       │`,
+    `├──────────────┼──────────────┼──────────────┼──────────────┤`,
+    `│  ${String(products.length).padEnd(10)} │  ${String(categories.length).padEnd(10)} │  ${String(availableProducts).padEnd(10)} │  ${String(totalStock < 0 ? "∞" : totalStock).padEnd(10)} │`,
+    `└──────────────┴──────────────┴──────────────┴──────────────┘\`\`\``,
     "",
-    "**◆ Payment Methods**",
-    "💳 PromptPay  •  TrueMoney  •  Bank Transfer",
+    "**✦ Payment Methods**",
+    "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",
     "",
-    "**◆ Store Features**",
-    `${UI_EMOJI.text.bullet} ${features.join("  •  ")}`,
+    "**✦ Store Features**",
+    features.map((f, i) => `${i === 0 ? "▸" : " "} ${f}`).join("\n"),
     "",
-    SMALL_DIVIDER,
-    "▸ เลือกหมวดหมู่จากเมนูด้านล่างเพื่อดูสินค้า"
+    DIVIDER,
+    "เลือกหมวดหมู่จากเมนูด้านล่างเพื่อดูสินค้า"
   ].join("\n");
   
   const embed = new EmbedBuilder()
     .setColor(shop.embedColor)
-    .setTitle(uiTitle(shop.storeName))
+    .setTitle(shop.storeName)
     .setAuthor({ 
       name: shop.authorName || "Realm of Gu1tarzzz  •  Premium Marketplace", 
       iconURL: shop.authorIcon || shop.storeLogo 
     })
     .setDescription(description)
-    .setFooter({ text: uiFooter(shop.footer), iconURL: shop.storeLogo })
+    .setFooter({ text: shop.footer, iconURL: shop.storeLogo })
     .setTimestamp();
   
   // Large banner image (priority: GIF > static)

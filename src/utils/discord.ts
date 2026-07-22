@@ -1,5 +1,5 @@
 import { EmbedBuilder, type Guild, type GuildMember, type InteractionReplyOptions } from "discord.js";
-import { DIVIDER, SMALL_DIVIDER, UI_EMOJI } from "../config/constants.js";
+import { DIVIDER, SECTION_DIVIDER, UI_EMOJI } from "../config/constants.js";
 import { settingsRepository, categoryRepository, productRepository } from "../database/repositories.js";
 import { truncate, formatNumber } from "./formatters.js";
 
@@ -58,19 +58,19 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     "",
     DIVIDER,
     "",
-    "**✦ Store Statistics**",
+    `**${UI_EMOJI.text.section} Store Statistics**`,
     "",
-    `\`\`\`┌──────────────┬──────────────┬──────────────┬──────────────┐`,
-    `│  สินค้า     │  หมวดหมู่   │  พร้อมขาย    │  สต็อก       │`,
-    `├──────────────┼──────────────┼──────────────┼──────────────┤`,
+    "```┌──────────────┬──────────────┬──────────────┬──────────────┐",
+    "│  สินค้า     │  หมวดหมู่   │  พร้อมขาย    │  สต็อก       │",
+    "├──────────────┼──────────────┼──────────────┼──────────────┤",
     `│  ${String(products.length).padEnd(10)} │  ${String(categories.length).padEnd(10)} │  ${String(availableProducts).padEnd(10)} │  ${String(totalStock < 0 ? "∞" : totalStock).padEnd(10)} │`,
-    `└──────────────┴──────────────┴──────────────┴──────────────┘\`\`\``,
+    "└──────────────┴──────────────┴──────────────┴──────────────┘```",
     "",
-    "**✦ Payment Methods**",
+    `**${UI_EMOJI.text.section} Payment Methods**`,
     "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",
     "",
-    "**✦ Store Features**",
-    features.map((f, i) => `${i === 0 ? "▸" : " "} ${f}`).join("\n"),
+    `**${UI_EMOJI.text.section} Store Features**`,
+    features.map((f) => `${UI_EMOJI.text.bullet} ${f}`).join("\n"),
     "",
     DIVIDER,
     "เลือกหมวดหมู่จากเมนูด้านล่างเพื่อดูสินค้า"

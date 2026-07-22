@@ -3,7 +3,7 @@ import { categoryRepository, productRepository, settingsRepository } from "../da
 import { premiumEmbed } from "../utils/discord.js";
 import { formatPrice, formatStock } from "../utils/formatters.js";
 import { hasAdminAccess } from "../utils/permissions.js";
-import { DIVIDER, SMALL_DIVIDER, UI_EMOJI } from "../config/constants.js";
+import { DIVIDER, SECTION_DIVIDER, UI_EMOJI } from "../config/constants.js";
 import { showSetupSection } from "./setupHandler.js";
 async function admin(interaction) {
     if (!interaction.guild)
@@ -43,7 +43,7 @@ async function buildMainShopEmbed(guildId) {
         "",
         DIVIDER,
         "",
-        "**✦ Store Statistics**",
+        `**${UI_EMOJI.text.section} Store Statistics**`,
         "",
         "```┌──────────────┬──────────────┬──────────────┬──────────────┐",
         "│  สินค้า     │  หมวดหมู่   │  พร้อมขาย    │  สต็อก       │",
@@ -51,11 +51,11 @@ async function buildMainShopEmbed(guildId) {
         `│  ${String(products.length).padEnd(10)} │  ${String(categories.length).padEnd(10)} │  ${String(availableProducts).padEnd(10)} │  ${String(totalStock < 0 ? "∞" : totalStock).padEnd(10)} │`,
         "└──────────────┴──────────────┴──────────────┴──────────────┘```",
         "",
-        "**✦ Payment Methods**",
+        `**${UI_EMOJI.text.section} Payment Methods**`,
         "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",
         "",
-        "**✦ Store Features**",
-        features.map((f, i) => `${i === 0 ? "▸" : " "} ${f}`).join("\n"),
+        `**${UI_EMOJI.text.section} Store Features**`,
+        features.map((f) => `${UI_EMOJI.text.bullet} ${f}`).join("\n"),
         "",
         DIVIDER,
         "เลือกหมวดหมู่จากเมนูด้านล่างเพื่อดูสินค้า"
@@ -84,10 +84,10 @@ async function buildProductBrowserEmbed(guildId, categoryName, products) {
         "",
         DIVIDER,
         "",
-        `**◆ สินค้าทั้งหมด ${products.length} รายการ**`,
+        `**${UI_EMOJI.text.section} สินค้าทั้งหมด ${products.length} รายการ**`,
         "",
         ...products.slice(0, 10).map((p, i) => `**${i + 1}. ${p.name}**\n   └ ${formatPrice(p.price)} • ${p.stock < 0 ? "ไม่จำกัด" : `สต็อก ${p.stock}`}`),
-        products.length > 10 ? `\n▸ และอีก ${products.length - 10} รายการ...` : ""
+        products.length > 10 ? `\n${UI_EMOJI.text.bullet} และอีก ${products.length - 10} รายการ...` : ""
     ].filter(line => line !== "").join("\n");
     return premiumEmbed(guildId, "📦 PRODUCT BROWSER", description);
 }
@@ -104,14 +104,14 @@ async function buildProductPreviewEmbed(guildId, product) {
         "",
         DIVIDER,
         "",
-        "**◆ รายละเอียดสินค้า**",
+        `**${UI_EMOJI.text.section} รายละเอียดสินค้า**`,
         "",
         `\`ราคา\`  **${formatPrice(product.price)}**`,
         `\`สต็อก\`  **${stockStatus}**`,
         product.requiredRoleId ? `\`Role\`  <@&${product.requiredRoleId}>` : "",
         "",
-        SMALL_DIVIDER,
-        "▸ กดปุ่มด้านล่างเพื่อสั่งซื้อ"
+        SECTION_DIVIDER,
+        `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อสั่งซื้อ`
     ].filter(line => line !== "").join("\n");
     const embed = await premiumEmbed(guildId, `🛒 ${product.name}`, description);
     // Add image if available
@@ -130,17 +130,17 @@ async function buildCheckoutEmbed(guildId, product) {
         "",
         DIVIDER,
         "",
-        "**◆ คำสั่งซื้อ**",
+        `**${UI_EMOJI.text.section} คำสั่งซื้อ**`,
         "",
         `\`สินค้า\`  **${product.name}**`,
         `\`ราคา\`  **${formatPrice(product.price)}**`,
         `\`จำนวน\`  **1**`,
         "",
-        "**◆ ช่องทางชำระเงิน**",
+        `**${UI_EMOJI.text.section} ช่องทางชำระเงิน**`,
         "💳 PromptPay  •  TrueMoney  •  Bank Transfer",
         "",
-        SMALL_DIVIDER,
-        "▸ ยืนยันการสั่งซื้อหรือยกเลิก"
+        SECTION_DIVIDER,
+        `${UI_EMOJI.text.bullet} ยืนยันการสั่งซื้อหรือยกเลิก`
     ].join("\n");
     return premiumEmbed(guildId, "✅ CONFIRM ORDER", description);
 }
@@ -197,8 +197,8 @@ export async function handleSelectMenu(interaction) {
                 "*เติมเครดิตเพื่อซื้อสินค้า*",
                 "",
                 DIVIDER,
-                "▸ ติดต่อทีมงานเพื่อเติมเครดิต",
-                "▸ หรือใช้คำสั่งซื้อเพื่อชำระเงิน"
+                `${UI_EMOJI.text.bullet} ติดต่อทีมงานเพื่อเติมเครดิต`,
+                `${UI_EMOJI.text.bullet} หรือใช้คำสั่งซื้อเพื่อชำระเงิน`
             ].join("\n"));
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }
@@ -207,8 +207,8 @@ export async function handleSelectMenu(interaction) {
                 "*ตรวจสอบยอดเครดิตของคุณ*",
                 "",
                 DIVIDER,
-                "▸ ระบบเครดิตกำลังพัฒนา",
-                "▸ ติดต่อทีมงานสำหรับข้อมูลเพิ่มเติม"
+                `${UI_EMOJI.text.bullet} ระบบเครดิตกำลังพัฒนา`,
+                `${UI_EMOJI.text.bullet} ติดต่อทีมงานสำหรับข้อมูลเพิ่มเติม`
             ].join("\n"));
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }
@@ -217,8 +217,8 @@ export async function handleSelectMenu(interaction) {
                 "*ประวัติการสั่งซื้อของคุณ*",
                 "",
                 DIVIDER,
-                "▸ ระบบประวัติการซื้อกำลังพัฒนา",
-                "▸ ติดต่อทีมงานสำหรับข้อมูลเพิ่มเติม"
+                `${UI_EMOJI.text.bullet} ระบบประวัติการซื้อกำลังพัฒนา`,
+                `${UI_EMOJI.text.bullet} ติดต่อทีมงานสำหรับข้อมูลเพิ่มเติม`
             ].join("\n"));
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }

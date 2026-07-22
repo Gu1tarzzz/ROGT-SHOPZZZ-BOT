@@ -11,6 +11,25 @@ export const statusMark = (isPositive: boolean, positive: string, negative: stri
 
 export const metric = (label: string, value: string | number): string => "`" + label + "`  **" + value + "**";
 
+/**
+ * Premium metric card with icon, title, and value
+ * Format: `icon` **title**  value
+ */
+export const premiumMetric = (icon: string, label: string, value: string | number): string => 
+  `${icon} **${label}**  ${value}`;
+
+/**
+ * Status indicator with modern premium icons
+ */
+export const statusIndicator = (status: string): string => {
+  switch (status) {
+    case "open": return "🟢 **Online**";
+    case "maintenance": return "🟠 **Maintenance**";
+    case "closed": return "🔴 **Offline**";
+    default: return "⚪ **Unknown**";
+  }
+};
+
 export async function premiumEmbed(guildId: string, title: string, description?: string): Promise<EmbedBuilder> {
   const { shop } = await settingsRepository.get(guildId);
   const embed = new EmbedBuilder()
@@ -54,16 +73,16 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     `**${UI_EMOJI.text.brand} ${shop.storeName}**`,
     `${shop.description || "Premium marketplace"}`,
     "",
-    `${shop.status === "open" ? "🟢" : "🔴"} **${shop.status === "open" ? "เปิดให้บริการ" : "ปิดปรับปรุง"}**`,
+    statusIndicator(shop.status),
     "",
     DIVIDER,
     "",
     `**${UI_EMOJI.text.section} Store Statistics**`,
     "",
-    `${metric("สินค้า", formatNumber(products.length))}`,
-    `${metric("หมวดหมู่", formatNumber(categories.length))}`,
-    `${metric("พร้อมขาย", formatNumber(availableProducts))}`,
-    `${metric("สต็อกทั้งหมด", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}`,
+    premiumMetric("📦", "Products", formatNumber(products.length)),
+    premiumMetric("📁", "Categories", formatNumber(categories.length)),
+    premiumMetric("✨", "Available", formatNumber(availableProducts)),
+    premiumMetric("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
     "",
     `**${UI_EMOJI.text.section} Payment Methods**`,
     "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",

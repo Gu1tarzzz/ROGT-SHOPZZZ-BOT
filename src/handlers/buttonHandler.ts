@@ -151,7 +151,8 @@ async function refreshShopMessage(interaction: ButtonInteraction): Promise<void>
     
     const message = await channel.messages.fetch(publishedMessageId);
     console.log("DEBUG message fetch:", message.id);
-    const buttonRows = shopButtons(settings.shop, false);
+    const categories = await categoryRepository.list(interaction.guildId, false);
+    const buttonRows = shopButtons(settings.shop, false, categories);
     
     await message.edit({ embeds: [await shopEmbed(interaction.guildId)], components: buttonRows });
     

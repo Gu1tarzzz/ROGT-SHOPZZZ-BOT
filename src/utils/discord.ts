@@ -1,13 +1,13 @@
 import { EmbedBuilder, type Guild, type GuildMember, type InteractionReplyOptions } from "discord.js";
-import { DIVIDER, SMALL_DIVIDER } from "../config/constants.js";
+import { DIVIDER, SMALL_DIVIDER, UI_EMOJI } from "../config/constants.js";
 import { settingsRepository, categoryRepository, productRepository } from "../database/repositories.js";
 import { truncate, formatNumber } from "./formatters.js";
 
-const uiTitle = (title: string): string => title.startsWith("✦") ? title : `✦ ${title}`;
-const uiFooter = (footer: string): string => `✦ ${footer}`;
+const uiTitle = (title: string): string => title.startsWith(UI_EMOJI.text.brand) ? title : `${UI_EMOJI.text.brand} ${title}`;
+const uiFooter = (footer: string): string => `${UI_EMOJI.text.brand} ${footer}`;
 
 export const statusMark = (isPositive: boolean, positive: string, negative: string): string =>
-  `${isPositive ? "●" : "○"} ${isPositive ? positive : negative}`;
+  `${isPositive ? UI_EMOJI.text.active : UI_EMOJI.text.inactive} ${isPositive ? positive : negative}`;
 
 export const metric = (label: string, value: string | number): string => "`" + label + "`  **" + value + "**";
 
@@ -20,7 +20,10 @@ export async function premiumEmbed(guildId: string, title: string, description?:
     .setFooter({ text: uiFooter(shop.footer), iconURL: shop.storeLogo })
     .setTimestamp();
   if (shop.thumbnail) embed.setThumbnail(shop.thumbnail);
-  if (shop.authorName || shop.authorIcon) embed.setAuthor({ name: shop.authorName || shop.storeName, iconURL: shop.authorIcon });
+  embed.setAuthor({
+    name: shop.authorName || "Realm of Gu1tarzzz  •  Premium Marketplace",
+    iconURL: shop.authorIcon || shop.storeLogo
+  });
   return embed;
 }
 
@@ -49,15 +52,14 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     statusMark(shop.status === "open", "เปิดให้บริการ", "ปิดปรับปรุง"),
     "",
     DIVIDER,
-    "**◆ ภาพรวมร้านค้า**",
-    `${metric("หมวดหมู่", formatNumber(categories.length))}  •  ${metric("สินค้า", formatNumber(products.length))}`,
-    metric("สต็อก", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock)),
+    `**${UI_EMOJI.text.section} Marketplace Essentials**`,
+    `${metric("สต็อกรวม", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}`,
     "",
-    "**◆ ช่องทางชำระเงิน**",
+    `**${UI_EMOJI.text.section} ช่องทางชำระเงิน**`,
     "PromptPay  •  TrueMoney  •  Bank Transfer",
     "",
     SMALL_DIVIDER,
-    `▸ ${features.join("  •  ")}`
+    `${UI_EMOJI.text.bullet} ${features.join("  •  ")}`
   ].join("\n");
   
   const embed = new EmbedBuilder()
@@ -70,6 +72,12 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     .setDescription(description)
     .setFooter({ text: uiFooter(shop.footer), iconURL: shop.storeLogo })
     .setTimestamp();
+  const availableProducts = products.filter((product) => product.stock !== 0).length;
+  embed.addFields(
+    { name: `${UI_EMOJI.component.category} หมวดหมู่`, value: `**${formatNumber(categories.length)}**`, inline: true },
+    { name: `${UI_EMOJI.component.product} สินค้า`, value: `**${formatNumber(products.length)}**`, inline: true },
+    { name: `${UI_EMOJI.component.catalog} พร้อมขาย`, value: `**${formatNumber(availableProducts)}**`, inline: true }
+  );
     
   // Large banner image (priority: GIF > static)
   if (shop.bannerGif) {

@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import { shopButtons } from "../components/shopComponents.js";
-import { settingsRepository } from "../database/repositories.js";
+import { categoryRepository, settingsRepository } from "../database/repositories.js";
 import { shopEmbed } from "../utils/discord.js";
 
 export const shopCommand = {
@@ -8,7 +8,8 @@ export const shopCommand = {
   async execute(interaction: import("discord.js").ChatInputCommandInteraction): Promise<void> {
     if (!interaction.guildId) return;
     const settings = await settingsRepository.get(interaction.guildId);
-    const buttonRows = shopButtons(settings.shop, false);
+    const categories = await categoryRepository.list(interaction.guildId, false);
+    const buttonRows = shopButtons(settings.shop, false, categories);
     await interaction.reply({ embeds: [await shopEmbed(interaction.guildId)], components: buttonRows });
     
     // Fetch the actual message to get correct ID and channelId

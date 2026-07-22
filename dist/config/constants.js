@@ -40,7 +40,6 @@ export const UI_EMOJI = {
 };
 // Single consistent divider style - clean line with brand markers
 export const DIVIDER = `${UI_EMOJI.text.brand}━━━━━━━━━━━━━━━━━━━━${UI_EMOJI.text.brand}`;
-export const SECTION_DIVIDER = `─────────────────────────────────────`;
 // ═══════════════════════════════════════════════════════════════
 // PREMIUM THEME - ROGT SHOPZZZ
 // Fantasy • Magic • Luxury • Dark Mode

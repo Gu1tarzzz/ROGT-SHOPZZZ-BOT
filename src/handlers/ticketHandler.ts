@@ -4,7 +4,7 @@ import { orderRepository, productRepository, settingsRepository, stockRepository
 import type { Order, OrderStatus, Product } from "../types.js";
 import { channelSlug, formatPrice } from "../utils/formatters.js";
 import { hasStaffAccess } from "../utils/permissions.js";
-import { DIVIDER, SECTION_DIVIDER, UI_EMOJI } from "../config/constants.js";
+import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 
 function paymentInstructions(settings: Awaited<ReturnType<typeof settingsRepository.get>>): string {
   const options = [
@@ -77,9 +77,10 @@ export async function createOrderTicket(interaction: ButtonInteraction, product?
   
   const embed = new EmbedBuilder()
     .setColor(settings.shop.embedColor)
-    .setTitle(product ? "✦ ORDER DESK" : "✦ SUPPORT DESK")
+    .setTitle("✦ ORDER DESK")
     .setDescription(product ? [
       `**${UI_EMOJI.text.section} คำสั่งซื้อใหม่**`,
+      "",
       `${UI_EMOJI.text.bullet} สินค้า  **${product.name}**`,
       `${UI_EMOJI.text.bullet} ราคา  **${formatPrice(product.price)}**`,
       `${UI_EMOJI.text.bullet} ลูกค้า  <@${customer.id}>`,
@@ -89,7 +90,7 @@ export async function createOrderTicket(interaction: ButtonInteraction, product?
       `**${UI_EMOJI.text.section} ชำระเงิน**`,
       paymentInstructions(settings) || "กรุณารอทีมงานแจ้งรายละเอียดการชำระเงิน",
       "",
-      SECTION_DIVIDER,
+      DIVIDER,
       `${UI_EMOJI.text.bullet} หลังชำระเงิน เลือก **ส่งสลิป** แล้วแนบหลักฐานในห้องนี้`
     ].join("\n") : [
       `**${UI_EMOJI.text.section} ยินดีต้อนรับ <@${customer.id}>**`,
@@ -218,7 +219,7 @@ export async function reviewSlip(interaction: ButtonInteraction, orderId: string
         const ticketChannel = await interaction.guild.channels.fetch(order.channelId).catch(() => null);
         if (ticketChannel?.isSendable()) {
           await ticketChannel.send({
-            content: `<@${order.customerId}> **✦ จัดส่งสินค้าแล้ว**\n${DIVIDER}\n\`\`\`${item.content}\`\`\`\n${SECTION_DIVIDER}\n${UI_EMOJI.text.bullet} หากมีปัญหา กรุณาติดต่อทีมงาน`
+            content: `<@${order.customerId}> **✦ จัดส่งสินค้าแล้ว**\n${DIVIDER}\n\`\`\`${item.content}\`\`\`\n${DIVIDER}\n${UI_EMOJI.text.bullet} หากมีปัญหา กรุณาติดต่อทีมงาน`
           });
         }
         

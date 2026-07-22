@@ -1,0 +1,873 @@
+diff --git a/dist/commands/shop.js b/dist/commands/shop.js
+index 5e80c7c..bd9ff5b 100644
+--- a/dist/commands/shop.js
++++ b/dist/commands/shop.js
+@@ -1,6 +1,6 @@
+ import { SlashCommandBuilder } from "discord.js";
+ import { shopButtons } from "../components/shopComponents.js";
+-import { settingsRepository } from "../database/repositories.js";
++import { categoryRepository, settingsRepository } from "../database/repositories.js";
+ import { shopEmbed } from "../utils/discord.js";
+ export const shopCommand = {
+     data: new SlashCommandBuilder().setName("shop").setDescription("เปิดหน้าร้านพรีเมียม ROGT SHOPZZZ"),
+@@ -8,7 +8,8 @@ export const shopCommand = {
+         if (!interaction.guildId)
+             return;
+         const settings = await settingsRepository.get(interaction.guildId);
+-        const buttonRows = shopButtons(settings.shop, false);
++        const categories = await categoryRepository.list(interaction.guildId, false);
++        const buttonRows = shopButtons(settings.shop, false, categories);
+         await interaction.reply({ embeds: [await shopEmbed(interaction.guildId)], components: buttonRows });
+         // Fetch the actual message to get correct ID and channelId
+         const message = await interaction.fetchReply();
+diff --git a/dist/components/setupComponents.js b/dist/components/setupComponents.js
+index bdd6cfb..c353901 100644
+--- a/dist/components/setupComponents.js
++++ b/dist/components/setupComponents.js
+@@ -1,6 +1,7 @@
+ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from "discord.js";
+ import { formatStock, truncate } from "../utils/formatters.js";
+ import { componentEmoji } from "../utils/componentEmoji.js";
++import { UI_EMOJI } from "../config/constants.js";
+ // ╭──────────────────────────────────────────────────────────────╮
+ // │  PREMIUM DASHBOARD COMPONENTS - ROGT SHOPZZZ                 │
+ // │  Style: Luxury • Fantasy • Minimal • Dark                    │
+@@ -9,73 +10,73 @@ import { componentEmoji } from "../utils/componentEmoji.js";
+ export function dashboardMenu() {
+     return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
+         .setCustomId("setup:section")
+-        .setPlaceholder("◆ เลือกส่วนจัดการ")
+-        .addOptions({ label: "หมวดหมู่", value: "categories", description: "สร้าง • เรียงลำดับ • แสดงผล", emoji: "📁" }, { label: "สินค้า", value: "products", description: "ราคา • สต็อก • สถานะ", emoji: "📦" }, { label: "ดีไซน์ร้าน", value: "appearance", description: "แบรนด์ • สี • ภาพ", emoji: "💎" }, { label: "การชำระเงิน", value: "payment", description: "ช่องทางและบัญชีรับเงิน", emoji: "💳" }, { label: "Ticket", value: "tickets", description: "หมวดหมู่และทีมงาน", emoji: "🎫" }, { label: "ตั้งค่าระบบ", value: "bot", description: "สิทธิ์และสถานะบอต", emoji: "⚡" }));
++        .setPlaceholder(`${UI_EMOJI.text.section} เลือกส่วนจัดการ`)
++        .addOptions({ label: "หมวดหมู่", value: "categories", description: "สร้าง • เรียงลำดับ • แสดงผล", emoji: UI_EMOJI.component.category }, { label: "สินค้า", value: "products", description: "ราคา • สต็อก • สถานะ", emoji: UI_EMOJI.component.product }, { label: "ดีไซน์ร้าน", value: "appearance", description: "แบรนด์ • สี • ภาพ", emoji: UI_EMOJI.component.gem }, { label: "การชำระเงิน", value: "payment", description: "ช่องทางและบัญชีรับเงิน", emoji: UI_EMOJI.component.payment }, { label: "Ticket", value: "tickets", description: "หมวดหมู่และทีมงาน", emoji: UI_EMOJI.component.ticket }, { label: "ตั้งค่าระบบ", value: "bot", description: "สิทธิ์และสถานะบอต", emoji: UI_EMOJI.component.settings }));
+ }
+ export function backButton() {
+-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับแดชบอร์ด").setStyle(ButtonStyle.Secondary).setEmoji("🔙"));
++    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับแดชบอร์ด").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back));
+ }
+ export function refreshButtons(publishedMessageId) {
+-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:refresh:shop").setLabel("อัปเดตหน้าร้าน").setStyle(ButtonStyle.Primary).setEmoji("🔄").setDisabled(!publishedMessageId), new ButtonBuilder().setCustomId("setup:refresh:dashboard").setLabel("รีเฟรชสรุป").setStyle(ButtonStyle.Secondary).setEmoji("📈"));
++    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:refresh:shop").setLabel("อัปเดตหน้าร้าน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.refresh).setDisabled(!publishedMessageId), new ButtonBuilder().setCustomId("setup:refresh:dashboard").setLabel("รีเฟรชสรุป").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.analytics));
+ }
+ export function categoryButtons() {
+-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("category:create").setLabel("สร้าง").setStyle(ButtonStyle.Success).setEmoji("📂"), new ButtonBuilder().setCustomId("category:edit:pick").setLabel("แก้ไข").setStyle(ButtonStyle.Primary).setEmoji("📝"), new ButtonBuilder().setCustomId("category:visibility:pick").setLabel("แสดงผล").setStyle(ButtonStyle.Secondary).setEmoji("⭐"), new ButtonBuilder().setCustomId("category:sort:pick").setLabel("เรียงลำดับ").setStyle(ButtonStyle.Secondary).setEmoji("📈"), new ButtonBuilder().setCustomId("category:delete:pick").setLabel("ลบ").setStyle(ButtonStyle.Danger).setEmoji("🗑️"));
++    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("category:create").setLabel("สร้าง").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.categories), new ButtonBuilder().setCustomId("category:edit:pick").setLabel("แก้ไข").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.edit), new ButtonBuilder().setCustomId("category:visibility:pick").setLabel("แสดงผล").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.star), new ButtonBuilder().setCustomId("category:sort:pick").setLabel("เรียงลำดับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.analytics), new ButtonBuilder().setCustomId("category:delete:pick").setLabel("ลบ").setStyle(ButtonStyle.Danger).setEmoji(UI_EMOJI.component.remove));
+ }
+ export function categoryManagerMenu(categories, mode) {
+-    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId(`category:pick:${mode}`).setPlaceholder("📁 เลือกหมวดหมู่").addOptions(categories.slice(0, 25).map((category) => ({
++    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId(`category:pick:${mode}`).setPlaceholder(`${UI_EMOJI.component.category} เลือกหมวดหมู่`).addOptions(categories.slice(0, 25).map((category) => ({
+         label: truncate(category.name, 100), value: category.id,
+-        description: truncate(`${category.hidden ? "○ ซ่อน" : "● แสดง"}  •  ลำดับ ${category.position}`, 100),
+-        emoji: componentEmoji(category.emoji, "📁")
++        description: truncate(`${category.hidden ? `${UI_EMOJI.text.inactive} ซ่อน` : `${UI_EMOJI.text.active} แสดง`}  •  ลำดับ ${category.position}`, 100),
++        emoji: componentEmoji(category.emoji, UI_EMOJI.component.category)
+     }))));
+ }
+ export function categorySortButtons(categoryId) {
+-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`category:move:${categoryId}:up`).setLabel("เลื่อนขึ้น").setStyle(ButtonStyle.Primary).setEmoji("📈"), new ButtonBuilder().setCustomId(`category:move:${categoryId}:down`).setLabel("เลื่อนลง").setStyle(ButtonStyle.Primary).setEmoji("📉"));
++    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`category:move:${categoryId}:up`).setLabel("เลื่อนขึ้น").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.analytics), new ButtonBuilder().setCustomId(`category:move:${categoryId}:down`).setLabel("เลื่อนลง").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.decrease));
+ }
+ export function productButtons() {
+-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("product:create:pick").setLabel("เพิ่มสินค้า").setStyle(ButtonStyle.Success).setEmoji("📦"), new ButtonBuilder().setCustomId("product:edit:pick").setLabel("แก้ไข").setStyle(ButtonStyle.Primary).setEmoji("📝"), new ButtonBuilder().setCustomId("product:visibility:pick").setLabel("แสดงผล").setStyle(ButtonStyle.Secondary).setEmoji("⭐"), new ButtonBuilder().setCustomId("product:delete:pick").setLabel("ลบ").setStyle(ButtonStyle.Danger).setEmoji("🗑️"));
++    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("product:create:pick").setLabel("เพิ่มสินค้า").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.product), new ButtonBuilder().setCustomId("product:edit:pick").setLabel("แก้ไข").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.edit), new ButtonBuilder().setCustomId("product:visibility:pick").setLabel("แสดงผล").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.star), new ButtonBuilder().setCustomId("product:delete:pick").setLabel("ลบ").setStyle(ButtonStyle.Danger).setEmoji(UI_EMOJI.component.remove));
+ }
+ export function productManagerMenu(products, mode) {
+-    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId(`product:pick:${mode}`).setPlaceholder("📦 เลือกสินค้า").addOptions(products.slice(0, 25).map((product) => ({
++    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId(`product:pick:${mode}`).setPlaceholder(`${UI_EMOJI.component.product} เลือกสินค้า`).addOptions(products.slice(0, 25).map((product) => ({
+         label: truncate(product.name, 100), value: product.id,
+-        description: truncate(`${product.hidden ? "○ ซ่อน" : product.status === "active" ? "● พร้อมขาย" : "○ ปิดขาย"}  •  ${formatStock(product.stock)}`, 100),
+-        emoji: componentEmoji(product.emoji, "📦")
++        description: truncate(`${product.hidden ? `${UI_EMOJI.text.inactive} ซ่อน` : product.status === "active" ? `${UI_EMOJI.text.active} พร้อมขาย` : `${UI_EMOJI.text.inactive} ปิดขาย`}  •  ${formatStock(product.stock)}`, 100),
++        emoji: componentEmoji(product.emoji, UI_EMOJI.component.product)
+     }))));
+ }
+ export function productCategoryMenu(categories) {
+-    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId("product:pick:create").setPlaceholder("📁 เลือกหมวดหมู่").addOptions(categories.slice(0, 25).map((category) => ({ label: truncate(category.name, 100), value: category.id, emoji: componentEmoji(category.emoji, "📁") }))));
++    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId("product:pick:create").setPlaceholder(`${UI_EMOJI.component.category} เลือกหมวดหมู่`).addOptions(categories.slice(0, 25).map((category) => ({ label: truncate(category.name, 100), value: category.id, emoji: componentEmoji(category.emoji, UI_EMOJI.component.category) }))));
+ }
+ export function sectionButtons(section) {
+     const map = {
+         appearance: [
+-            { label: "ข้อมูลร้าน", id: "basic", emoji: "📝" },
+-            { label: "รูปภาพ", id: "images", emoji: "🖼️" },
+-            { label: "แบรนด์", id: "branding", emoji: "💎" }
++            { label: "ข้อมูลร้าน", id: "basic", emoji: UI_EMOJI.component.edit },
++            { label: "รูปภาพ", id: "images", emoji: UI_EMOJI.component.image },
++            { label: "แบรนด์", id: "branding", emoji: UI_EMOJI.component.gem }
+         ],
+-        payment: [{ label: "การชำระเงิน", id: "payment", emoji: "💳" }],
++        payment: [{ label: "การชำระเงิน", id: "payment", emoji: UI_EMOJI.component.payment }],
+         tickets: [
+-            { label: "หมวดหมู่", id: "ticket-categories", emoji: "📂" },
+-            { label: "ทีมงาน", id: "ticket-staff", emoji: "👑" }
++            { label: "หมวดหมู่", id: "ticket-categories", emoji: UI_EMOJI.component.categories },
++            { label: "ทีมงาน", id: "ticket-staff", emoji: UI_EMOJI.component.owner }
+         ],
+-        bot: [{ label: "ตั้งค่าบอต", id: "bot", emoji: "⚡" }]
++        bot: [{ label: "ตั้งค่าบอต", id: "bot", emoji: UI_EMOJI.component.settings }]
+     };
+     const options = map[section];
+     const row = new ActionRowBuilder();
+     for (const opt of options) {
+         row.addComponents(new ButtonBuilder().setCustomId(`setup:modal:${section}:${opt.id}`).setLabel(opt.label).setStyle(ButtonStyle.Primary).setEmoji(opt.emoji));
+     }
+-    return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji("🔙"));
++    return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back));
+ }
+ export function stockManagerButtons() {
+-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("stock:view:all").setLabel("ดูสต็อก").setStyle(ButtonStyle.Primary).setEmoji("📦"), new ButtonBuilder().setCustomId("stock:alerts").setLabel("แจ้งเตือน").setStyle(ButtonStyle.Danger).setEmoji("🔥"), new ButtonBuilder().setCustomId("stock:restock").setLabel("เติมสต็อก").setStyle(ButtonStyle.Success).setEmoji("📦"));
++    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("stock:view:all").setLabel("ดูสต็อก").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.product), new ButtonBuilder().setCustomId("stock:alerts").setLabel("แจ้งเตือน").setStyle(ButtonStyle.Danger).setEmoji(UI_EMOJI.component.alert), new ButtonBuilder().setCustomId("stock:restock").setLabel("เติมสต็อก").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.product));
+ }
+ export function stockActionButtons(productId) {
+-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`stock:add:${productId}`).setLabel("เพิ่ม").setStyle(ButtonStyle.Success).setEmoji("📦"), new ButtonBuilder().setCustomId(`stock:remove:${productId}`).setLabel("ตัดออก").setStyle(ButtonStyle.Danger).setEmoji("🗑️"), new ButtonBuilder().setCustomId(`stock:history:${productId}`).setLabel("ประวัติ").setStyle(ButtonStyle.Secondary).setEmoji("📊"));
++    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`stock:add:${productId}`).setLabel("เพิ่ม").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.product), new ButtonBuilder().setCustomId(`stock:remove:${productId}`).setLabel("ตัดออก").setStyle(ButtonStyle.Danger).setEmoji(UI_EMOJI.component.remove), new ButtonBuilder().setCustomId(`stock:history:${productId}`).setLabel("ประวัติ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.analytics));
+ }
+ export function stockHistoryMenu(transactions) {
+-    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId("stock:history:view").setPlaceholder("📊 ดูรายการเคลื่อนไหว").addOptions(transactions.slice(0, 25).map((t) => ({
++    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId("stock:history:view").setPlaceholder(`${UI_EMOJI.component.analytics} ดูรายการเคลื่อนไหว`).addOptions(transactions.slice(0, 25).map((t) => ({
+         label: `${t.type} ${t.quantity > 0 ? "+" : ""}${t.quantity}`,
+         value: t.id,
+         description: `${t.previousStock} → ${t.newStock}  •  <@${t.performedBy}>`,
+-        emoji: t.type === "purchase" ? "🛒" : t.type === "restock" ? "📦" : "📝"
++        emoji: t.type === "purchase" ? UI_EMOJI.component.browse : t.type === "restock" ? UI_EMOJI.component.product : UI_EMOJI.component.edit
+     }))));
+ }
+diff --git a/dist/components/shopComponents.js b/dist/components/shopComponents.js
+index 579afb0..295b08a 100644
+--- a/dist/components/shopComponents.js
++++ b/dist/components/shopComponents.js
+@@ -1,5 +1,5 @@
+ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from "discord.js";
+-import { BUTTON_STYLES } from "../config/constants.js";
++import { BUTTON_STYLES, UI_EMOJI } from "../config/constants.js";
+ import { formatPrice, formatStock, truncate } from "../utils/formatters.js";
+ import { componentEmoji } from "../utils/componentEmoji.js";
+ // ╭──────────────────────────────────────────────────────────────╮
+@@ -7,42 +7,68 @@ import { componentEmoji } from "../utils/componentEmoji.js";
+ // │  Style: Luxury • Fantasy • Minimal • Dark                   │
+ // │  Reference: Dapex Boost, Mickey Boost, Steam Store          │
+ // ╰──────────────────────────────────────────────────────────────╯
+-export function shopButtons(shop, allowRefresh = false) {
++export function shopButtons(shop, allowRefresh = false, categories = []) {
+     const rows = [];
+-    const mainRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("shop:browse").setLabel("เลือกชม").setStyle(ButtonStyle.Primary).setEmoji("🛒"), new ButtonBuilder().setCustomId("shop:order").setLabel("สั่งซื้อ").setStyle(ButtonStyle.Success).setEmoji("📦"), new ButtonBuilder().setCustomId("shop:support").setLabel("ช่วยเหลือ").setStyle(ButtonStyle.Secondary).setEmoji("💬"), new ButtonBuilder().setCustomId("shop:info").setLabel("ข้อมูลร้าน").setStyle(ButtonStyle.Secondary).setEmoji("⭐"));
+-    rows.push(mainRow);
++    // Single catalog select menu row
++    if (categories.length)
++        rows.push(catalogMenu(categories));
++    // Only TWO action buttons: Top Up Credit and Check Credit
++    const actionRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("shop:topup").setLabel("เติมเครดิต").setStyle(ButtonStyle.Primary).setEmoji("🪙"), new ButtonBuilder().setCustomId("shop:credit").setLabel("ตรวจสอบเครดิต").setStyle(ButtonStyle.Secondary).setEmoji("🍎"));
++    rows.push(actionRow);
+     return rows;
+ }
++/**
++ * Unified catalog menu for browsing all products by category
++ */
++export function catalogMenu(categories, customId = "shop:catalog") {
++    const options = categories.slice(0, 25).map((category) => ({
++        label: truncate(category.name, 100),
++        value: `cat:${category.id}`,
++        description: truncate(category.description || "เลือกเพื่อดูสินค้า", 100),
++        emoji: componentEmoji(category.emoji, UI_EMOJI.component.category)
++    }));
++    // Add an "All Products" option at the top
++    options.unshift({
++        label: "สินค้าทั้งหมด",
++        value: "cat:all",
++        description: "ดูสินค้าทุกหมวดหมู่",
++        emoji: { id: null, name: UI_EMOJI.component.catalog }
++    });
++    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
++        .setCustomId(customId)
++        .setPlaceholder(`${UI_EMOJI.component.catalog} เลือกหมวดหมู่สินค้า`)
++        .addOptions(options));
++}
+ export function shopAdminButtons(hasLiveShop = false) {
+-    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("shop:preview").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Primary).setEmoji("🛍️"), new ButtonBuilder().setCustomId("shop:publish").setLabel("เผยแพร่").setStyle(ButtonStyle.Success).setEmoji("⭐"), new ButtonBuilder().setCustomId("shop:appearance").setLabel("ดีไซน์ร้าน").setStyle(ButtonStyle.Secondary).setEmoji("💎"));
++    return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("shop:preview").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.catalog), new ButtonBuilder().setCustomId("shop:publish").setLabel("เผยแพร่").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.star), new ButtonBuilder().setCustomId("shop:appearance").setLabel("ดีไซน์ร้าน").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.gem));
+ }
+ export function categoryMenu(categories, customId = "shop:category") {
+     const options = categories.slice(0, 25).map((category) => ({
+         label: truncate(category.name, 100),
+         value: category.id,
+         description: truncate(category.description || "เลือกเพื่อดูสินค้า", 100),
+-        emoji: componentEmoji(category.emoji, "📁")
++        emoji: componentEmoji(category.emoji, UI_EMOJI.component.category)
+     }));
+     return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
+         .setCustomId(customId)
+-        .setPlaceholder("📁 เลือกหมวดหมู่")
++        .setPlaceholder(`${UI_EMOJI.component.category} เลือกหมวดหมู่สินค้า`)
+         .addOptions(options));
+ }
+ export function productMenu(products, customId = "shop:product") {
+     return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
+         .setCustomId(customId)
+-        .setPlaceholder("📦 เลือกสินค้า")
++        .setPlaceholder(`${UI_EMOJI.component.product} เลือกสินค้า`)
+         .addOptions(products.slice(0, 25).map((product) => {
+         const stockStatus = product.stock < 0
+-            ? "● พร้อมจำหน่าย"
++            ? `${UI_EMOJI.text.active} พร้อมจำหน่าย`
+             : product.stock > 0
+-                ? `● คงเหลือ ${formatStock(product.stock)}`
+-                : "○ สินค้าหมด";
++                ? `${UI_EMOJI.text.active} คงเหลือ ${formatStock(product.stock)}`
++                : `${UI_EMOJI.text.inactive} สินค้าหมด`;
+         return {
+             label: truncate(product.name, 100),
+             value: product.id,
+             description: truncate(`${formatPrice(product.price)} • ${stockStatus}`, 100),
+-            emoji: componentEmoji(product.emoji, "📦")
++            emoji: componentEmoji(product.emoji, UI_EMOJI.component.product)
+         };
+     })));
+ }
+@@ -51,5 +77,5 @@ export function productOrderButton(product) {
+         .setCustomId(`order:create:${product.id}`)
+         .setLabel("ยืนยันคำสั่งซื้อ")
+         .setStyle(BUTTON_STYLES[product.buttonColor])
+-        .setEmoji("🛒"));
++        .setEmoji(UI_EMOJI.component.browse));
+ }
+diff --git a/dist/config/constants.js b/dist/config/constants.js
+index 168b81e..1e3213f 100644
+--- a/dist/config/constants.js
++++ b/dist/config/constants.js
+@@ -1,7 +1,45 @@
+ import { ButtonStyle } from "discord.js";
+ export const BRAND = "ROGT SHOPZZZ";
+-export const DIVIDER = "✦━━━━━━━━━━━━━━━━━━━━✦";
+-export const SMALL_DIVIDER = "◆────────────◆";
++/** Shared visual language. `text` symbols stay inside embeds; `component`
++ * values are valid Unicode emoji intended for buttons and select menus. */
++export const UI_EMOJI = {
++    text: {
++        brand: "✦",
++        section: "◆",
++        bullet: "▸",
++        active: "●",
++        inactive: "○",
++        success: "✔"
++    },
++    component: {
++        browse: "🛒",
++        product: "📦",
++        catalog: "🛍️",
++        payment: "💳",
++        bank: "🏦",
++        category: "📁",
++        categories: "📂",
++        analytics: "📈",
++        history: "📜",
++        ticket: "🎫",
++        support: "💬",
++        star: "⭐",
++        refresh: "🔄",
++        gem: "💎",
++        settings: "⚙️",
++        back: "🔙",
++        image: "🖼️",
++        edit: "📝",
++        remove: "🗑️",
++        owner: "👑",
++        alert: "🔥",
++        approve: "✅",
++        reject: "❌",
++        decrease: "📉"
++    }
++};
++export const DIVIDER = `${UI_EMOJI.text.brand}━━━━━━━━━━━━━━━━━━━━${UI_EMOJI.text.brand}`;
++export const SMALL_DIVIDER = `${UI_EMOJI.text.section}────────────${UI_EMOJI.text.section}`;
+ // ═══════════════════════════════════════════════════════════════
+ // PREMIUM THEME - ROGT SHOPZZZ
+ // Fantasy • Magic • Luxury • Dark Mode
+diff --git a/dist/handlers/buttonHandler.js b/dist/handlers/buttonHandler.js
+index d758942..6b033cc 100644
+--- a/dist/handlers/buttonHandler.js
++++ b/dist/handlers/buttonHandler.js
+@@ -1,6 +1,6 @@
+ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, DiscordAPIError } from "discord.js";
+ import { categoryManagerMenu, categorySortButtons, productCategoryMenu, productManagerMenu, stockActionButtons } from "../components/setupComponents.js";
+-import { categoryMenu, shopButtons } from "../components/shopComponents.js";
++import { shopButtons } from "../components/shopComponents.js";
+ import { categoryRepository, productRepository, settingsRepository, stockRepository } from "../database/repositories.js";
+ import { openCategoryModal, openModal, openProductModal } from "./modalHandler.js";
+ import { showDashboard } from "./setupHandler.js";
+@@ -23,28 +23,24 @@ export async function handleButton(interaction) {
+         return;
+     const [scope, action, id, extra] = interaction.customId.split(":");
+     if (scope === "shop") {
+-        if (action === "browse" || action === "order") {
+-            const categories = await categoryRepository.list(interaction.guildId, false);
+-            if (!categories.length)
+-                return interaction.reply({ content: "○ ร้านค้ายังไม่มีหมวดหมู่สินค้า", ephemeral: true });
+-            const embed = await premiumEmbed(interaction.guildId, action === "order" ? "CREATE ORDER" : "PRODUCT CATALOG", [
+-                action === "order" ? "*เริ่มคำสั่งซื้อด้วยการเลือกหมวดหมู่สินค้า*" : "*เลือกหมวดหมู่เพื่อดูสินค้าที่พร้อมจำหน่าย*",
++        // Handle topup and credit button interactions
++        if (action === "topup") {
++            const embed = await premiumEmbed(interaction.guildId, "TOP UP CREDIT", [
++                "*เติมเครดิตเพื่อซื้อสินค้า*",
+                 "",
+                 DIVIDER,
+-                "▸ เลือกหมวดหมู่จากเมนูด้านล่าง"
++                "▸ ติดต่อทีมงานเพื่อเติมเครดิต",
++                "▸ หรือใช้คำสั่งซื้อเพื่อชำระเงิน"
+             ].join("\n"));
+-            return interaction.reply({ embeds: [embed], components: [categoryMenu(categories)], ephemeral: true });
++            return interaction.reply({ embeds: [embed], ephemeral: true });
+         }
+-        if (action === "support")
+-            return createOrderTicket(interaction);
+-        if (action === "info") {
+-            const embed = await premiumEmbed(interaction.guildId, "STORE INFORMATION", [
+-                "**◆ ROGT SHOPZZZ**",
+-                "*Realm of Gu1tarzzz • Premium Marketplace*",
++        if (action === "credit") {
++            const embed = await premiumEmbed(interaction.guildId, "CHECK CREDIT", [
++                "*ตรวจสอบยอดเครดิตของคุณ*",
+                 "",
+                 DIVIDER,
+-                "▸ สินค้าดูแลโดยทีมงาน",
+-                "▸ ต้องการความช่วยเหลือ เลือกปุ่ม ช่วยเหลือ"
++                "▸ ระบบเครดิตกำลังพัฒนา",
++                "▸ ติดต่อทีมงานสำหรับข้อมูลเพิ่มเติม"
+             ].join("\n"));
+             return interaction.reply({ embeds: [embed], ephemeral: true });
+         }
+@@ -160,7 +156,8 @@ async function refreshShopMessage(interaction) {
+         }
+         const message = await channel.messages.fetch(publishedMessageId);
+         console.log("DEBUG message fetch:", message.id);
+-        const buttonRows = shopButtons(settings.shop, false);
++        const categories = await categoryRepository.list(interaction.guildId, false);
++        const buttonRows = shopButtons(settings.shop, false, categories);
+         await message.edit({ embeds: [await shopEmbed(interaction.guildId)], components: buttonRows });
+         await interaction.reply({ content: "✔ อัปเดตหน้าร้านแล้ว", ephemeral: true });
+     }
+diff --git a/dist/handlers/selectMenuHandler.js b/dist/handlers/selectMenuHandler.js
+index d2ce5bc..6e53c02 100644
+--- a/dist/handlers/selectMenuHandler.js
++++ b/dist/handlers/selectMenuHandler.js
+@@ -20,9 +20,25 @@ export async function handleSelectMenu(interaction) {
+         return;
+     const [scope, action, extra] = interaction.customId.split(":");
+     if (scope === "shop") {
+-        if (action === "category") {
+-            const category = await categoryRepository.find(interaction.values[0]);
+-            const products = (await productRepository.list(interaction.guildId, false)).filter((product) => product.categoryId === category?.id && (product.stock !== 0));
++        if (action === "catalog") {
++            const value = interaction.values[0];
++            // Handle "All Products" or specific category
++            if (value === "cat:all") {
++                const allProducts = (await productRepository.list(interaction.guildId, false)).filter((product) => product.stock !== 0);
++                if (!allProducts.length)
++                    return interaction.update({ content: "○ ยังไม่มีสินค้าที่พร้อมจำหน่าย", components: [] });
++                const embed = await premiumEmbed(interaction.guildId, "ALL PRODUCTS", [
++                    "*สินค้าทั้งหมดที่พร้อมจำหน่าย*",
++                    "",
++                    DIVIDER,
++                    "▸ เลือกสินค้าที่ต้องการจากเมนูด้านล่าง"
++                ].join("\n"));
++                return interaction.update({ embeds: [embed], components: [productMenu(allProducts)] });
++            }
++            // Handle specific category (cat:{categoryId})
++            const categoryId = value.replace("cat:", "");
++            const category = await categoryRepository.find(categoryId);
++            const products = (await productRepository.list(interaction.guildId, false)).filter((product) => product.categoryId === categoryId && (product.stock !== 0));
+             if (!products.length)
+                 return interaction.update({ content: "○ หมวดหมู่นี้ยังไม่มีสินค้าที่พร้อมจำหน่าย", components: [] });
+             const embed = await premiumEmbed(interaction.guildId, category?.name ?? "PRODUCTS", [
+@@ -49,6 +65,27 @@ export async function handleSelectMenu(interaction) {
+                 embed.setImage(product.imageUrl);
+             return interaction.update({ embeds: [embed], components: [productOrderButton(product)] });
+         }
++        // Handle topup and credit buttons
++        if (action === "topup") {
++            const embed = await premiumEmbed(interaction.guildId, "TOP UP CREDIT", [
++                "*เติมเครดิตเพื่อซื้อสินค้า*",
++                "",
++                DIVIDER,
++                "▸ ติดต่อทีมงานเพื่อเติมเครดิต",
++                "▸ หรือใช้คำสั่งซื้อเพื่อชำระเงิน"
++            ].join("\n"));
++            return interaction.reply({ embeds: [embed], ephemeral: true });
++        }
++        if (action === "credit") {
++            const embed = await premiumEmbed(interaction.guildId, "CHECK CREDIT", [
++                "*ตรวจสอบยอดเครดิตของคุณ*",
++                "",
++                DIVIDER,
++                "▸ ระบบเครดิตกำลังพัฒนา",
++                "▸ ติดต่อทีมงานสำหรับข้อมูลเพิ่มเติม"
++            ].join("\n"));
++            return interaction.reply({ embeds: [embed], ephemeral: true });
++        }
+     }
+     if (!(await admin(interaction)))
+         return;
+diff --git a/dist/handlers/setupHandler.js b/dist/handlers/setupHandler.js
+index b5bb6a0..096eafe 100644
+--- a/dist/handlers/setupHandler.js
++++ b/dist/handlers/setupHandler.js
+@@ -2,7 +2,7 @@ import { categoryRepository, productRepository, settingsRepository } from "../da
+ import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons } from "../components/setupComponents.js";
+ import { metric, premiumEmbed, statusMark } from "../utils/discord.js";
+ import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
+-import { SMALL_DIVIDER, DIVIDER } from "../config/constants.js";
++import { SMALL_DIVIDER, DIVIDER, UI_EMOJI } from "../config/constants.js";
+ export async function showDashboard(interaction) {
+     if (!interaction.guildId)
+         return;
+@@ -20,25 +20,34 @@ export async function showDashboard(interaction) {
+     const paymentStatus = statusMark(settings.payment.enabled, "พร้อมรับชำระ", "ยังไม่เปิด");
+     const ticketStatus = statusMark(Boolean(settings.tickets.categoryId), "พร้อมใช้งาน", "ต้องตั้งค่า");
+     const publishStatus = statusMark(Boolean(settings.shop.publishedMessageId), "เผยแพร่แล้ว", "ยังไม่เผยแพร่");
+-    const lines = [
+-        `**◆ ${settings.shop.storeName}**`,
++    // Premium metric cards layout
++    const description = [
++        `**${UI_EMOJI.text.brand} ${settings.shop.storeName}**`,
+         statusMark(settings.shop.status === "open", "เปิดให้บริการ", "ปิดปรับปรุง"),
+         "",
+         DIVIDER,
+-        "**◆ ภาพรวม Marketplace**",
+-        `${metric("หมวดหมู่", formatNumber(categories.length))}  •  ${metric("สินค้า", formatNumber(products.length))}`,
+-        metric("สต็อก", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock)),
+         "",
+-        "**◆ สถานะระบบ**",
+-        `💳 ชำระเงิน  ${paymentStatus}`,
+-        `◆ Ticket  ${ticketStatus}`,
+-        `🛒 หน้าร้าน  ${publishStatus}`
+-    ];
+-    if (settings.shop.publishedChannelId && settings.shop.publishedMessageId) {
+-        lines.push(`▸ เผยแพร่ใน <#${settings.shop.publishedChannelId}>`);
+-    }
+-    lines.push("", SMALL_DIVIDER, `▸ อัปเดต <t:${timestamp}:R>  •  เลือกส่วนจัดการด้านล่าง`);
+-    const description = lines.join("\n");
++        "**◆ Marketplace Metrics**",
++        "",
++        `┌─────────────────────────────────────`,
++        `│  ${metric("หมวดหมู่", formatNumber(categories.length))}  │  ${metric("สินค้า", formatNumber(products.length))}`,
++        `├─────────────────────────────────────`,
++        `│  ${metric("สต็อกรวม", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}  │  ${metric("สถานะ", settings.shop.status === "open" ? "🟢 เปิด" : "🔴 ปิด")}`,
++        `└─────────────────────────────────────`,
++        "",
++        "**◆ System Status**",
++        "",
++        `${UI_EMOJI.component.payment}  **ชำระเงิน**  ${paymentStatus}`,
++        `${UI_EMOJI.component.ticket}  **Ticket**  ${ticketStatus}`,
++        `${UI_EMOJI.component.catalog}  **หน้าร้าน**  ${publishStatus}`,
++        "",
++        settings.shop.publishedChannelId && settings.shop.publishedMessageId
++            ? `▸ เผยแพร่ใน <#${settings.shop.publishedChannelId}>`
++            : "",
++        "",
++        SMALL_DIVIDER,
++        `▸ อัปเดต <t:${timestamp}:R>  •  เลือกส่วนจัดการด้านล่าง`
++    ].filter(line => line !== "").join("\n");
+     const baseEmbed = await premiumEmbed(interaction.guildId, "ROGT COMMAND CENTER", description);
+     const components = [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
+     const payload = { embeds: [baseEmbed], components };
+diff --git a/dist/utils/discord.js b/dist/utils/discord.js
+index 79f3b8e..980d85f 100644
+--- a/dist/utils/discord.js
++++ b/dist/utils/discord.js
+@@ -1,10 +1,10 @@
+ import { EmbedBuilder } from "discord.js";
+-import { DIVIDER, SMALL_DIVIDER } from "../config/constants.js";
++import { DIVIDER, SMALL_DIVIDER, UI_EMOJI } from "../config/constants.js";
+ import { settingsRepository, categoryRepository, productRepository } from "../database/repositories.js";
+ import { truncate, formatNumber } from "./formatters.js";
+-const uiTitle = (title) => title.startsWith("✦") ? title : `✦ ${title}`;
+-const uiFooter = (footer) => `✦ ${footer}`;
+-export const statusMark = (isPositive, positive, negative) => `${isPositive ? "●" : "○"} ${isPositive ? positive : negative}`;
++const uiTitle = (title) => title.startsWith(UI_EMOJI.text.brand) ? title : `${UI_EMOJI.text.brand} ${title}`;
++const uiFooter = (footer) => `${UI_EMOJI.text.brand} ${footer}`;
++export const statusMark = (isPositive, positive, negative) => `${isPositive ? UI_EMOJI.text.active : UI_EMOJI.text.inactive} ${isPositive ? positive : negative}`;
+ export const metric = (label, value) => "`" + label + "`  **" + value + "**";
+ export async function premiumEmbed(guildId, title, description) {
+     const { shop } = await settingsRepository.get(guildId);
+@@ -16,8 +16,10 @@ export async function premiumEmbed(guildId, title, description) {
+         .setTimestamp();
+     if (shop.thumbnail)
+         embed.setThumbnail(shop.thumbnail);
+-    if (shop.authorName || shop.authorIcon)
+-        embed.setAuthor({ name: shop.authorName || shop.storeName, iconURL: shop.authorIcon });
++    embed.setAuthor({
++        name: shop.authorName || "Realm of Gu1tarzzz  •  Premium Marketplace",
++        iconURL: shop.authorIcon || shop.storeLogo
++    });
+     return embed;
+ }
+ export async function shopEmbed(guildId, showAdminControls = false) {
+@@ -37,21 +39,30 @@ export async function shopEmbed(guildId, showAdminControls = false) {
+     const features = shop.marketplaceFeatures?.length
+         ? shop.marketplaceFeatures.slice(0, 4)
+         : ["จัดส่งรวดเร็ว", "ชำระเงินปลอดภัย", "ดูแลโดยทีมงาน"];
++    const availableProducts = products.filter((product) => product.stock !== 0).length;
++    // Premium storefront layout with hero, stats, and info
+     const description = [
++        `**${UI_EMOJI.text.brand} ${shop.storeName}**`,
+         `*${shop.description || "Premium marketplace of Realm of Gu1tarzzz"}*`,
+         "",
+         statusMark(shop.status === "open", "เปิดให้บริการ", "ปิดปรับปรุง"),
+         "",
+         DIVIDER,
+-        "**◆ ภาพรวมร้านค้า**",
+-        `${metric("หมวดหมู่", formatNumber(categories.length))}  •  ${metric("สินค้า", formatNumber(products.length))}`,
+-        metric("สต็อก", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock)),
+         "",
+-        "**◆ ช่องทางชำระเงิน**",
+-        "PromptPay  •  TrueMoney  •  Bank Transfer",
++        "**◆ Store Statistics**",
++        "",
++        `┌──────────────┬──────────────┬──────────────┬──────────────`,
++        `│  ${metric("สินค้า", formatNumber(products.length))}  │  ${metric("หมวดหมู่", formatNumber(categories.length))}  │  ${metric("พร้อมขาย", formatNumber(availableProducts))}  │  ${metric("สต็อก", totalStock < 0 ? "∞" : formatNumber(totalStock))}`,
++        `└──────────────┴──────────────┴──────────────┴──────────────`,
++        "",
++        "**◆ Payment Methods**",
++        "💳 PromptPay  •  TrueMoney  •  Bank Transfer",
++        "",
++        "**◆ Store Features**",
++        `${UI_EMOJI.text.bullet} ${features.join("  •  ")}`,
+         "",
+         SMALL_DIVIDER,
+-        `▸ ${features.join("  •  ")}`
++        "▸ เลือกหมวดหมู่จากเมนูด้านล่างเพื่อดูสินค้า"
+     ].join("\n");
+     const embed = new EmbedBuilder()
+         .setColor(shop.embedColor)
+diff --git a/src/components/shopComponents.ts b/src/components/shopComponents.ts
+index 38c205c..19bcfb3 100644
+--- a/src/components/shopComponents.ts
++++ b/src/components/shopComponents.ts
+@@ -10,21 +10,49 @@ import { componentEmoji } from "../utils/componentEmoji.js";
+ // │  Reference: Dapex Boost, Mickey Boost, Steam Store          │
+ // ╰──────────────────────────────────────────────────────────────╯
+ 
+-export function shopButtons(shop: ShopSettings, allowRefresh = false, categories: Category[] = []): ActionRowBuilder<ButtonBuilder>[] {
+-  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+-  if (categories.length) rows.push(categoryMenu(categories));
++export function shopButtons(shop: ShopSettings, allowRefresh = false, categories: Category[] = []): (ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>)[] {
++  const rows: (ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>)[] = [];
+   
+-  const mainRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+-    new ButtonBuilder().setCustomId("shop:browse").setLabel("แคตตาล็อก").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.browse),
+-    new ButtonBuilder().setCustomId("shop:order").setLabel("สร้างคำสั่งซื้อ").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.product),
+-    new ButtonBuilder().setCustomId("shop:support").setLabel("ช่วยเหลือ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.support),
+-    new ButtonBuilder().setCustomId("shop:info").setLabel("ข้อมูลร้าน").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.star)
++  // Single catalog select menu row
++  if (categories.length) rows.push(catalogMenu(categories));
++  
++  // Only TWO action buttons: Top Up Credit and Check Credit
++  const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
++    new ButtonBuilder().setCustomId("shop:topup").setLabel("เติมเครดิต").setStyle(ButtonStyle.Primary).setEmoji("🪙"),
++    new ButtonBuilder().setCustomId("shop:credit").setLabel("ตรวจสอบเครดิต").setStyle(ButtonStyle.Secondary).setEmoji("🍎")
+   );
+-  rows.push(mainRow);
++  rows.push(actionRow);
+   
+   return rows;
+ }
+ 
++/**
++ * Unified catalog menu for browsing all products by category
++ */
++export function catalogMenu(categories: Category[], customId = "shop:catalog"): ActionRowBuilder<StringSelectMenuBuilder> {
++  const options: APISelectMenuOption[] = categories.slice(0, 25).map((category) => ({
++    label: truncate(category.name, 100), 
++    value: `cat:${category.id}`, 
++    description: truncate(category.description || "เลือกเพื่อดูสินค้า", 100),
++    emoji: componentEmoji(category.emoji, UI_EMOJI.component.category)
++  }));
++  
++  // Add an "All Products" option at the top
++  options.unshift({
++    label: "สินค้าทั้งหมด",
++    value: "cat:all",
++    description: "ดูสินค้าทุกหมวดหมู่",
++    emoji: { id: null, name: UI_EMOJI.component.catalog } as never
++  });
++  
++  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
++    new StringSelectMenuBuilder()
++      .setCustomId(customId)
++      .setPlaceholder(`${UI_EMOJI.component.catalog} เลือกหมวดหมู่สินค้า`)
++      .addOptions(options)
++  );
++}
++
+ export function shopAdminButtons(hasLiveShop: boolean = false): ActionRowBuilder<ButtonBuilder> {
+   return new ActionRowBuilder<ButtonBuilder>().addComponents(
+     new ButtonBuilder().setCustomId("shop:preview").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.catalog),
+diff --git a/src/handlers/buttonHandler.ts b/src/handlers/buttonHandler.ts
+index f3807e7..90854a3 100644
+--- a/src/handlers/buttonHandler.ts
++++ b/src/handlers/buttonHandler.ts
+@@ -1,6 +1,6 @@
+ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type ButtonInteraction, DiscordAPIError } from "discord.js";
+ import { categoryManagerMenu, categorySortButtons, productCategoryMenu, productManagerMenu, stockActionButtons } from "../components/setupComponents.js";
+-import { categoryMenu, shopButtons } from "../components/shopComponents.js";
++import { shopButtons } from "../components/shopComponents.js";
+ import { categoryRepository, productRepository, settingsRepository, stockRepository } from "../database/repositories.js";
+ import { openCategoryModal, openModal, openProductModal } from "./modalHandler.js";
+ import { showDashboard } from "./setupHandler.js";
+@@ -21,27 +21,26 @@ async function assertAdmin(interaction: ButtonInteraction): Promise<boolean> {
+ export async function handleButton(interaction: ButtonInteraction): Promise<unknown> {
+   if (!interaction.guildId) return;
+   const [scope, action, id, extra] = interaction.customId.split(":");
++  
+   if (scope === "shop") {
+-    if (action === "browse" || action === "order") {
+-      const categories = await categoryRepository.list(interaction.guildId, false);
+-      if (!categories.length) return interaction.reply({ content: "○ ร้านค้ายังไม่มีหมวดหมู่สินค้า", ephemeral: true });
+-      const embed = await premiumEmbed(interaction.guildId, action === "order" ? "CREATE ORDER" : "PRODUCT CATALOG", [
+-        action === "order" ? "*เริ่มคำสั่งซื้อด้วยการเลือกหมวดหมู่สินค้า*" : "*เลือกหมวดหมู่เพื่อดูสินค้าที่พร้อมจำหน่าย*",
++    // Handle topup and credit button interactions
++    if (action === "topup") {
++      const embed = await premiumEmbed(interaction.guildId, "TOP UP CREDIT", [
++        "*เติมเครดิตเพื่อซื้อสินค้า*",
+         "",
+         DIVIDER,
+-        "▸ เลือกหมวดหมู่จากเมนูด้านล่าง"
++        "▸ ติดต่อทีมงานเพื่อเติมเครดิต",
++        "▸ หรือใช้คำสั่งซื้อเพื่อชำระเงิน"
+       ].join("\n"));
+-      return interaction.reply({ embeds: [embed], components: [categoryMenu(categories)], ephemeral: true });
++      return interaction.reply({ embeds: [embed], ephemeral: true });
+     }
+-    if (action === "support") return createOrderTicket(interaction);
+-    if (action === "info") {
+-      const embed = await premiumEmbed(interaction.guildId, "STORE INFORMATION", [
+-        "**◆ ROGT SHOPZZZ**",
+-        "*Realm of Gu1tarzzz • Premium Marketplace*",
++    if (action === "credit") {
++      const embed = await premiumEmbed(interaction.guildId, "CHECK CREDIT", [
++        "*ตรวจสอบยอดเครดิตของคุณ*",
+         "",
+         DIVIDER,
+-        "▸ สินค้าดูแลโดยทีมงาน",
+-        "▸ ต้องการความช่วยเหลือ เลือกปุ่ม ช่วยเหลือ"
++        "▸ ระบบเครดิตกำลังพัฒนา",
++        "▸ ติดต่อทีมงานสำหรับข้อมูลเพิ่มเติม"
+       ].join("\n"));
+       return interaction.reply({ embeds: [embed], ephemeral: true });
+     }
+diff --git a/src/handlers/selectMenuHandler.ts b/src/handlers/selectMenuHandler.ts
+index b55c4f9..6490cb0 100644
+--- a/src/handlers/selectMenuHandler.ts
++++ b/src/handlers/selectMenuHandler.ts
+@@ -1,12 +1,12 @@
+ import type { StringSelectMenuInteraction } from "discord.js";
+-import { productMenu, productOrderButton } from "../components/shopComponents.js";
++import { productMenu, productOrderButton, catalogMenu } from "../components/shopComponents.js";
+ import { categoryRepository, productRepository } from "../database/repositories.js";
+ import { handleCategoryPick, handleProductPick } from "./buttonHandler.js";
+ import { showSetupSection } from "./setupHandler.js";
+ import { premiumEmbed } from "../utils/discord.js";
+ import { formatPrice, formatStock } from "../utils/formatters.js";
+ import { hasAdminAccess } from "../utils/permissions.js";
+-import { DIVIDER } from "../config/constants.js";
++import { DIVIDER, UI_EMOJI } from "../config/constants.js";
+ 
+ async function admin(interaction: StringSelectMenuInteraction): Promise<boolean> {
+   if (!interaction.guild) return false;
+@@ -19,11 +19,32 @@ async function admin(interaction: StringSelectMenuInteraction): Promise<boolean>
+ export async function handleSelectMenu(interaction: StringSelectMenuInteraction): Promise<unknown> {
+   if (!interaction.guildId) return;
+   const [scope, action, extra] = interaction.customId.split(":");
++  
+   if (scope === "shop") {
+-    if (action === "category") {
+-      const category = await categoryRepository.find(interaction.values[0]);
+-      const products = (await productRepository.list(interaction.guildId, false)).filter((product) => product.categoryId === category?.id && (product.stock !== 0));
++    if (action === "catalog") {
++      const value = interaction.values[0];
++      
++      // Handle "All Products" or specific category
++      if (value === "cat:all") {
++        const allProducts = (await productRepository.list(interaction.guildId, false)).filter((product) => product.stock !== 0);
++        if (!allProducts.length) return interaction.update({ content: "○ ยังไม่มีสินค้าที่พร้อมจำหน่าย", components: [] });
++        
++        const embed = await premiumEmbed(interaction.guildId, "ALL PRODUCTS", [
++          "*สินค้าทั้งหมดที่พร้อมจำหน่าย*",
++          "",
++          DIVIDER,
++          "▸ เลือกสินค้าที่ต้องการจากเมนูด้านล่าง"
++        ].join("\n"));
++        return interaction.update({ embeds: [embed], components: [productMenu(allProducts)] });
++      }
++      
++      // Handle specific category (cat:{categoryId})
++      const categoryId = value.replace("cat:", "");
++      const category = await categoryRepository.find(categoryId);
++      const products = (await productRepository.list(interaction.guildId, false)).filter((product) => product.categoryId === categoryId && (product.stock !== 0));
++      
+       if (!products.length) return interaction.update({ content: "○ หมวดหมู่นี้ยังไม่มีสินค้าที่พร้อมจำหน่าย", components: [] });
++      
+       const embed = await premiumEmbed(interaction.guildId, category?.name ?? "PRODUCTS", [
+         `*${category?.description || "สินค้าที่คัดสรรสำหรับคุณ"}*`,
+         "",
+@@ -32,6 +53,7 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
+       ].join("\n"));
+       return interaction.update({ embeds: [embed], components: [productMenu(products)] });
+     }
++    
+     if (action === "product") {
+       const product = await productRepository.find(interaction.values[0]);
+       if (!product || product.hidden || product.status !== "active") return interaction.update({ content: "○ สินค้านี้ไม่พร้อมจำหน่าย", components: [] });
+@@ -46,7 +68,31 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
+       if (product.imageUrl) embed.setImage(product.imageUrl);
+       return interaction.update({ embeds: [embed], components: [productOrderButton(product)] });
+     }
++    
++    // Handle topup and credit buttons
++    if (action === "topup") {
++      const embed = await premiumEmbed(interaction.guildId, "TOP UP CREDIT", [
++        "*เติมเครดิตเพื่อซื้อสินค้า*",
++        "",
++        DIVIDER,
++        "▸ ติดต่อทีมงานเพื่อเติมเครดิต",
++        "▸ หรือใช้คำสั่งซื้อเพื่อชำระเงิน"
++      ].join("\n"));
++      return interaction.reply({ embeds: [embed], ephemeral: true });
++    }
++    
++    if (action === "credit") {
++      const embed = await premiumEmbed(interaction.guildId, "CHECK CREDIT", [
++        "*ตรวจสอบยอดเครดิตของคุณ*",
++        "",
++        DIVIDER,
++        "▸ ระบบเครดิตกำลังพัฒนา",
++        "▸ ติดต่อทีมงานสำหรับข้อมูลเพิ่มเติม"
++      ].join("\n"));
++      return interaction.reply({ embeds: [embed], ephemeral: true });
++    }
+   }
++  
+   if (!(await admin(interaction))) return;
+   if (scope === "setup" && action === "section") return showSetupSection(interaction, interaction.values[0]);
+   if (scope === "category" && action === "pick") return handleCategoryPick(interaction, extra as "edit" | "delete" | "visibility" | "sort");
+diff --git a/src/handlers/setupHandler.ts b/src/handlers/setupHandler.ts
+index 21b68f9..9c6e9aa 100644
+--- a/src/handlers/setupHandler.ts
++++ b/src/handlers/setupHandler.ts
+@@ -3,7 +3,7 @@ import { categoryRepository, productRepository, settingsRepository } from "../da
+ import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons } from "../components/setupComponents.js";
+ import { metric, premiumEmbed, statusMark } from "../utils/discord.js";
+ import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
+-import { SMALL_DIVIDER, DIVIDER } from "../config/constants.js";
++import { SMALL_DIVIDER, DIVIDER, UI_EMOJI } from "../config/constants.js";
+ 
+ type SetupInteraction = ChatInputCommandInteraction | ButtonInteraction | StringSelectMenuInteraction;
+ 
+@@ -24,26 +24,35 @@ export async function showDashboard(interaction: SetupInteraction): Promise<void
+   const paymentStatus = statusMark(settings.payment.enabled, "พร้อมรับชำระ", "ยังไม่เปิด");
+   const ticketStatus = statusMark(Boolean(settings.tickets.categoryId), "พร้อมใช้งาน", "ต้องตั้งค่า");
+   const publishStatus = statusMark(Boolean(settings.shop.publishedMessageId), "เผยแพร่แล้ว", "ยังไม่เผยแพร่");
+-  const lines: string[] = [
+-    `**◆ ${settings.shop.storeName}**`,
++  
++  // Premium metric cards layout
++  const description = [
++    `**${UI_EMOJI.text.brand} ${settings.shop.storeName}**`,
+     statusMark(settings.shop.status === "open", "เปิดให้บริการ", "ปิดปรับปรุง"),
+     "",
+     DIVIDER,
+-    "**◆ ภาพรวม Marketplace**",
+-    `${metric("หมวดหมู่", formatNumber(categories.length))}  •  ${metric("สินค้า", formatNumber(products.length))}`,
+-    metric("สต็อก", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock)),
+     "",
+-    "**◆ สถานะระบบ**",
+-    `💳 ชำระเงิน  ${paymentStatus}`,
+-    `◆ Ticket  ${ticketStatus}`,
+-    `🛒 หน้าร้าน  ${publishStatus}`
+-  ];
+-  if (settings.shop.publishedChannelId && settings.shop.publishedMessageId) {
+-    lines.push(`▸ เผยแพร่ใน <#${settings.shop.publishedChannelId}>`);
+-  }
+-  lines.push("", SMALL_DIVIDER, `▸ อัปเดต <t:${timestamp}:R>  •  เลือกส่วนจัดการด้านล่าง`);
+-  
+-  const description = lines.join("\n");
++    "**◆ Marketplace Metrics**",
++    "",
++    `┌─────────────────────────────────────`,
++    `│  ${metric("หมวดหมู่", formatNumber(categories.length))}  │  ${metric("สินค้า", formatNumber(products.length))}`,
++    `├─────────────────────────────────────`,
++    `│  ${metric("สต็อกรวม", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}  │  ${metric("สถานะ", settings.shop.status === "open" ? "🟢 เปิด" : "🔴 ปิด")}`,
++    `└─────────────────────────────────────`,
++    "",
++    "**◆ System Status**",
++    "",
++    `${UI_EMOJI.component.payment}  **ชำระเงิน**  ${paymentStatus}`,
++    `${UI_EMOJI.component.ticket}  **Ticket**  ${ticketStatus}`,
++    `${UI_EMOJI.component.catalog}  **หน้าร้าน**  ${publishStatus}`,
++    "",
++    settings.shop.publishedChannelId && settings.shop.publishedMessageId 
++      ? `▸ เผยแพร่ใน <#${settings.shop.publishedChannelId}>` 
++      : "",
++    "",
++    SMALL_DIVIDER,
++    `▸ อัปเดต <t:${timestamp}:R>  •  เลือกส่วนจัดการด้านล่าง`
++  ].filter(line => line !== "").join("\n");
+   
+   const baseEmbed = await premiumEmbed(interaction.guildId, "ROGT COMMAND CENTER", description);
+   
+diff --git a/src/utils/discord.ts b/src/utils/discord.ts
+index 86d4cec..04c9e62 100644
+--- a/src/utils/discord.ts
++++ b/src/utils/discord.ts
+@@ -46,20 +46,32 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
+   const features = shop.marketplaceFeatures?.length
+     ? shop.marketplaceFeatures.slice(0, 4)
+     : ["จัดส่งรวดเร็ว", "ชำระเงินปลอดภัย", "ดูแลโดยทีมงาน"];
++    
++  const availableProducts = products.filter((product) => product.stock !== 0).length;
++  
++  // Premium storefront layout with hero, stats, and info
+   const description = [
++    `**${UI_EMOJI.text.brand} ${shop.storeName}**`,
+     `*${shop.description || "Premium marketplace of Realm of Gu1tarzzz"}*`,
+     "",
+     statusMark(shop.status === "open", "เปิดให้บริการ", "ปิดปรับปรุง"),
+     "",
+     DIVIDER,
+-    `**${UI_EMOJI.text.section} Marketplace Essentials**`,
+-    `${metric("สต็อกรวม", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}`,
+     "",
+-    `**${UI_EMOJI.text.section} ช่องทางชำระเงิน**`,
+-    "PromptPay  •  TrueMoney  •  Bank Transfer",
++    "**◆ Store Statistics**",
++    "",
++    `┌──────────────┬──────────────┬──────────────┬──────────────`,
++    `│  ${metric("สินค้า", formatNumber(products.length))}  │  ${metric("หมวดหมู่", formatNumber(categories.length))}  │  ${metric("พร้อมขาย", formatNumber(availableProducts))}  │  ${metric("สต็อก", totalStock < 0 ? "∞" : formatNumber(totalStock))}`,
++    `└──────────────┴──────────────┴──────────────┴──────────────`,
++    "",
++    "**◆ Payment Methods**",
++    "💳 PromptPay  •  TrueMoney  •  Bank Transfer",
++    "",
++    "**◆ Store Features**",
++    `${UI_EMOJI.text.bullet} ${features.join("  •  ")}`,
+     "",
+     SMALL_DIVIDER,
+-    `${UI_EMOJI.text.bullet} ${features.join("  •  ")}`
++    "▸ เลือกหมวดหมู่จากเมนูด้านล่างเพื่อดูสินค้า"
+   ].join("\n");
+   
+   const embed = new EmbedBuilder()
+@@ -72,13 +84,7 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
+     .setDescription(description)
+     .setFooter({ text: uiFooter(shop.footer), iconURL: shop.storeLogo })
+     .setTimestamp();
+-  const availableProducts = products.filter((product) => product.stock !== 0).length;
+-  embed.addFields(
+-    { name: `${UI_EMOJI.component.category} หมวดหมู่`, value: `**${formatNumber(categories.length)}**`, inline: true },
+-    { name: `${UI_EMOJI.component.product} สินค้า`, value: `**${formatNumber(products.length)}**`, inline: true },
+-    { name: `${UI_EMOJI.component.catalog} พร้อมขาย`, value: `**${formatNumber(availableProducts)}**`, inline: true }
+-  );
+-    
++  
+   // Large banner image (priority: GIF > static)
+   if (shop.bannerGif) {
+     embed.setImage(shop.bannerGif);

@@ -1,7 +1,45 @@
 import { ButtonStyle } from "discord.js";
 export const BRAND = "ROGT SHOPZZZ";
-export const DIVIDER = "✦━━━━━━━━━━━━━━━━━━━━✦";
-export const SMALL_DIVIDER = "◆────────────◆";
+/** Shared visual language. `text` symbols stay inside embeds; `component`
+ * values are valid Unicode emoji intended for buttons and select menus. */
+export const UI_EMOJI = {
+    text: {
+        brand: "✦",
+        section: "◆",
+        bullet: "▸",
+        active: "●",
+        inactive: "○",
+        success: "✔"
+    },
+    component: {
+        browse: "🛒",
+        product: "📦",
+        catalog: "🛍️",
+        payment: "💳",
+        bank: "🏦",
+        category: "📁",
+        categories: "📂",
+        analytics: "📈",
+        history: "📜",
+        ticket: "🎫",
+        support: "💬",
+        star: "⭐",
+        refresh: "🔄",
+        gem: "💎",
+        settings: "⚙️",
+        back: "🔙",
+        image: "🖼️",
+        edit: "📝",
+        remove: "🗑️",
+        owner: "👑",
+        alert: "🔥",
+        approve: "✅",
+        reject: "❌",
+        decrease: "📉"
+    }
+};
+export const DIVIDER = `${UI_EMOJI.text.brand}━━━━━━━━━━━━━━━━━━━━${UI_EMOJI.text.brand}`;
+export const SMALL_DIVIDER = `${UI_EMOJI.text.section}────────────${UI_EMOJI.text.section}`;
 // ═══════════════════════════════════════════════════════════════
 // PREMIUM THEME - ROGT SHOPZZZ
 // Fantasy • Magic • Luxury • Dark Mode

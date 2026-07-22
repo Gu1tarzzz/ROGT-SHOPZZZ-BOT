@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type ButtonInteraction, DiscordAPIError } from "discord.js";
 import { categoryManagerMenu, categorySortButtons, productCategoryMenu, productManagerMenu, stockActionButtons } from "../components/setupComponents.js";
-import { categoryMenu, shopButtons } from "../components/shopComponents.js";
+import { shopButtons } from "../components/shopComponents.js";
 import { categoryRepository, productRepository, settingsRepository, stockRepository } from "../database/repositories.js";
 import { openCategoryModal, openModal, openProductModal } from "./modalHandler.js";
 import { showDashboard } from "./setupHandler.js";
@@ -21,27 +21,26 @@ async function assertAdmin(interaction: ButtonInteraction): Promise<boolean> {
 export async function handleButton(interaction: ButtonInteraction): Promise<unknown> {
   if (!interaction.guildId) return;
   const [scope, action, id, extra] = interaction.customId.split(":");
+  
   if (scope === "shop") {
-    if (action === "browse" || action === "order") {
-      const categories = await categoryRepository.list(interaction.guildId, false);
-      if (!categories.length) return interaction.reply({ content: "○ ร้านค้ายังไม่มีหมวดหมู่สินค้า", ephemeral: true });
-      const embed = await premiumEmbed(interaction.guildId, action === "order" ? "CREATE ORDER" : "PRODUCT CATALOG", [
-        action === "order" ? "*เริ่มคำสั่งซื้อด้วยการเลือกหมวดหมู่สินค้า*" : "*เลือกหมวดหมู่เพื่อดูสินค้าที่พร้อมจำหน่าย*",
+    // Handle topup and credit button interactions
+    if (action === "topup") {
+      const embed = await premiumEmbed(interaction.guildId, "TOP UP CREDIT", [
+        "*เติมเครดิตเพื่อซื้อสินค้า*",
         "",
         DIVIDER,
-        "▸ เลือกหมวดหมู่จากเมนูด้านล่าง"
+        "▸ ติดต่อทีมงานเพื่อเติมเครดิต",
+        "▸ หรือใช้คำสั่งซื้อเพื่อชำระเงิน"
       ].join("\n"));
-      return interaction.reply({ embeds: [embed], components: [categoryMenu(categories)], ephemeral: true });
+      return interaction.reply({ embeds: [embed], ephemeral: true });
     }
-    if (action === "support") return createOrderTicket(interaction);
-    if (action === "info") {
-      const embed = await premiumEmbed(interaction.guildId, "STORE INFORMATION", [
-        "**◆ ROGT SHOPZZZ**",
-        "*Realm of Gu1tarzzz • Premium Marketplace*",
+    if (action === "credit") {
+      const embed = await premiumEmbed(interaction.guildId, "CHECK CREDIT", [
+        "*ตรวจสอบยอดเครดิตของคุณ*",
         "",
         DIVIDER,
-        "▸ สินค้าดูแลโดยทีมงาน",
-        "▸ ต้องการความช่วยเหลือ เลือกปุ่ม ช่วยเหลือ"
+        "▸ ระบบเครดิตกำลังพัฒนา",
+        "▸ ติดต่อทีมงานสำหรับข้อมูลเพิ่มเติม"
       ].join("\n"));
       return interaction.reply({ embeds: [embed], ephemeral: true });
     }

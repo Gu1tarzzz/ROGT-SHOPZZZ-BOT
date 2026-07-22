@@ -1,11 +1,14 @@
-import type { ButtonInteraction, ChatInputCommandInteraction, StringSelectMenuInteraction } from "discord.js";
+import { EmbedBuilder, type ButtonInteraction, type ChatInputCommandInteraction, type StringSelectMenuInteraction } from "discord.js";
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
 import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons } from "../components/setupComponents.js";
-import { metric, premiumEmbed, statusMark, premiumMetric, statusIndicator } from "../utils/discord.js";
+import { premiumEmbed, premiumMetricBlock, statusIndicator } from "../utils/discord.js";
 import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 
 type SetupInteraction = ChatInputCommandInteraction | ButtonInteraction | StringSelectMenuInteraction;
+
+const statusMark = (isPositive: boolean, positive: string, negative: string): string =>
+  `${isPositive ? "🟢" : "🔴"} **${isPositive ? positive : negative}**`;
 
 export async function showDashboard(interaction: SetupInteraction): Promise<void> {
   if (!interaction.guildId) return;
@@ -24,7 +27,7 @@ export async function showDashboard(interaction: SetupInteraction): Promise<void
   const ticketStatus = statusMark(Boolean(settings.tickets.categoryId), "พร้อมใช้งาน", "ต้องตั้งค่า");
   const publishStatus = statusMark(Boolean(settings.shop.publishedMessageId), "เผยแพร่แล้ว", "ยังไม่เผยแพร่");
   
-  // Premium dashboard layout with metric cards
+  // Premium dashboard layout with metric blocks
   const description = [
     `**${UI_EMOJI.text.brand} ${settings.shop.storeName}**`,
     statusIndicator(settings.shop.status),
@@ -33,10 +36,12 @@ export async function showDashboard(interaction: SetupInteraction): Promise<void
     "",
     `**${UI_EMOJI.text.section} Marketplace Metrics**`,
     "",
-    premiumMetric("📁", "Categories", formatNumber(categories.length)),
-    premiumMetric("📦", "Products", formatNumber(products.length)),
-    premiumMetric("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
-    premiumMetric("✨", "Available", products.filter(p => p.stock !== 0).length.toString()),
+    premiumMetricBlock("📁", "Categories", formatNumber(categories.length)),
+    premiumMetricBlock("📦", "Products", formatNumber(products.length)),
+    premiumMetricBlock("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
+    premiumMetricBlock("✨", "Available", products.filter(p => p.stock !== 0).length.toString()),
+    "",
+    DIVIDER,
     "",
     `**${UI_EMOJI.text.section} System Status**`,
     "",
@@ -112,10 +117,10 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
       "",
       DIVIDER,
       "",
-      premiumMetric("🎨", "Color", settings.shop.embedColor),
-      premiumMetric("🖼️", "Banner", settings.shop.bannerGif || settings.shop.banner ? "Set" : "Not Set"),
-      premiumMetric("✨", "Thumbnail", settings.shop.thumbnail ? "Set" : "Not Set"),
-      premiumMetric("🏷️", "Branding", settings.shop.authorName || "Default"),
+      premiumMetricBlock("🎨", "Color", settings.shop.embedColor),
+      premiumMetricBlock("🖼️", "Banner", settings.shop.bannerGif || settings.shop.banner ? "Set" : "Not Set"),
+      premiumMetricBlock("✨", "Thumbnail", settings.shop.thumbnail ? "Set" : "Not Set"),
+      premiumMetricBlock("🏷️", "Branding", settings.shop.authorName || "Default"),
       "",
       `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อแก้ไข`
     ].join("\n") },
@@ -136,10 +141,10 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
       "",
       DIVIDER,
       "",
-      premiumMetric("📁", "Order Category", settings.tickets.categoryId ? `<#${settings.tickets.categoryId}>` : "Not Set"),
-      premiumMetric("💬", "Support Category", settings.tickets.supportCategoryId ? `<#${settings.tickets.supportCategoryId}>` : "Use Order Category"),
-      premiumMetric("🏷️", "Prefix", settings.tickets.ticketPrefix),
-      premiumMetric("👥", "Staff Roles", settings.tickets.staffRoleIds.length.toString()),
+      premiumMetricBlock("📁", "Order Category", settings.tickets.categoryId ? `<#${settings.tickets.categoryId}>` : "Not Set"),
+      premiumMetricBlock("💬", "Support Category", settings.tickets.supportCategoryId ? `<#${settings.tickets.supportCategoryId}>` : "Use Order Category"),
+      premiumMetricBlock("🏷️", "Prefix", settings.tickets.ticketPrefix),
+      premiumMetricBlock("👥", "Staff Roles", settings.tickets.staffRoleIds.length.toString()),
       "",
       `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อแก้ไข`
     ].join("\n") },
@@ -148,8 +153,8 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
       "",
       DIVIDER,
       "",
-      premiumMetric("👑", "Owner", settings.bot.ownerId ? `<@${settings.bot.ownerId}>` : "Guild Owner"),
-      premiumMetric("🛡️", "Staff Roles", settings.bot.staffRoleIds.length.toString()),
+      premiumMetricBlock("👑", "Owner", settings.bot.ownerId ? `<@${settings.bot.ownerId}>` : "Guild Owner"),
+      premiumMetricBlock("🛡️", "Staff Roles", settings.bot.staffRoleIds.length.toString()),
       statusMark(!settings.bot.maintenanceMode, "ระบบพร้อมให้บริการ", "กำลังปิดปรับปรุง"),
       "",
       `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อแก้ไข`

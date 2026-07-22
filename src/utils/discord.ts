@@ -1,5 +1,5 @@
 import { EmbedBuilder, type Guild, type GuildMember, type InteractionReplyOptions } from "discord.js";
-import { DIVIDER, SECTION_DIVIDER, UI_EMOJI } from "../config/constants.js";
+import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 import { settingsRepository, categoryRepository, productRepository } from "../database/repositories.js";
 import { truncate, formatNumber } from "./formatters.js";
 
@@ -60,11 +60,10 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     "",
     `**${UI_EMOJI.text.section} Store Statistics**`,
     "",
-    "```┌──────────────┬──────────────┬──────────────┬──────────────┐",
-    "│  สินค้า     │  หมวดหมู่   │  พร้อมขาย    │  สต็อก       │",
-    "├──────────────┼──────────────┼──────────────┼──────────────┤",
-    `│  ${String(products.length).padEnd(10)} │  ${String(categories.length).padEnd(10)} │  ${String(availableProducts).padEnd(10)} │  ${String(totalStock < 0 ? "∞" : totalStock).padEnd(10)} │`,
-    "└──────────────┴──────────────┴──────────────┴──────────────┘```",
+    `${metric("สินค้า", formatNumber(products.length))}`,
+    `${metric("หมวดหมู่", formatNumber(categories.length))}`,
+    `${metric("พร้อมขาย", formatNumber(availableProducts))}`,
+    `${metric("สต็อกทั้งหมด", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}`,
     "",
     `**${UI_EMOJI.text.section} Payment Methods**`,
     "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",

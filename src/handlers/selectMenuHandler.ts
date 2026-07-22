@@ -1,10 +1,10 @@
 import type { StringSelectMenuInteraction } from "discord.js";
 import { categoryMenu, productMenu, purchaseButton, productBrowserComponents } from "../components/shopComponents.js";
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
-import { premiumEmbed } from "../utils/discord.js";
-import { formatPrice, formatStock } from "../utils/formatters.js";
+import { premiumEmbed, metric } from "../utils/discord.js";
+import { formatPrice, formatStock, formatNumber } from "../utils/formatters.js";
 import { hasAdminAccess } from "../utils/permissions.js";
-import { DIVIDER, SECTION_DIVIDER, UI_EMOJI } from "../config/constants.js";
+import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 import { showSetupSection } from "./setupHandler.js";
 
 async function admin(interaction: StringSelectMenuInteraction): Promise<boolean> {
@@ -50,11 +50,10 @@ async function buildMainShopEmbed(guildId: string) {
     "",
     `**${UI_EMOJI.text.section} Store Statistics**`,
     "",
-    "```┌──────────────┬──────────────┬──────────────┬──────────────┐",
-    "│  สินค้า     │  หมวดหมู่   │  พร้อมขาย    │  สต็อก       │",
-    "├──────────────┼──────────────┼──────────────┼──────────────┤",
-    `│  ${String(products.length).padEnd(10)} │  ${String(categories.length).padEnd(10)} │  ${String(availableProducts).padEnd(10)} │  ${String(totalStock < 0 ? "∞" : totalStock).padEnd(10)} │`,
-    "└──────────────┴──────────────┴──────────────┴──────────────┘```",
+    `${metric("สินค้า", formatNumber(products.length))}`,
+    `${metric("หมวดหมู่", formatNumber(categories.length))}`,
+    `${metric("พร้อมขาย", formatNumber(availableProducts))}`,
+    `${metric("สต็อกทั้งหมด", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}`,
     "",
     `**${UI_EMOJI.text.section} Payment Methods**`,
     "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",
@@ -89,19 +88,19 @@ async function buildMainShopEmbed(guildId: string) {
  */
 async function buildProductBrowserEmbed(guildId: string, categoryName: string, products: any[]) {
   const description = [
-    `**${UI_EMOJI.component.category} ${categoryName}**`,
+    `**${UI_EMOJI.text.section} ${categoryName}**`,
     "",
     DIVIDER,
     "",
-    `**${UI_EMOJI.text.section} สินค้าทั้งหมด ${products.length} รายการ**`,
+    `${UI_EMOJI.text.bullet} สินค้าทั้งหมด **${products.length}** รายการ`,
     "",
     ...products.slice(0, 10).map((p, i) => 
-      `**${i + 1}. ${p.name}**\n   └ ${formatPrice(p.price)} • ${p.stock < 0 ? "ไม่จำกัด" : `สต็อก ${p.stock}`}`
+      `**${i + 1}. ${p.name}**\n   ${formatPrice(p.price)} • ${p.stock < 0 ? "ไม่จำกัด" : `สต็อก ${p.stock}`}`
     ),
     products.length > 10 ? `\n${UI_EMOJI.text.bullet} และอีก ${products.length - 10} รายการ...` : ""
   ].filter(line => line !== "").join("\n");
   
-  return premiumEmbed(guildId, "📦 PRODUCT BROWSER", description);
+  return premiumEmbed(guildId, "PRODUCT BROWSER", description);
 }
 
 /**
@@ -112,23 +111,21 @@ async function buildProductPreviewEmbed(guildId: string, product: any) {
   const stockStatus = product.stock < 0 ? "ไม่จำกัด" : formatStock(product.stock);
   
   const description = [
-    `**${UI_EMOJI.component.product} ${product.name}**`,
+    `**${UI_EMOJI.text.section} ${product.name}**`,
     "",
     `*${product.description || "ไม่มีรายละเอียด"}*`,
     "",
     DIVIDER,
     "",
-    `**${UI_EMOJI.text.section} รายละเอียดสินค้า**`,
+    `${metric("ราคา", formatPrice(product.price))}`,
+    `${metric("สต็อก", stockStatus)}`,
+    product.requiredRoleId ? `${metric("Role", `<@&${product.requiredRoleId}>`)}` : "",
     "",
-    `\`ราคา\`  **${formatPrice(product.price)}**`,
-    `\`สต็อก\`  **${stockStatus}**`,
-    product.requiredRoleId ? `\`Role\`  <@&${product.requiredRoleId}>` : "",
-    "",
-    SECTION_DIVIDER,
+    DIVIDER,
     `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อสั่งซื้อ`
   ].filter(line => line !== "").join("\n");
   
-  const embed = await premiumEmbed(guildId, `🛒 ${product.name}`, description);
+  const embed = await premiumEmbed(guildId, product.name, description);
   
   // Add image if available
   if (product.imageUrl) {
@@ -144,24 +141,22 @@ async function buildProductPreviewEmbed(guildId: string, product: any) {
  */
 async function buildCheckoutEmbed(guildId: string, product: any) {
   const description = [
-    `**${UI_EMOJI.component.payment} CHECKOUT**`,
+    `**${UI_EMOJI.text.section} คำสั่งซื้อ**`,
     "",
     DIVIDER,
     "",
-    `**${UI_EMOJI.text.section} คำสั่งซื้อ**`,
-    "",
-    `\`สินค้า\`  **${product.name}**`,
-    `\`ราคา\`  **${formatPrice(product.price)}**`,
-    `\`จำนวน\`  **1**`,
+    `${metric("สินค้า", product.name)}`,
+    `${metric("ราคา", formatPrice(product.price))}`,
+    `${metric("จำนวน", "1")}`,
     "",
     `**${UI_EMOJI.text.section} ช่องทางชำระเงิน**`,
-    "💳 PromptPay  •  TrueMoney  •  Bank Transfer",
+    "> 💳 `PromptPay` • `TrueMoney` • `Bank Transfer`",
     "",
-    SECTION_DIVIDER,
+    DIVIDER,
     `${UI_EMOJI.text.bullet} ยืนยันการสั่งซื้อหรือยกเลิก`
   ].join("\n");
   
-  return premiumEmbed(guildId, "✅ CONFIRM ORDER", description);
+  return premiumEmbed(guildId, "CONFIRM ORDER", description);
 }
 
 export async function handleSelectMenu(interaction: StringSelectMenuInteraction) {

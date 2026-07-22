@@ -3,7 +3,7 @@ import { categoryRepository, productRepository, settingsRepository } from "../da
 import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons } from "../components/setupComponents.js";
 import { metric, premiumEmbed, statusMark } from "../utils/discord.js";
 import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
-import { SECTION_DIVIDER, DIVIDER, UI_EMOJI } from "../config/constants.js";
+import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 
 type SetupInteraction = ChatInputCommandInteraction | ButtonInteraction | StringSelectMenuInteraction;
 
@@ -34,23 +34,22 @@ export async function showDashboard(interaction: SetupInteraction): Promise<void
     "",
     `**${UI_EMOJI.text.section} Marketplace Metrics**`,
     "",
-    "```┌─────────────────────────────────────",
-    `│  ${metric("หมวดหมู่", formatNumber(categories.length))}  │  ${metric("สินค้า", formatNumber(products.length))}`,
-    "├─────────────────────────────────────",
-    `│  ${metric("สต็อกรวม", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}  │  ${metric("สถานะ", settings.shop.status === "open" ? "🟢 เปิด" : "🔴 ปิด")}`,
-    "└─────────────────────────────────────```",
+    `${metric("หมวดหมู่", formatNumber(categories.length))}`,
+    `${metric("สินค้า", formatNumber(products.length))}`,
+    `${metric("สต็อกรวม", totalStock < 0 ? "ไม่จำกัด" : formatNumber(totalStock))}`,
+    `${metric("สถานะ", settings.shop.status === "open" ? "🟢 เปิด" : "🔴 ปิด")}`,
     "",
     `**${UI_EMOJI.text.section} System Status**`,
     "",
-    `${UI_EMOJI.component.payment}  **ชำระเงิน**  ${paymentStatus}`,
-    `${UI_EMOJI.component.ticket}  **Ticket**  ${ticketStatus}`,
-    `${UI_EMOJI.component.catalog}  **หน้าร้าน**  ${publishStatus}`,
+    `${UI_EMOJI.component.payment} **ชำระเงิน**  ${paymentStatus}`,
+    `${UI_EMOJI.component.ticket} **Ticket**  ${ticketStatus}`,
+    `${UI_EMOJI.component.catalog} **หน้าร้าน**  ${publishStatus}`,
     "",
     settings.shop.publishedChannelId && settings.shop.publishedMessageId 
       ? `${UI_EMOJI.text.bullet} เผยแพร่ใน <#${settings.shop.publishedChannelId}>` 
       : "",
     "",
-    SECTION_DIVIDER,
+    DIVIDER,
     `${UI_EMOJI.text.bullet} อัปเดต <t:${timestamp}:R>  •  เลือกส่วนจัดการด้านล่าง`
   ].filter(line => line !== "").join("\n");
   
@@ -79,7 +78,7 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
       "",
       DIVIDER,
       "",
-      `**${UI_EMOJI.text.section} ทั้งหมด ${formatNumber(categories.length)} หมวดหมู่**`,
+      `${UI_EMOJI.text.bullet} ทั้งหมด **${formatNumber(categories.length)}** หมวดหมู่`,
       summary
     ].join("\n"));
     await interaction.update({ embeds: [embed], components: [categoryButtons(), backButton()] });
@@ -95,7 +94,7 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
       "",
       DIVIDER,
       "",
-      `**${UI_EMOJI.text.section} ทั้งหมด ${formatNumber(products.length)} รายการ**`,
+      `${UI_EMOJI.text.bullet} ทั้งหมด **${formatNumber(products.length)}** รายการ`,
       summary
     ].join("\n"));
     await interaction.update({ embeds: [embed], components: [productButtons(), backButton()] });

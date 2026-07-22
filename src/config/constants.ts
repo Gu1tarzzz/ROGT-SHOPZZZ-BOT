@@ -8,8 +8,8 @@ export const BRAND = "ROGT SHOPZZZ";
 export const UI_EMOJI = {
   text: {
     brand: "✦",
-    section: "◆",
-    bullet: "▸",
+    section: "✦",
+    bullet: "•",
     active: "●",
     inactive: "○",
     success: "✔"
@@ -42,9 +42,9 @@ export const UI_EMOJI = {
   }
 } as const;
 
+// Single consistent divider style - clean line with brand markers
 export const DIVIDER = `${UI_EMOJI.text.brand}━━━━━━━━━━━━━━━━━━━━${UI_EMOJI.text.brand}`;
-export const SMALL_DIVIDER = `${UI_EMOJI.text.section}────────────${UI_EMOJI.text.section}`;
-export const TINY_DIVIDER = `─·─·─·─·─·─·─·─·─`;
+export const SECTION_DIVIDER = `─────────────────────────────────────`;
 
 // ═══════════════════════════════════════════════════════════════
 // PREMIUM THEME - ROGT SHOPZZZ

@@ -3,7 +3,7 @@ import { ticketButtons, reviewButtons } from "../components/ticketComponents.js"
 import { orderRepository, productRepository, settingsRepository, stockRepository } from "../database/repositories.js";
 import { channelSlug, formatPrice } from "../utils/formatters.js";
 import { hasStaffAccess } from "../utils/permissions.js";
-import { DIVIDER, SMALL_DIVIDER } from "../config/constants.js";
+import { DIVIDER, SECTION_DIVIDER, UI_EMOJI } from "../config/constants.js";
 function paymentInstructions(settings) {
     const options = [
         settings.payment.trueMoneyWallet && `▸ TrueMoney  ${settings.payment.trueMoneyWallet}`,
@@ -71,22 +71,23 @@ export async function createOrderTicket(interaction, product) {
         .setColor(settings.shop.embedColor)
         .setTitle(product ? "✦ ORDER DESK" : "✦ SUPPORT DESK")
         .setDescription(product ? [
-        "**◆ คำสั่งซื้อใหม่**",
-        `▸ สินค้า  **${product.name}**`,
-        `▸ ราคา  **${formatPrice(product.price)}**`,
-        `▸ ลูกค้า  <@${customer.id}>`,
+        `**${UI_EMOJI.text.section} คำสั่งซื้อใหม่**`,
+        `${UI_EMOJI.text.bullet} สินค้า  **${product.name}**`,
+        `${UI_EMOJI.text.bullet} ราคา  **${formatPrice(product.price)}**`,
+        `${UI_EMOJI.text.bullet} ลูกค้า  <@${customer.id}>`,
         "",
         DIVIDER,
-        "**◆ ชำระเงิน**",
+        "",
+        `**${UI_EMOJI.text.section} ชำระเงิน**`,
         paymentInstructions(settings) || "กรุณารอทีมงานแจ้งรายละเอียดการชำระเงิน",
         "",
-        SMALL_DIVIDER,
-        "▸ หลังชำระเงิน เลือก **ส่งสลิป** แล้วแนบหลักฐานในห้องนี้"
+        SECTION_DIVIDER,
+        `${UI_EMOJI.text.bullet} หลังชำระเงิน เลือก **ส่งสลิป** แล้วแนบหลักฐานในห้องนี้`
     ].join("\n") : [
-        `**◆ ยินดีต้อนรับ <@${customer.id}>**`,
+        `**${UI_EMOJI.text.section} ยินดีต้อนรับ <@${customer.id}>**`,
         "",
         DIVIDER,
-        "▸ แจ้งรายละเอียดที่ต้องการให้ทีมงานช่วยเหลือได้เลย"
+        `${UI_EMOJI.text.bullet} แจ้งรายละเอียดที่ต้องการให้ทีมงานช่วยเหลือได้เลย`
     ].join("\n"))
         .setFooter({ text: `✦ Order ID: ${order.id}` })
         .setTimestamp();
@@ -204,7 +205,7 @@ export async function reviewSlip(interaction, orderId, decision) {
                 const ticketChannel = await interaction.guild.channels.fetch(order.channelId).catch(() => null);
                 if (ticketChannel?.isSendable()) {
                     await ticketChannel.send({
-                        content: `<@${order.customerId}> **✦ จัดส่งสินค้าแล้ว**\n${DIVIDER}\n\`\`\`${item.content}\`\`\`\n${SMALL_DIVIDER}\n▸ หากมีปัญหา กรุณาติดต่อทีมงาน`
+                        content: `<@${order.customerId}> **✦ จัดส่งสินค้าแล้ว**\n${DIVIDER}\n\`\`\`${item.content}\`\`\`\n${SECTION_DIVIDER}\n${UI_EMOJI.text.bullet} หากมีปัญหา กรุณาติดต่อทีมงาน`
                     });
                 }
                 await stockRepository.logPurchase({

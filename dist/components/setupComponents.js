@@ -11,7 +11,7 @@ export function dashboardMenu() {
     return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
         .setCustomId("setup:section")
         .setPlaceholder(`${UI_EMOJI.text.section} เลือกส่วนจัดการ`)
-        .addOptions({ label: "หมวดหมู่", value: "categories", description: "สร้าง • เรียงลำดับ • แสดงผล", emoji: UI_EMOJI.component.category }, { label: "สินค้า", value: "products", description: "ราคา • สต็อก • สถานะ", emoji: UI_EMOJI.component.product }, { label: "ดีไซน์ร้าน", value: "appearance", description: "แบรนด์ • สี • ภาพ", emoji: UI_EMOJI.component.gem }, { label: "การชำระเงิน", value: "payment", description: "ช่องทางและบัญชีรับเงิน", emoji: UI_EMOJI.component.payment }, { label: "Ticket", value: "tickets", description: "หมวดหมู่และทีมงาน", emoji: UI_EMOJI.component.ticket }, { label: "ตั้งค่าระบบ", value: "bot", description: "สิทธิ์และสถานะบอต", emoji: UI_EMOJI.component.settings }));
+        .addOptions({ label: "หมวดหมู่", value: "categories", description: "สร้าง • เรียงลำดับ • แสดงผล", emoji: UI_EMOJI.component.category }, { label: "สินค้า", value: "products", description: "ราคา • สต็อก • สถานะ", emoji: UI_EMOJI.component.product }, { label: "ดีไซน์ร้าน", value: "appearance", description: "แบรนด์ • สี • ภาพ", emoji: UI_EMOJI.component.gem }, { label: "ดีไซน์หลังร้าน", value: "backoffice", description: "รูปลักษณ์แดชบอร์ด", emoji: UI_EMOJI.component.gem }, { label: "การชำระเงิน", value: "payment", description: "ช่องทางและบัญชีรับเงิน", emoji: UI_EMOJI.component.payment }, { label: "Ticket", value: "tickets", description: "หมวดหมู่และทีมงาน", emoji: UI_EMOJI.component.ticket }, { label: "ตั้งค่าระบบ", value: "bot", description: "สิทธิ์และสถานะบอต", emoji: UI_EMOJI.component.settings }));
 }
 export function backButton() {
     return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับแดชบอร์ด").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back));
@@ -52,6 +52,11 @@ export function sectionButtons(section) {
             { label: "รูปภาพ", id: "images", emoji: UI_EMOJI.component.image },
             { label: "แบรนด์", id: "branding", emoji: UI_EMOJI.component.gem }
         ],
+        backoffice: [
+            { label: "Embed Design", id: "embed-design", emoji: UI_EMOJI.component.gem },
+            { label: "Banner & Image", id: "banner-image", emoji: UI_EMOJI.component.image },
+            { label: "Preview", id: "preview", emoji: UI_EMOJI.component.browse }
+        ],
         payment: [{ label: "การชำระเงิน", id: "payment", emoji: UI_EMOJI.component.payment }],
         tickets: [
             { label: "หมวดหมู่", id: "ticket-categories", emoji: UI_EMOJI.component.categories },
@@ -65,6 +70,67 @@ export function sectionButtons(section) {
         row.addComponents(new ButtonBuilder().setCustomId(`setup:modal:${section}:${opt.id}`).setLabel(opt.label).setStyle(ButtonStyle.Primary).setEmoji(opt.emoji));
     }
     return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back));
+}
+/**
+ * Creates a NEW embed for Back Office Design Manager page (not editing existing dashboard)
+ */
+export function backOfficeDesignEmbed(guildId, settings) {
+    const backOffice = settings.backOffice;
+    const embed = new EmbedBuilder()
+        .setColor(backOffice.embedColor)
+        .setTitle(`${UI_EMOJI.text.brand} BACK OFFICE DESIGN`)
+        .setDescription([
+        "*ปรับแต่งรูปลักษณ์แดชบอร์ดและหน้าจัดการ*",
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.section} Embed Configuration`,
+        "",
+        `${UI_EMOJI.text.bullet} **Title**  ${backOffice.embedTitle}`,
+        `${UI_EMOJI.text.bullet} **Description**  ${truncate(backOffice.embedDescription, 60)}`,
+        `${UI_EMOJI.text.bullet} **Color**  \\`, $, { backOffice, : .embedColor }, ``,
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.section} Visual Elements`,
+        "",
+        `${UI_EMOJI.text.bullet} **Thumbnail**  ${backOffice.thumbnailUrl ? "✓ Set" : "○ Not Set"}`,
+        `${UI_EMOJI.text.bullet} **Image Banner**  ${backOffice.imageUrl ? "✓ Set" : "○ Not Set"}`,
+        `${UI_EMOJI.text.bullet} **Footer**  ${backOffice.footerText}`,
+        `${UI_EMOJI.text.bullet} **Footer Icon**  ${backOffice.footerIcon ? "✓ Set" : "○ Not Set"}`,
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.section} Author Info`,
+        "",
+        `${UI_EMOJI.text.bullet} **Author Name**  ${backOffice.authorName || "Default"}`,
+        `${UI_EMOJI.text.bullet} **Author Icon**  ${backOffice.authorIcon ? "✓ Set" : "○ Not Set"}`,
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.section} Style Options`,
+        "",
+        `${UI_EMOJI.text.bullet} **Divider**  ${backOffice.dividerStyle}`,
+        `${UI_EMOJI.text.bullet} **Status Icons**  ${backOffice.statusIconStyle}`,
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อแก้ไขหรือดูตัวอย่าง`
+    ].join("\n"))
+        .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+        .setTimestamp();
+    if (backOffice.thumbnailUrl)
+        embed.setThumbnail(backOffice.thumbnailUrl);
+    if (backOffice.imageUrl)
+        embed.setImage(backOffice.imageUrl);
+    if (backOffice.authorName)
+        embed.setAuthor({ name: backOffice.authorName, iconURL: backOffice.authorIcon || undefined });
+    return {
+        embed,
+        components: [
+            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:backoffice:embed-design").setLabel("Embed Design").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.gem), new ButtonBuilder().setCustomId("setup:modal:backoffice:banner-image").setLabel("Banner & Image").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image), new ButtonBuilder().setCustomId("setup:preview:backoffice").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.browse), new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back))
+        ]
+    };
 }
 export function stockManagerButtons() {
     return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("stock:view:all").setLabel("ดูสต็อก").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.product), new ButtonBuilder().setCustomId("stock:alerts").setLabel("แจ้งเตือน").setStyle(ButtonStyle.Danger).setEmoji(UI_EMOJI.component.alert), new ButtonBuilder().setCustomId("stock:restock").setLabel("เติมสต็อก").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.product));

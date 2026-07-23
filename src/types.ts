@@ -343,11 +343,26 @@ export interface ShopAppearance {
   featuredProducts: string[];
 }
 
+export interface BackOfficeDesign {
+  embedTitle: string;
+  embedDescription: string;
+  embedColor: HexColor;
+  thumbnailUrl?: string;
+  imageUrl?: string;
+  footerText: string;
+  footerIcon?: string;
+  authorName?: string;
+  authorIcon?: string;
+  dividerStyle: "line" | "double" | "bold";
+  statusIconStyle: "dot" | "circle" | "square";
+}
+
 export interface GuildSettings {
   shop: ShopSettings;
   payment: PaymentSettings;
   tickets: TicketSettings;
   bot: BotSettings;
+  backOffice: BackOfficeDesign;
 }
 
 export interface DatabaseFile<T> {

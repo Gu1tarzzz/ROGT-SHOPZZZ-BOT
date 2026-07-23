@@ -1,6 +1,6 @@
 import { EmbedBuilder, type ButtonInteraction, type ChatInputCommandInteraction, type StringSelectMenuInteraction } from "discord.js";
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
-import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons, categoryManagerEmbed, productManagerEmbed, designSettingsEmbed, paymentSettingsEmbed, ticketSettingsEmbed, botSettingsEmbed } from "../components/setupComponents.js";
+import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons, categoryManagerEmbed, productManagerEmbed, designSettingsEmbed, paymentSettingsEmbed, ticketSettingsEmbed, botSettingsEmbed, backOfficeDesignEmbed } from "../components/setupComponents.js";
 import { premiumEmbed, premiumMetricBlock, statusIndicator, compactMetricCard } from "../utils/discord.js";
 import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
@@ -91,6 +91,14 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
   if (section === "appearance") {
     const settings = await settingsRepository.get(guildId);
     const { embed, components } = designSettingsEmbed(guildId, settings);
+    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    return;
+  }
+  
+  // Back Office Design - creates new dedicated embed
+  if (section === "backoffice") {
+    const settings = await settingsRepository.get(guildId);
+    const { embed, components } = backOfficeDesignEmbed(guildId, settings);
     await interaction.reply({ embeds: [embed], components, ephemeral: true });
     return;
   }

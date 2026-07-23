@@ -37,7 +37,8 @@ export class SettingsRepository {
             shop: shopFile.data[guildId] ?? defaults.shop,
             payment: paymentFile.data[guildId] ?? defaults.payment,
             tickets: settingsFile.data[guildId]?.tickets ?? defaults.tickets,
-            bot: settingsFile.data[guildId]?.bot ?? defaults.bot
+            bot: settingsFile.data[guildId]?.bot ?? defaults.bot,
+            backOffice: settingsFile.data[guildId]?.backOffice ?? defaults.backOffice
         };
         if (!settingsFile.data[guildId] || !shopFile.data[guildId] || !paymentFile.data[guildId])
             await this.persist(guildId, current);
@@ -52,7 +53,7 @@ export class SettingsRepository {
         await Promise.all([
             this.shopStore.update((file) => ({ ...file, data: { ...file.data, [guildId]: value.shop } })),
             this.paymentStore.update((file) => ({ ...file, data: { ...file.data, [guildId]: value.payment } })),
-            this.settingsStore.update((file) => ({ ...file, data: { ...file.data, [guildId]: { tickets: value.tickets, bot: value.bot } } }))
+            this.settingsStore.update((file) => ({ ...file, data: { ...file.data, [guildId]: { tickets: value.tickets, bot: value.bot, backOffice: value.backOffice } } }))
         ]);
     }
 }

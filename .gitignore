@@ -2,16 +2,9 @@
 # Build artifacts
 dist/
 build/
-*.js
-
 # Dependencies
 node_modules/
-
-# Editors
-.vscode/
-
-# Compiled/Generated files
-*.o
-*.obj
-*.out
+# Compiled files
+*.js.map
+*.tsbuildinfo
 ```

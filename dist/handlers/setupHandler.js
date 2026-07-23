@@ -54,7 +54,8 @@ export async function showDashboard(interaction) {
         await interaction.reply({ ...payload, ephemeral: false });
     }
     else {
-        await interaction.update(payload);
+        // Always send as NEW ephemeral message, never edit existing
+        await interaction.reply({ ...payload, ephemeral: true });
     }
 }
 export async function showSetupSection(interaction, section) {
@@ -65,41 +66,41 @@ export async function showSetupSection(interaction, section) {
     if (section === "categories") {
         const categories = await categoryRepository.list(guildId);
         const { embed, components } = categoryManagerEmbed(guildId, categories);
-        await interaction.update({ embeds: [embed], components });
+        await interaction.reply({ embeds: [embed], components, ephemeral: true });
         return;
     }
     if (section === "products") {
         const products = await productRepository.list(guildId);
         const { embed, components } = productManagerEmbed(guildId, products);
-        await interaction.update({ embeds: [embed], components });
+        await interaction.reply({ embeds: [embed], components, ephemeral: true });
         return;
     }
     // Design Settings - creates new dedicated embed
     if (section === "appearance") {
         const settings = await settingsRepository.get(guildId);
         const { embed, components } = designSettingsEmbed(guildId, settings);
-        await interaction.update({ embeds: [embed], components });
+        await interaction.reply({ embeds: [embed], components, ephemeral: true });
         return;
     }
     // Payment Settings - creates new dedicated embed
     if (section === "payment") {
         const settings = await settingsRepository.get(guildId);
         const { embed, components } = paymentSettingsEmbed(guildId, settings);
-        await interaction.update({ embeds: [embed], components });
+        await interaction.reply({ embeds: [embed], components, ephemeral: true });
         return;
     }
     // Ticket Settings - creates new dedicated embed
     if (section === "tickets") {
         const settings = await settingsRepository.get(guildId);
         const { embed, components } = ticketSettingsEmbed(guildId, settings);
-        await interaction.update({ embeds: [embed], components });
+        await interaction.reply({ embeds: [embed], components, ephemeral: true });
         return;
     }
     // Bot Settings - creates new dedicated embed
     if (section === "bot") {
         const settings = await settingsRepository.get(guildId);
         const { embed, components } = botSettingsEmbed(guildId, settings);
-        await interaction.update({ embeds: [embed], components });
+        await interaction.reply({ embeds: [embed], components, ephemeral: true });
         return;
     }
 }

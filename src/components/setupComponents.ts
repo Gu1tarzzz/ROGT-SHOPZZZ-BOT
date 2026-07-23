@@ -3,6 +3,7 @@ import type { Category, Product, StockTransaction, ShopSettings } from "../types
 import { formatStock, truncate, formatPrice } from "../utils/formatters.js";
 import { componentEmoji } from "../utils/componentEmoji.js";
 import { UI_EMOJI, DIVIDER } from "../config/constants.js";
+import { settingsRepository } from "../database/repositories.js";
 
 // ╭──────────────────────────────────────────────────────────────╮
 // │  PREMIUM DASHBOARD COMPONENTS - ROGT SHOPZZZ                 │
@@ -197,4 +198,201 @@ export function productManagerEmbed(guildId: string, products: Product[]): { emb
     .setTimestamp();
     
   return { embed, components: [productButtons(), backButton()] };
+}
+
+/**
+ * Creates a NEW embed for Design Settings page (not editing existing dashboard)
+ * Premium design settings with all customization options
+ */
+export function designSettingsEmbed(guildId: string, settings: Awaited<ReturnType<typeof settingsRepository.get>>): { embed: EmbedBuilder, components: ActionRowBuilder<any>[] } {
+  const shop = settings.shop;
+  
+  const embed = new EmbedBuilder()
+    .setColor(shop.embedColor)
+    .setTitle(`${UI_EMOJI.text.brand} DESIGN SETTINGS`)
+    .setDescription([
+      "*ปรับแต่งรูปลักษณ์ร้านค้าของคุณ*",
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} Store Information`,
+      "",
+      `${UI_EMOJI.text.bullet} **Store Name**  ${shop.storeName}`,
+      `${UI_EMOJI.text.bullet} **Description**  ${truncate(shop.description, 80)}`,
+      `${UI_EMOJI.text.bullet} **Footer**  ${shop.footer}`,
+      `${UI_EMOJI.text.bullet} **Status**  ${shop.status === "open" ? "● Online" : "○ Offline"}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} Visual Design`,
+      "",
+      `${UI_EMOJI.text.bullet} **Embed Color**  \`${shop.embedColor}\``,
+      `${UI_EMOJI.text.bullet} **Banner**  ${shop.bannerGif || shop.banner ? "✓ Set" : "○ Not Set"}`,
+      `${UI_EMOJI.text.bullet} **Thumbnail**  ${shop.thumbnail ? "✓ Set" : "○ Not Set"}`,
+      `${UI_EMOJI.text.bullet} **Logo**  ${shop.storeLogo ? "✓ Set" : "○ Not Set"}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} Branding`,
+      "",
+      `${UI_EMOJI.text.bullet} **Author Name**  ${shop.authorName || "Default"}`,
+      `${UI_EMOJI.text.bullet} **Author Icon**  ${shop.authorIcon ? "✓ Set" : "○ Not Set"}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อแก้ไขหรือดูตัวอย่าง`
+    ].join("\n"))
+    .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+    .setTimestamp();
+    
+  if (shop.thumbnail) embed.setThumbnail(shop.thumbnail);
+  if (shop.bannerGif) embed.setImage(shop.bannerGif);
+  else if (shop.banner) embed.setImage(shop.banner);
+    
+  return { 
+    embed, 
+    components: [
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId("setup:modal:appearance:basic").setLabel("ข้อมูลร้าน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.edit),
+        new ButtonBuilder().setCustomId("setup:modal:appearance:images").setLabel("รูปภาพ").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image),
+        new ButtonBuilder().setCustomId("setup:modal:appearance:branding").setLabel("แบรนด์").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.gem),
+        new ButtonBuilder().setCustomId("setup:preview:shop").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.browse),
+        new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back)
+      )
+    ] 
+  };
+}
+
+/**
+ * Creates a NEW embed for Payment Settings page (not editing existing dashboard)
+ */
+export function paymentSettingsEmbed(guildId: string, settings: Awaited<ReturnType<typeof settingsRepository.get>>): { embed: EmbedBuilder, components: ActionRowBuilder<any>[] } {
+  const payment = settings.payment;
+  
+  const embed = new EmbedBuilder()
+    .setColor("#8B5CF6")
+    .setTitle(`${UI_EMOJI.text.brand} PAYMENT SETTINGS`)
+    .setDescription([
+      "*จัดการช่องทางชำระเงิน*",
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} Status`,
+      "",
+      `${payment.enabled ? "●" : "○"} **Payment**  ${payment.enabled ? "เปิดรับชำระเงิน" : "ยังไม่เปิด"}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} Payment Methods`,
+      "",
+      `${UI_EMOJI.text.bullet} **TrueMoney Wallet**  ${payment.trueMoneyWallet || "—"}`,
+      `${UI_EMOJI.text.bullet} **PromptPay**  ${payment.promptPay || "—"}`,
+      `${UI_EMOJI.text.bullet} **Bank Account**  ${payment.bankAccount || "—"}`,
+      `${UI_EMOJI.text.bullet} **Slip Channel**  ${payment.slipChannelId ? `<#${payment.slipChannelId}>` : "—"}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อแก้ไข`
+    ].join("\n"))
+    .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+    .setTimestamp();
+    
+  return { 
+    embed, 
+    components: [
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId("setup:modal:payment:payment").setLabel("การชำระเงิน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.payment),
+        new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back)
+      )
+    ] 
+  };
+}
+
+/**
+ * Creates a NEW embed for Ticket Settings page (not editing existing dashboard)
+ */
+export function ticketSettingsEmbed(guildId: string, settings: Awaited<ReturnType<typeof settingsRepository.get>>): { embed: EmbedBuilder, components: ActionRowBuilder<any>[] } {
+  const tickets = settings.tickets;
+  
+  const embed = new EmbedBuilder()
+    .setColor("#8B5CF6")
+    .setTitle(`${UI_EMOJI.text.brand} TICKET SETTINGS`)
+    .setDescription([
+      "*ระบบ Ticket สำหรับดูแลคำสั่งซื้อ*",
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} Categories`,
+      "",
+      `${UI_EMOJI.text.bullet} **Order Category**  ${tickets.categoryId ? `<#${tickets.categoryId}>` : "○ Not Set"}`,
+      `${UI_EMOJI.text.bullet} **Support Category**  ${tickets.supportCategoryId ? `<#${tickets.supportCategoryId}>` : "Use Order Category"}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} Configuration`,
+      "",
+      `${UI_EMOJI.text.bullet} **Prefix**  \`${tickets.ticketPrefix}\``,
+      `${UI_EMOJI.text.bullet} **Staff Roles**  ${tickets.staffRoleIds.length} roles`,
+      `${UI_EMOJI.text.bullet} **Transcript Channel**  ${tickets.transcriptChannelId ? `<#${tickets.transcriptChannelId}>` : "—"}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อแก้ไข`
+    ].join("\n"))
+    .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+    .setTimestamp();
+    
+  return { 
+    embed, 
+    components: [
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId("setup:modal:tickets:ticket-categories").setLabel("หมวดหมู่").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.categories),
+        new ButtonBuilder().setCustomId("setup:modal:tickets:ticket-staff").setLabel("ทีมงาน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.owner),
+        new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back)
+      )
+    ] 
+  };
+}
+
+/**
+ * Creates a NEW embed for Bot Settings page (not editing existing dashboard)
+ */
+export function botSettingsEmbed(guildId: string, settings: Awaited<ReturnType<typeof settingsRepository.get>>): { embed: EmbedBuilder, components: ActionRowBuilder<any>[] } {
+  const bot = settings.bot;
+  
+  const embed = new EmbedBuilder()
+    .setColor("#8B5CF6")
+    .setTitle(`${UI_EMOJI.text.brand} BOT SETTINGS`)
+    .setDescription([
+      "*ตั้งค่าสิทธิ์และสถานะบอต*",
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} Access Control`,
+      "",
+      `${UI_EMOJI.text.bullet} **Owner**  ${bot.ownerId ? `<@${bot.ownerId}>` : "Guild Owner"}`,
+      `${UI_EMOJI.text.bullet} **Staff Roles**  ${bot.staffRoleIds.length} roles`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} System Status`,
+      "",
+      `${!bot.maintenanceMode ? "●" : "◐"} **Maintenance Mode**  ${!bot.maintenanceMode ? "ระบบพร้อมให้บริการ" : "กำลังปิดปรับปรุง"}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อแก้ไข`
+    ].join("\n"))
+    .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+    .setTimestamp();
+    
+  return { 
+    embed, 
+    components: [
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId("setup:modal:bot:bot").setLabel("ตั้งค่าบอต").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.settings),
+        new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back)
+      )
+    ] 
+  };
 }

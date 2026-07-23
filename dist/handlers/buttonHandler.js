@@ -68,6 +68,11 @@ export async function handleButton(interaction) {
             return showDashboard(interaction);
         if (action === "modal")
             return openModal(interaction, id);
+        if (action === "preview" && id === "shop") {
+            // Preview shop - creates new ephemeral embed showing shop appearance
+            const { shopEmbed } = await import("../utils/discord.js");
+            return interaction.reply({ embeds: [await shopEmbed(interaction.guildId)], ephemeral: true });
+        }
         if (action === "refresh") {
             if (id === "dashboard")
                 return showDashboard(interaction);

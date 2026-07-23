@@ -1,7 +1,7 @@
 import type { StringSelectMenuInteraction } from "discord.js";
 import { categoryMenu, productMenu, purchaseButton, productBrowserComponents } from "../components/shopComponents.js";
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
-import { premiumEmbed, premiumMetricBlock, statusIndicator } from "../utils/discord.js";
+import { premiumEmbed, compactMetricCard, premiumMetricBlock, statusIndicator } from "../utils/discord.js";
 import { formatPrice, formatStock, formatNumber } from "../utils/formatters.js";
 import { hasAdminAccess } from "../utils/permissions.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
@@ -39,7 +39,7 @@ async function buildMainShopEmbed(guildId: string) {
     
   const availableProducts = products.filter((product) => product.stock !== 0).length;
   
-  // Premium storefront layout matching reference image with metric blocks
+  // Premium storefront layout matching reference image with compact 2x2 metric cards
   const description = [
     `**${UI_EMOJI.text.brand} ${settings.shop.storeName}**`,
     `${settings.shop.description || "Premium marketplace"}`,
@@ -50,10 +50,8 @@ async function buildMainShopEmbed(guildId: string) {
     "",
     `**${UI_EMOJI.text.section} Store Statistics**`,
     "",
-    premiumMetricBlock("📦", "Products", formatNumber(products.length)),
-    premiumMetricBlock("📁", "Categories", formatNumber(categories.length)),
-    premiumMetricBlock("✨", "Available", formatNumber(availableProducts)),
-    premiumMetricBlock("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
+    `${compactMetricCard("📦", "Products", formatNumber(products.length))}  ${compactMetricCard("📁", "Categories", formatNumber(categories.length))}`,
+    `${compactMetricCard("✨", "Available", formatNumber(availableProducts))}  ${compactMetricCard("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock))}`,
     "",
     DIVIDER,
     "",

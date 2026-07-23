@@ -1,7 +1,7 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from "discord.js";
-import { formatStock, truncate } from "../utils/formatters.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, EmbedBuilder } from "discord.js";
+import { formatStock, truncate, formatPrice } from "../utils/formatters.js";
 import { componentEmoji } from "../utils/componentEmoji.js";
-import { UI_EMOJI } from "../config/constants.js";
+import { UI_EMOJI, DIVIDER } from "../config/constants.js";
 // ╭──────────────────────────────────────────────────────────────╮
 // │  PREMIUM DASHBOARD COMPONENTS - ROGT SHOPZZZ                 │
 // │  Style: Luxury • Fantasy • Minimal • Dark                    │
@@ -79,4 +79,50 @@ export function stockHistoryMenu(transactions) {
         description: `${t.previousStock} → ${t.newStock}  •  <@${t.performedBy}>`,
         emoji: t.type === "purchase" ? UI_EMOJI.component.browse : t.type === "restock" ? UI_EMOJI.component.product : UI_EMOJI.component.edit
     }))));
+}
+/**
+ * Creates a NEW embed for category manager page (not editing existing dashboard)
+ */
+export function categoryManagerEmbed(guildId, categories) {
+    const summary = categories.length
+        ? categories.map((c) => `${UI_EMOJI.text.bullet} **${truncate(c.name, 40)}**  ${c.hidden ? "○ ซ่อน" : "● แสดง"}  •  ลำดับ ${c.position}`).join("\n")
+        : "○ ยังไม่มีหมวดหมู่สินค้า";
+    const embed = new EmbedBuilder()
+        .setColor("#8B5CF6")
+        .setTitle(`${UI_EMOJI.text.brand} CATEGORY MANAGER`)
+        .setDescription([
+        "*จัดการหมวดหมู่สินค้าและการแสดงผล*",
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.bullet} ทั้งหมด **${categories.length}** หมวดหมู่`,
+        "",
+        summary || "ไม่มีข้อมูล"
+    ].join("\n"))
+        .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+        .setTimestamp();
+    return { embed, components: [categoryButtons(), backButton()] };
+}
+/**
+ * Creates a NEW embed for product manager page (not editing existing dashboard)
+ */
+export function productManagerEmbed(guildId, products) {
+    const summary = products.length
+        ? products.slice(0, 15).map((p) => `${UI_EMOJI.text.bullet} **${truncate(p.name, 35)}**  ${formatPrice(p.price)}  •  ${p.stock < 0 ? "ไม่จำกัด" : `สต็อก ${p.stock}`}`).join("\n")
+        : "○ ยังไม่มีสินค้า";
+    const embed = new EmbedBuilder()
+        .setColor("#8B5CF6")
+        .setTitle(`${UI_EMOJI.text.brand} PRODUCT MANAGER`)
+        .setDescription([
+        "*จัดการสินค้า ราคา และสต็อก*",
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.bullet} ทั้งหมด **${products.length}** รายการ`,
+        "",
+        summary || "ไม่มีข้อมูล"
+    ].join("\n"))
+        .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+        .setTimestamp();
+    return { embed, components: [productButtons(), backButton()] };
 }

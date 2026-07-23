@@ -1,7 +1,7 @@
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
-import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons } from "../components/setupComponents.js";
-import { premiumEmbed, premiumMetricBlock, statusIndicator } from "../utils/discord.js";
-import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
+import { dashboardMenu, sectionButtons, refreshButtons, categoryManagerEmbed, productManagerEmbed } from "../components/setupComponents.js";
+import { premiumEmbed, premiumMetricBlock, statusIndicator, compactMetricCard } from "../utils/discord.js";
+import { truncate, formatNumber } from "../utils/formatters.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 const statusMark = (isPositive, positive, negative) => `${isPositive ? "🟢" : "🔴"} **${isPositive ? positive : negative}**`;
 export async function showDashboard(interaction) {
@@ -20,7 +20,7 @@ export async function showDashboard(interaction) {
     const paymentStatus = statusMark(settings.payment.enabled, "พร้อมรับชำระ", "ยังไม่เปิด");
     const ticketStatus = statusMark(Boolean(settings.tickets.categoryId), "พร้อมใช้งาน", "ต้องตั้งค่า");
     const publishStatus = statusMark(Boolean(settings.shop.publishedMessageId), "เผยแพร่แล้ว", "ยังไม่เผยแพร่");
-    // Premium dashboard layout with metric blocks
+    // Premium dashboard layout with compact 2x2 metric cards matching reference
     const description = [
         `**${UI_EMOJI.text.brand} ${settings.shop.storeName}**`,
         statusIndicator(settings.shop.status),
@@ -29,10 +29,8 @@ export async function showDashboard(interaction) {
         "",
         `**${UI_EMOJI.text.section} Marketplace Metrics**`,
         "",
-        premiumMetricBlock("📁", "Categories", formatNumber(categories.length)),
-        premiumMetricBlock("📦", "Products", formatNumber(products.length)),
-        premiumMetricBlock("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
-        premiumMetricBlock("✨", "Available", products.filter(p => p.stock !== 0).length.toString()),
+        `${compactMetricCard("📁", "Categories", formatNumber(categories.length))}  ${compactMetricCard("📦", "Products", formatNumber(products.length))}`,
+        `${compactMetricCard("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock))}  ${compactMetricCard("✨", "Available", products.filter(p => p.stock !== 0).length.toString())}`,
         "",
         DIVIDER,
         "",
@@ -65,36 +63,14 @@ export async function showSetupSection(interaction, section) {
     const guildId = interaction.guildId;
     if (section === "categories") {
         const categories = await categoryRepository.list(guildId);
-        const summary = categories.length
-            ? categories.map((c) => `${UI_EMOJI.text.bullet} **${truncate(c.name, 40)}**  ${c.hidden ? "○ ซ่อน" : "● แสดง"}  •  ลำดับ ${c.position}`).join("\n")
-            : "○ ยังไม่มีหมวดหมู่สินค้า";
-        const embed = await premiumEmbed(guildId, "📁 CATEGORY MANAGER", [
-            "*จัดการหมวดหมู่สินค้าและการแสดงผล*",
-            "",
-            DIVIDER,
-            "",
-            `${UI_EMOJI.text.bullet} ทั้งหมด **${formatNumber(categories.length)}** หมวดหมู่`,
-            "",
-            summary || "ไม่มีข้อมูล"
-        ].join("\n"));
-        await interaction.update({ embeds: [embed], components: [categoryButtons(), backButton()] });
+        const { embed, components } = categoryManagerEmbed(guildId, categories);
+        await interaction.update({ embeds: [embed], components });
         return;
     }
     if (section === "products") {
         const products = await productRepository.list(guildId);
-        const summary = products.length
-            ? products.slice(0, 15).map((p) => `${UI_EMOJI.text.bullet} **${truncate(p.name, 35)}**  ${formatPrice(p.price)}  •  ${p.stock < 0 ? "ไม่จำกัด" : `สต็อก ${p.stock}`}`).join("\n")
-            : "○ ยังไม่มีสินค้า";
-        const embed = await premiumEmbed(guildId, "📦 PRODUCT MANAGER", [
-            "*จัดการสินค้า ราคา และสต็อก*",
-            "",
-            DIVIDER,
-            "",
-            `${UI_EMOJI.text.bullet} ทั้งหมด **${formatNumber(products.length)}** รายการ`,
-            "",
-            summary || "ไม่มีข้อมูล"
-        ].join("\n"));
-        await interaction.update({ embeds: [embed], components: [productButtons(), backButton()] });
+        const { embed, components } = productManagerEmbed(guildId, products);
+        await interaction.update({ embeds: [embed], components });
         return;
     }
     const settings = await settingsRepository.get(guildId);

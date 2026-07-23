@@ -26,6 +26,13 @@ export const premiumMetric = (icon: string, label: string, value: string | numbe
   `\`${value}\` **${label}**`;
 
 /**
+ * Compact 2x2 metric card for statistics section
+ * Creates a more compact layout for dashboard statistics
+ */
+export const compactMetricCard = (icon: string, label: string, value: string | number): string =>
+  `◈ ${label}  \`${value}\``;
+
+/**
  * Status indicator with modern premium icons
  */
 export const statusIndicator = (status: string): string => {
@@ -75,7 +82,7 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     
   const availableProducts = products.filter((product) => product.stock !== 0).length;
   
-  // Premium storefront layout matching reference image with metric blocks
+  // Premium storefront layout matching reference image with compact 2x2 metric cards
   const description = [
     `**${UI_EMOJI.text.brand} ${shop.storeName}**`,
     `${shop.description || "Premium marketplace"}`,
@@ -86,10 +93,8 @@ export async function shopEmbed(guildId: string, showAdminControls = false): Pro
     "",
     `**${UI_EMOJI.text.section} Store Statistics**`,
     "",
-    premiumMetricBlock("📦", "Products", formatNumber(products.length)),
-    premiumMetricBlock("📁", "Categories", formatNumber(categories.length)),
-    premiumMetricBlock("✨", "Available", formatNumber(availableProducts)),
-    premiumMetricBlock("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock)),
+    `${compactMetricCard("📦", "Products", formatNumber(products.length))}  ${compactMetricCard("📁", "Categories", formatNumber(categories.length))}`,
+    `${compactMetricCard("✨", "Available", formatNumber(availableProducts))}  ${compactMetricCard("💎", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock))}`,
     "",
     DIVIDER,
     "",

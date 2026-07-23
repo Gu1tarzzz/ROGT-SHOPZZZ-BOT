@@ -64,8 +64,10 @@ export async function handleButton(interaction) {
     if (!await assertAdmin(interaction))
         return;
     if (scope === "setup") {
-        if (action === "home")
+        if (action === "home") {
+            // Back to Dashboard - creates NEW dashboard embed (not editing)
             return showDashboard(interaction);
+        }
         if (action === "modal")
             return openModal(interaction, id);
         if (action === "preview" && id === "shop") {

@@ -89,6 +89,15 @@ export async function openModal(interaction, section) {
             { id: "maintenance", label: "Maintenance Mode (yes / no)", value: settings.bot.maintenanceMode ? "yes" : "no", required: true, maxLength: 3 }
         ]));
     }
+    // Handle backoffice with subsections (banner-image)
+    if (type === "backoffice") {
+        if (subSection === "banner-image") {
+            return interaction.showModal(createModal("settings:backoffice:banner-image", "✦ ดีไซน์หลังร้าน • รูปภาพ", [
+                { id: "imageUrl", label: "Image Banner URL", value: settings.backOffice.imageUrl, placeholder: "https://...", maxLength: 1024 },
+                { id: "thumbnailUrl", label: "Thumbnail URL", value: settings.backOffice.thumbnailUrl, placeholder: "https://...", maxLength: 1024 }
+            ]));
+        }
+    }
 }
 async function openAppearanceModal(interaction, settings) {
     return interaction.showModal(createModal("settings:appearance", "✦ ดีไซน์ร้าน", [
@@ -234,6 +243,16 @@ export async function handleModal(interaction) {
     }
     else if (action === "bot") {
         await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, bot: { ...settings.bot, ownerId: parseOptional(value(interaction, "owner")), staffRoleIds: value(interaction, "roles").split(",").map((item) => item.trim()).filter(Boolean), maintenanceMode: value(interaction, "maintenance").toLowerCase() === "yes" } }));
+    }
+    else if (action === "backoffice:banner-image") {
+        await settingsRepository.update(interaction.guildId, (settings) => ({
+            ...settings,
+            backOffice: {
+                ...settings.backOffice,
+                imageUrl: parseOptional(value(interaction, "imageUrl")),
+                thumbnailUrl: parseOptional(value(interaction, "thumbnailUrl"))
+            }
+        }));
     }
     return interaction.reply({ content: "✔ บันทึกการตั้งค่าแล้ว  •  หน้าร้านจะอัปเดตทันที", ephemeral: true });
 }

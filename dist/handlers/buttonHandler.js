@@ -1,14 +1,17 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, DiscordAPIError } from "discord.js";
-import { categoryManagerMenu, categorySortButtons, productCategoryMenu, productManagerMenu, stockActionButtons } from "../components/setupComponents.js";
+import { categoryManagerMenu, categorySortButtons, productCategoryMenu, productManagerMenu, stockActionButtons, dashboardMenu, refreshButtons } from "../components/setupComponents.js";
 import { shopButtons } from "../components/shopComponents.js";
 import { categoryRepository, productRepository, settingsRepository, stockRepository } from "../database/repositories.js";
 import { openCategoryModal, openModal, openProductModal } from "./modalHandler.js";
 import { showDashboard } from "./setupHandler.js";
 import { cancelTicket, closeTicket, createOrderTicket, promptSlip, reviewSlip } from "./ticketHandler.js";
-import { premiumEmbed, shopEmbed } from "../utils/discord.js";
+import { premiumEmbed, shopEmbed, statusIndicator, compactMetricCard } from "../utils/discord.js";
 import { hasAdminAccess } from "../utils/permissions.js";
-import { formatStock } from "../utils/formatters.js";
-import { DIVIDER } from "../config/constants.js";
+import { formatStock, formatNumber } from "../utils/formatters.js";
+import { DIVIDER, UI_EMOJI } from "../config/constants.js";
+function statusMark(isPositive, positive, negative) {
+    return `${isPositive ? UI_EMOJI.text.active : UI_EMOJI.text.inactive} **${isPositive ? positive : negative}**`;
+}
 async function assertAdmin(interaction) {
     if (!interaction.guild)
         return false;
@@ -76,8 +79,10 @@ export async function handleButton(interaction) {
             return interaction.reply({ embeds: [await shopEmbed(interaction.guildId)], ephemeral: true });
         }
         if (action === "refresh") {
-            if (id === "dashboard")
-                return showDashboard(interaction);
+            if (id === "dashboard") {
+                // Refresh Summary - updates the SAME dashboard message (not creating new one)
+                return refreshDashboard(interaction);
+            }
             if (id === "shop") {
                 return refreshShopMessage(interaction);
             }
@@ -182,6 +187,60 @@ async function refreshShopMessage(interaction) {
         }
         console.error("Error refreshing shop message:", error);
         await interaction.reply({ content: "○ ไม่สามารถอัปเดตหน้าร้านได้  •  กรุณาลองอีกครั้ง", ephemeral: true });
+    }
+}
+async function refreshDashboard(interaction) {
+    if (!interaction.guildId || !interaction.message)
+        return;
+    try {
+        // Re-fetch fresh data and update the SAME dashboard message
+        const settings = await settingsRepository.get(interaction.guildId);
+        const categories = await categoryRepository.list(interaction.guildId, false);
+        const products = await productRepository.list(interaction.guildId, false);
+        // Calculate total stock
+        let totalStock = 0;
+        for (const product of products) {
+            if (product.stock === -1)
+                continue;
+            totalStock += product.stock;
+        }
+        const paymentStatus = statusMark(settings.payment.enabled, "พร้อมรับชำระ", "ยังไม่เปิด");
+        const ticketStatus = statusMark(Boolean(settings.tickets.categoryId), "พร้อมใช้งาน", "ต้องตั้งค่า");
+        const publishStatus = statusMark(Boolean(settings.shop.publishedMessageId), "เผยแพร่แล้ว", "ยังไม่เผยแพร่");
+        // Premium dashboard layout with compact 2x2 metric cards matching reference
+        const description = [
+            `**${UI_EMOJI.text.brand} ${settings.shop.storeName}**`,
+            statusIndicator(settings.shop.status),
+            "",
+            DIVIDER,
+            "",
+            `**${UI_EMOJI.text.section} Marketplace Metrics**`,
+            "",
+            `${compactMetricCard("◈", "Categories", formatNumber(categories.length))}  ${compactMetricCard("◈", "Products", formatNumber(products.length))}`,
+            `${compactMetricCard("◈", "Total Stock", totalStock < 0 ? "Unlimited" : formatNumber(totalStock))}  ${compactMetricCard("◈", "Available", products.filter(p => p.stock !== 0).length.toString())}`,
+            "",
+            DIVIDER,
+            "",
+            `**${UI_EMOJI.text.section} System Status**`,
+            "",
+            `${UI_EMOJI.component.payment} **Payment**  ${paymentStatus}`,
+            `${UI_EMOJI.component.ticket} **Tickets**  ${ticketStatus}`,
+            `${UI_EMOJI.component.catalog} **Shop Front**  ${publishStatus}`,
+            "",
+            settings.shop.publishedChannelId && settings.shop.publishedMessageId
+                ? `${UI_EMOJI.text.bullet} Published in <#${settings.shop.publishedChannelId}>`
+                : "",
+            "",
+            DIVIDER,
+            "เลือกส่วนจัดการด้านล่าง"
+        ].filter(line => line !== "").join("\n");
+        const baseEmbed = await premiumEmbed(interaction.guildId, "⟡ DASHBOARD", description);
+        const components = [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
+        await interaction.update({ embeds: [baseEmbed], components });
+    }
+    catch (error) {
+        console.error("Error refreshing dashboard:", error);
+        await interaction.reply({ content: "○ ไม่สามารถรีเฟรชแดชบอร์ดได้  •  กรุณาลองอีกครั้ง", ephemeral: true });
     }
 }
 export async function handleCategoryPick(interaction, action) {

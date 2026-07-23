@@ -88,7 +88,7 @@ export function backOfficeDesignEmbed(guildId, settings) {
         "",
         `${UI_EMOJI.text.bullet} **Title**  ${backOffice.embedTitle}`,
         `${UI_EMOJI.text.bullet} **Description**  ${truncate(backOffice.embedDescription, 60)}`,
-        `${UI_EMOJI.text.bullet} **Color**  \\`, $, { backOffice, : .embedColor }, ``,
+        `${UI_EMOJI.text.bullet} **Color**  \`${backOffice.embedColor}\``,
         "",
         DIVIDER,
         "",

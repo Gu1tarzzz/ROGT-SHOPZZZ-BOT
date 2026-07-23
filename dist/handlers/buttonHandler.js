@@ -237,6 +237,8 @@ async function refreshDashboard(interaction) {
         const baseEmbed = await premiumEmbed(interaction.guildId, "⟡ DASHBOARD", description);
         const components = [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
         await interaction.update({ embeds: [baseEmbed], components });
+        // Show small ephemeral confirmation message (like Update Shop)
+        await interaction.followUp({ content: "✓ สรุป refreshed แล้ว", ephemeral: true });
     }
     catch (error) {
         console.error("Error refreshing dashboard:", error);

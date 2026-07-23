@@ -117,6 +117,14 @@ export const DEFAULT_GUILD_SETTINGS: GuildSettings = {
     staffRoleIds: [],
     locale: "th",
     maintenanceMode: false
+  },
+  backOffice: {
+    embedTitle: "⟡ DASHBOARD",
+    embedDescription: "จัดการร้านค้าของคุณ",
+    embedColor: THEME.primary,
+    footerText: "ROGT SHOPZZZ  •  Backend Dashboard",
+    dividerStyle: "line",
+    statusIconStyle: "dot"
   }
 };
 

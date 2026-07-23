@@ -244,6 +244,9 @@ async function refreshDashboard(interaction: ButtonInteraction): Promise<void> {
     const components = [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
     
     await interaction.update({ embeds: [baseEmbed], components });
+    
+    // Show small ephemeral confirmation message (like Update Shop)
+    await interaction.followUp({ content: "✓ สรุป refreshed แล้ว", ephemeral: true });
   } catch (error) {
     console.error("Error refreshing dashboard:", error);
     await interaction.reply({ content: "○ ไม่สามารถรีเฟรชแดชบอร์ดได้  •  กรุณาลองอีกครั้ง", ephemeral: true });

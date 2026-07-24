@@ -1,11 +1,12 @@
 import type { ModalSubmitInteraction } from "discord.js";
-import { TextInputStyle } from "discord.js";
+import { TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from "discord.js";
 import { createModal } from "../components/modal.js";
 import { categoryRepository, productRepository, settingsRepository, UserRepository } from "../database/repositories.js";
 import type { ButtonColor, Product } from "../types.js";
 import { isValidHex, parseOptional, parseThaiNumber, formatNumber } from "../utils/formatters.js";
 import { premiumEmbed, balanceEmbed } from "../utils/discord.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
+import { bankSetupEmbed, notificationSetupEmbed } from "../components/setupComponents.js";
 
 const value = (interaction: ModalSubmitInteraction, id: string): string => interaction.fields.getTextInputValue(id).trim();
 const splitLines = (input: string): string[] => input.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
@@ -172,6 +173,22 @@ export async function openModal(interaction: import("discord.js").ButtonInteract
       ]));
     }
   }
+}
+
+/**
+ * Shows the Bank Setup page with current configuration and edit buttons
+ */
+export async function showBankSetupPage(interaction: import("discord.js").ButtonInteraction, settings: Awaited<ReturnType<typeof settingsRepository.get>>): Promise<void> {
+  const { embed, components } = bankSetupEmbed(interaction.guildId!, settings);
+  await interaction.reply({ embeds: [embed], components, ephemeral: true });
+}
+
+/**
+ * Shows the Notification Setup page with channel selectors
+ */
+export async function showNotificationSetupPage(interaction: import("discord.js").ButtonInteraction, settings: Awaited<ReturnType<typeof settingsRepository.get>>): Promise<void> {
+  const { embed, components } = notificationSetupEmbed(interaction.guildId!, settings);
+  await interaction.reply({ embeds: [embed], components, ephemeral: true });
 }
 
 async function openAppearanceModal(interaction: import("discord.js").ButtonInteraction, settings: Awaited<ReturnType<typeof settingsRepository.get>>): Promise<unknown> {

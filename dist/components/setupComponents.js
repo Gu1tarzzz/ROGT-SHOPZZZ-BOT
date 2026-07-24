@@ -226,6 +226,71 @@ export function designSettingsEmbed(guildId, settings) {
 /**
  * Creates a NEW embed for Payment Settings page (not editing existing dashboard)
  */
+/**
+ * Creates a NEW embed for Payment Dashboard (main payment management page)
+ */
+export function paymentDashboardEmbed(guildId, settings) {
+    const payment = settings.payment;
+    const trueMoneyDisplay = payment.trueMoneyPhone || "—";
+    const bankName = payment.bank?.bankName || "—";
+    const accountName = payment.bank?.accountName || "—";
+    const accountNumber = payment.bank?.accountNumber || "—";
+    const qrImage = payment.bank?.qrImage || "—";
+    const topupChannel = payment.logs?.topupChannel ? `<#${payment.logs.topupChannel}>` : "—";
+    const purchaseChannel = payment.logs?.purchaseChannel ? `<#${payment.logs.purchaseChannel}>` : "—";
+    const embed = new EmbedBuilder()
+        .setColor("#8B5CF6")
+        .setTitle(`${UI_EMOJI.text.brand} PAYMENT DASHBOARD`)
+        .setDescription([
+        "*จัดการระบบการชำระเงิน*",
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.section} Status`,
+        "",
+        `${payment.enabled ? "●" : "○"} **Payment**  ${payment.enabled ? "เปิดรับชำระเงิน" : "ยังไม่เปิด"}`,
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.section} TrueMoney Wallet`,
+        "",
+        `${UI_EMOJI.text.bullet} **Phone Number**  ${trueMoneyDisplay}`,
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.section} Bank Account`,
+        "",
+        `${UI_EMOJI.text.bullet} **Bank Name**  ${bankName}`,
+        `${UI_EMOJI.text.bullet} **Account Name**  ${accountName}`,
+        `${UI_EMOJI.text.bullet} **Account Number**  ${accountNumber}`,
+        `${UI_EMOJI.text.bullet} **QR Image**  ${typeof qrImage === "string" && qrImage.startsWith("http") ? "✓ Set" : "○ Not Set"}`,
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.section} Notification Channels`,
+        "",
+        `${UI_EMOJI.text.bullet} **Top Up Log**  ${topupChannel}`,
+        `${UI_EMOJI.text.bullet} **Purchase Log**  ${purchaseChannel}`,
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อตั้งค่า`
+    ].join("\n"))
+        .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+        .setTimestamp();
+    if (typeof qrImage === "string" && qrImage.startsWith("http")) {
+        embed.setThumbnail(qrImage);
+    }
+    return {
+        embed,
+        components: [
+            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("payment:setup:truemoney").setLabel("TrueMoney Setup").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.payment), new ButtonBuilder().setCustomId("payment:setup:bank").setLabel("Bank Setup").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.bank), new ButtonBuilder().setCustomId("payment:setup:notification").setLabel("Notification Setup").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.alert))
+        ]
+    };
+}
+/**
+ * Creates a NEW embed for Payment Settings (legacy - kept for backwards compatibility)
+ */
 export function paymentSettingsEmbed(guildId, settings) {
     const payment = settings.payment;
     const embed = new EmbedBuilder()
@@ -358,6 +423,86 @@ export function userBalanceManagerEmbed(guildId) {
         embed,
         components: [
             new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:user-balance:add-balance").setLabel("Add Balance").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.payment), new ButtonBuilder().setCustomId("setup:modal:user-balance:remove-balance").setLabel("Remove Balance").setStyle(ButtonStyle.Danger).setEmoji(UI_EMOJI.component.remove), new ButtonBuilder().setCustomId("setup:modal:user-balance:check-balance").setLabel("Check Balance").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.analytics))
+        ]
+    };
+}
+/**
+ * Creates a NEW embed for Bank Setup page
+ */
+export function bankSetupEmbed(guildId, settings) {
+    const payment = settings.payment;
+    const bankName = payment.bank?.bankName || "—";
+    const accountName = payment.bank?.accountName || "—";
+    const accountNumber = payment.bank?.accountNumber || "—";
+    const qrImage = payment.bank?.qrImage || "—";
+    const embed = new EmbedBuilder()
+        .setColor("#8B5CF6")
+        .setTitle(`${UI_EMOJI.text.brand} BANK SETUP`)
+        .setDescription([
+        "*จัดการบัญชีธนาคาร*",
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.section} Current Configuration`,
+        "",
+        `${UI_EMOJI.text.bullet} **Bank Name**  ${bankName}`,
+        `${UI_EMOJI.text.bullet} **Account Name**  ${accountName}`,
+        `${UI_EMOJI.text.bullet} **Account Number**  ${accountNumber}`,
+        `${UI_EMOJI.text.bullet} **QR Image**  ${typeof qrImage === "string" && qrImage.startsWith("http") ? "✓ Set" : "○ Not Set"}`,
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อแก้ไข`
+    ].join("\n"))
+        .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+        .setTimestamp();
+    if (typeof qrImage === "string" && qrImage.startsWith("http")) {
+        embed.setThumbnail(qrImage);
+    }
+    return {
+        embed,
+        components: [
+            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("payment:bank:edit").setLabel("Edit Bank").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.edit), new ButtonBuilder().setCustomId("payment:qr:edit").setLabel("Edit QR").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image))
+        ]
+    };
+}
+/**
+ * Creates a NEW embed for Notification Setup page
+ */
+export function notificationSetupEmbed(guildId, settings) {
+    const payment = settings.payment;
+    const topupChannel = payment.logs?.topupChannel ? `<#${payment.logs.topupChannel}>` : "—";
+    const purchaseChannel = payment.logs?.purchaseChannel ? `<#${payment.logs.purchaseChannel}>` : "—";
+    const embed = new EmbedBuilder()
+        .setColor("#8B5CF6")
+        .setTitle(`${UI_EMOJI.text.brand} NOTIFICATION SETUP`)
+        .setDescription([
+        "*ตั้งค่าช่องแจ้งเตือน*",
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.section} Log Channels`,
+        "",
+        `${UI_EMOJI.text.bullet} **Top Up Log Channel**  ${topupChannel}`,
+        `${UI_EMOJI.text.bullet} **Purchase Log Channel**  ${purchaseChannel}`,
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.bullet} เลือกช่องด้านล่างเพื่อตั้งค่า`
+    ].join("\n"))
+        .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+        .setTimestamp();
+    return {
+        embed,
+        components: [
+            new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
+                .setCustomId("payment:notification:topup")
+                .setPlaceholder(`${UI_EMOJI.component.alert} Select Top Up Log Channel`)
+                .addOptions([{ label: "Clear Selection", value: "clear_topup", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }])),
+            new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
+                .setCustomId("payment:notification:purchase")
+                .setPlaceholder(`${UI_EMOJI.component.alert} Select Purchase Log Channel`)
+                .addOptions([{ label: "Clear Selection", value: "clear_purchase", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }]))
         ]
     };
 }

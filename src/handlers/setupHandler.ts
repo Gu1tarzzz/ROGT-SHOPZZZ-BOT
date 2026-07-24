@@ -1,6 +1,6 @@
 import { EmbedBuilder, type ButtonInteraction, type ChatInputCommandInteraction, type StringSelectMenuInteraction } from "discord.js";
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
-import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons, categoryManagerEmbed, productManagerEmbed, designSettingsEmbed, paymentDashboardEmbed, ticketSettingsEmbed, botSettingsEmbed, backOfficeDesignEmbed, userBalanceManagerEmbed } from "../components/setupComponents.js";
+import { backButton, categoryButtons, dashboardMenu, productButtons, sectionButtons, refreshButtons, categoryManagerEmbed, productManagerEmbed, designSettingsEmbed, paymentDashboardEmbed, ticketSettingsEmbed, botSettingsEmbed, backOfficeDesignEmbed, userBalanceManagerEmbed, bankSetupEmbed, notificationSetupEmbed } from "../components/setupComponents.js";
 import { premiumEmbed, premiumMetricBlock, statusIndicator, compactMetricCard } from "../utils/discord.js";
 import { formatPrice, truncate, formatNumber } from "../utils/formatters.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
@@ -107,6 +107,22 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
   if (section === "payment") {
     const settings = await settingsRepository.get(guildId);
     const { embed, components } = paymentDashboardEmbed(guildId, settings);
+    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    return;
+  }
+  
+  // Bank Setup - creates new dedicated embed
+  if (section === "bank-setup") {
+    const settings = await settingsRepository.get(guildId);
+    const { embed, components } = bankSetupEmbed(guildId, settings);
+    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    return;
+  }
+  
+  // Notification Setup - creates new dedicated embed
+  if (section === "notification-setup") {
+    const settings = await settingsRepository.get(guildId);
+    const { embed, components } = notificationSetupEmbed(guildId, settings);
     await interaction.reply({ embeds: [embed], components, ephemeral: true });
     return;
   }

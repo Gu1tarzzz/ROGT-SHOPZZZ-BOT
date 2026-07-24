@@ -120,7 +120,7 @@ export function sectionButtons(section: "appearance" | "backoffice" | "payment" 
     );
   }
   
-  return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back));
+  return row;
 }
 
 /**
@@ -154,8 +154,7 @@ export function backOfficeDesignEmbed(guildId: string, settings: Awaited<ReturnT
     embed, 
     components: [
       new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder().setCustomId("setup:modal:backoffice:banner-image").setLabel("Banner & Image").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image),
-        new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back)
+        new ButtonBuilder().setCustomId("setup:modal:backoffice:banner-image").setLabel("Banner & Image").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image)
       )
     ] 
   };
@@ -213,7 +212,7 @@ export function categoryManagerEmbed(guildId: string, categories: Category[]): {
     .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
     .setTimestamp();
     
-  return { embed, components: [categoryButtons(), backButton()] };
+  return { embed, components: [categoryButtons()] };
 }
 
 /**
@@ -239,7 +238,7 @@ export function productManagerEmbed(guildId: string, products: Product[]): { emb
     .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
     .setTimestamp();
     
-  return { embed, components: [productButtons(), backButton()] };
+  return { embed, components: [productButtons()] };
 }
 
 /**
@@ -298,8 +297,7 @@ export function designSettingsEmbed(guildId: string, settings: Awaited<ReturnTyp
         new ButtonBuilder().setCustomId("setup:modal:appearance:basic").setLabel("ข้อมูลร้าน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.edit),
         new ButtonBuilder().setCustomId("setup:modal:appearance:images").setLabel("รูปภาพ").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image),
         new ButtonBuilder().setCustomId("setup:modal:appearance:branding").setLabel("แบรนด์").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.gem),
-        new ButtonBuilder().setCustomId("setup:preview:shop").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.browse),
-        new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back)
+        new ButtonBuilder().setCustomId("setup:preview:shop").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.browse)
       )
     ] 
   };
@@ -343,8 +341,7 @@ export function paymentSettingsEmbed(guildId: string, settings: Awaited<ReturnTy
     embed, 
     components: [
       new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder().setCustomId("setup:modal:payment:payment").setLabel("การชำระเงิน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.payment),
-        new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back)
+        new ButtonBuilder().setCustomId("setup:modal:payment:payment").setLabel("การชำระเงิน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.payment)
       )
     ] 
   };
@@ -389,8 +386,7 @@ export function ticketSettingsEmbed(guildId: string, settings: Awaited<ReturnTyp
     components: [
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder().setCustomId("setup:modal:tickets:ticket-categories").setLabel("หมวดหมู่").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.categories),
-        new ButtonBuilder().setCustomId("setup:modal:tickets:ticket-staff").setLabel("ทีมงาน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.owner),
-        new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back)
+        new ButtonBuilder().setCustomId("setup:modal:tickets:ticket-staff").setLabel("ทีมงาน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.owner)
       )
     ] 
   };
@@ -432,8 +428,7 @@ export function botSettingsEmbed(guildId: string, settings: Awaited<ReturnType<t
     embed, 
     components: [
       new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder().setCustomId("setup:modal:bot:bot").setLabel("ตั้งค่าบอต").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.settings),
-        new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back)
+        new ButtonBuilder().setCustomId("setup:modal:bot:bot").setLabel("ตั้งค่าบอต").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.settings)
       )
     ] 
   };

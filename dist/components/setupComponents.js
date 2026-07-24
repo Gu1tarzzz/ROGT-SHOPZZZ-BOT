@@ -67,7 +67,7 @@ export function sectionButtons(section) {
     for (const opt of options) {
         row.addComponents(new ButtonBuilder().setCustomId(`setup:modal:${section}:${opt.id}`).setLabel(opt.label).setStyle(ButtonStyle.Primary).setEmoji(opt.emoji));
     }
-    return row.addComponents(new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back));
+    return row;
 }
 /**
  * Creates a NEW embed for Back Office Design Manager page (not editing existing dashboard)
@@ -97,7 +97,7 @@ export function backOfficeDesignEmbed(guildId, settings) {
     return {
         embed,
         components: [
-            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:backoffice:banner-image").setLabel("Banner & Image").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image), new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back))
+            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:backoffice:banner-image").setLabel("Banner & Image").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image))
         ]
     };
 }
@@ -136,7 +136,7 @@ export function categoryManagerEmbed(guildId, categories) {
     ].join("\n"))
         .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
         .setTimestamp();
-    return { embed, components: [categoryButtons(), backButton()] };
+    return { embed, components: [categoryButtons()] };
 }
 /**
  * Creates a NEW embed for product manager page (not editing existing dashboard)
@@ -159,7 +159,7 @@ export function productManagerEmbed(guildId, products) {
     ].join("\n"))
         .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
         .setTimestamp();
-    return { embed, components: [productButtons(), backButton()] };
+    return { embed, components: [productButtons()] };
 }
 /**
  * Creates a NEW embed for Design Settings page (not editing existing dashboard)
@@ -213,7 +213,7 @@ export function designSettingsEmbed(guildId, settings) {
     return {
         embed,
         components: [
-            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:appearance:basic").setLabel("ข้อมูลร้าน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.edit), new ButtonBuilder().setCustomId("setup:modal:appearance:images").setLabel("รูปภาพ").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image), new ButtonBuilder().setCustomId("setup:modal:appearance:branding").setLabel("แบรนด์").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.gem), new ButtonBuilder().setCustomId("setup:preview:shop").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.browse), new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back))
+            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:appearance:basic").setLabel("ข้อมูลร้าน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.edit), new ButtonBuilder().setCustomId("setup:modal:appearance:images").setLabel("รูปภาพ").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image), new ButtonBuilder().setCustomId("setup:modal:appearance:branding").setLabel("แบรนด์").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.gem), new ButtonBuilder().setCustomId("setup:preview:shop").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.browse))
         ]
     };
 }
@@ -252,7 +252,7 @@ export function paymentSettingsEmbed(guildId, settings) {
     return {
         embed,
         components: [
-            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:payment:payment").setLabel("การชำระเงิน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.payment), new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back))
+            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:payment:payment").setLabel("การชำระเงิน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.payment))
         ]
     };
 }
@@ -291,7 +291,7 @@ export function ticketSettingsEmbed(guildId, settings) {
     return {
         embed,
         components: [
-            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:tickets:ticket-categories").setLabel("หมวดหมู่").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.categories), new ButtonBuilder().setCustomId("setup:modal:tickets:ticket-staff").setLabel("ทีมงาน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.owner), new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back))
+            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:tickets:ticket-categories").setLabel("หมวดหมู่").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.categories), new ButtonBuilder().setCustomId("setup:modal:tickets:ticket-staff").setLabel("ทีมงาน").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.owner))
         ]
     };
 }
@@ -328,7 +328,7 @@ export function botSettingsEmbed(guildId, settings) {
     return {
         embed,
         components: [
-            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:bot:bot").setLabel("ตั้งค่าบอต").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.settings), new ButtonBuilder().setCustomId("setup:home").setLabel("กลับ").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back))
+            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:bot:bot").setLabel("ตั้งค่าบอต").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.settings))
         ]
     };
 }

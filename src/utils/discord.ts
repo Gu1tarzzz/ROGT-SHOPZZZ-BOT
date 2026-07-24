@@ -45,7 +45,7 @@ export const statusIndicator = (status: string): string => {
 };
 
 export async function premiumEmbed(guildId: string, title: string, description?: string): Promise<EmbedBuilder> {
-  const { shop } = await settingsRepository.get(guildId);
+  const { shop, backOffice } = await settingsRepository.get(guildId);
   const embed = new EmbedBuilder()
     .setColor(shop.embedColor)
     .setTitle(uiTitle(title))
@@ -57,6 +57,7 @@ export async function premiumEmbed(guildId: string, title: string, description?:
     name: shop.authorName || "Realm of Gu1tarzzz  •  Premium Marketplace",
     iconURL: shop.authorIcon || shop.storeLogo
   });
+  if (backOffice.imageUrl) embed.setImage(backOffice.imageUrl);
   return embed;
 }
 

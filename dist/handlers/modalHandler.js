@@ -3,6 +3,7 @@ import { createModal } from "../components/modal.js";
 import { categoryRepository, productRepository, settingsRepository, UserRepository } from "../database/repositories.js";
 import { isValidHex, parseOptional, parseThaiNumber, formatNumber } from "../utils/formatters.js";
 import { balanceEmbed } from "../utils/discord.js";
+import { bankSetupEmbed, notificationSetupEmbed } from "../components/setupComponents.js";
 const value = (interaction, id) => interaction.fields.getTextInputValue(id).trim();
 const splitLines = (input) => input.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
 const validColor = (input) => ["Primary", "Secondary", "Success", "Danger"].includes(input) ? input : "Primary";
@@ -57,6 +58,38 @@ export async function openModal(interaction, section) {
             { id: "wallet", label: "TrueMoney Wallet", value: settings.payment.trueMoneyWallet, placeholder: "เบอร์โทร หรือ -", maxLength: 100 },
             { id: "promptpay", label: "PromptPay", value: settings.payment.promptPay, placeholder: "เบอร์โทร/เลขบัตร หรือ -", maxLength: 100 },
             { id: "bank", label: "ธนาคาร (ชื่อ / ชื่อบัญชี / เลข)", value: bank, style: TextInputStyle.Paragraph, maxLength: 400 }
+        ]));
+    }
+    // Payment Dashboard button handlers
+    if (type === "setup") {
+        const subType = parts[3];
+        // TrueMoney Setup - Phone Number only
+        if (subType === "truemoney") {
+            return interaction.showModal(createModal("payment:truemoney:save", "✦ TrueMoney Setup", [
+                { id: "phone", label: "Phone Number (10 digits)", value: settings.payment.trueMoneyPhone, placeholder: "0812345678", required: true, maxLength: 10 }
+            ]));
+        }
+        // Bank Setup - Display current config with edit buttons
+        if (subType === "bank") {
+            return showBankSetupPage(interaction, settings);
+        }
+        // Notification Setup - Channel selectors
+        if (subType === "notification") {
+            return showNotificationSetupPage(interaction, settings);
+        }
+    }
+    // Bank Edit Modal
+    if (type === "bank" && subSection === "edit") {
+        return interaction.showModal(createModal("payment:bank:save", "✦ Edit Bank Account", [
+            { id: "bankName", label: "Bank Name", value: settings.payment.bank?.bankName, placeholder: "Kasikornbank", required: true, maxLength: 100 },
+            { id: "accountName", label: "Account Name", value: settings.payment.bank?.accountName, placeholder: "John Doe", required: true, maxLength: 100 },
+            { id: "accountNumber", label: "Account Number", value: settings.payment.bank?.accountNumber, placeholder: "123-4-56789-0", required: true, maxLength: 20 }
+        ]));
+    }
+    // QR Edit Modal
+    if (type === "qr" && subSection === "edit") {
+        return interaction.showModal(createModal("payment:qr:save", "✦ Edit QR Image", [
+            { id: "qrImage", label: "QR Image URL", value: settings.payment.bank?.qrImage, placeholder: "https://...", required: true, maxLength: 1024 }
         ]));
     }
     if (type === "tickets") {
@@ -126,6 +159,20 @@ export async function openModal(interaction, section) {
             ]));
         }
     }
+}
+/**
+ * Shows the Bank Setup page with current configuration and edit buttons
+ */
+export async function showBankSetupPage(interaction, settings) {
+    const { embed, components } = bankSetupEmbed(interaction.guildId, settings);
+    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+}
+/**
+ * Shows the Notification Setup page with channel selectors
+ */
+export async function showNotificationSetupPage(interaction, settings) {
+    const { embed, components } = notificationSetupEmbed(interaction.guildId, settings);
+    await interaction.reply({ embeds: [embed], components, ephemeral: true });
 }
 async function openAppearanceModal(interaction, settings) {
     return interaction.showModal(createModal("settings:appearance", "✦ ดีไซน์ร้าน", [

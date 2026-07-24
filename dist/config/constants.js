@@ -95,7 +95,9 @@ export const DEFAULT_GUILD_SETTINGS = {
     },
     payment: {
         enabled: false,
-        instructions: "กรุณาชำระเงินตามช่องทางที่ร้านค้ากำหนด แล้วอัปโหลดสลิปในห้องนี้"
+        instructions: "กรุณาชำระเงินตามช่องทางที่ร้านค้ากำหนด แล้วอัปโหลดสลิปในห้องนี้",
+        bank: {},
+        logs: {}
     },
     tickets: {
         staffRoleIds: [],

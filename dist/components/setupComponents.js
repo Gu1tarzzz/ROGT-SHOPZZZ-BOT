@@ -11,7 +11,7 @@ export function dashboardMenu() {
     return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
         .setCustomId("setup:section")
         .setPlaceholder(`${UI_EMOJI.text.section} เลือกส่วนจัดการ`)
-        .addOptions({ label: "หมวดหมู่", value: "categories", description: "สร้าง • เรียงลำดับ • แสดงผล", emoji: UI_EMOJI.component.category }, { label: "สินค้า", value: "products", description: "ราคา • สต็อก • สถานะ", emoji: UI_EMOJI.component.product }, { label: "ดีไซน์ร้าน", value: "appearance", description: "แบรนด์ • สี • ภาพ", emoji: UI_EMOJI.component.gem }, { label: "ดีไซน์หลังร้าน", value: "backoffice", description: "รูปลักษณ์แดชบอร์ด", emoji: UI_EMOJI.component.image }, { label: "การชำระเงิน", value: "payment", description: "ช่องทางและบัญชีรับเงิน", emoji: UI_EMOJI.component.payment }, { label: "Ticket", value: "tickets", description: "หมวดหมู่และทีมงาน", emoji: UI_EMOJI.component.ticket }, { label: "ตั้งค่าระบบ", value: "bot", description: "สิทธิ์และสถานะบอต", emoji: UI_EMOJI.component.settings }));
+        .addOptions({ label: "หมวดหมู่", value: "categories", description: "สร้าง • เรียงลำดับ • แสดงผล", emoji: UI_EMOJI.component.category }, { label: "สินค้า", value: "products", description: "ราคา • สต็อก • สถานะ", emoji: UI_EMOJI.component.product }, { label: "ดีไซน์ร้าน", value: "appearance", description: "แบรนด์ • สี • ภาพ", emoji: UI_EMOJI.component.gem }, { label: "ดีไซน์หลังร้าน", value: "backoffice", description: "รูปลักษณ์แดชบอร์ด", emoji: UI_EMOJI.component.image }, { label: "การชำระเงิน", value: "payment", description: "ช่องทางและบัญชีรับเงิน", emoji: UI_EMOJI.component.payment }, { label: "Ticket", value: "tickets", description: "หมวดหมู่และทีมงาน", emoji: UI_EMOJI.component.ticket }, { label: "ยอดผู้ใช้", value: "user-balance", description: "จัดการยอดเงินและคะแนน", emoji: UI_EMOJI.component.payment }, { label: "ตั้งค่าระบบ", value: "bot", description: "สิทธิ์และสถานะบอต", emoji: UI_EMOJI.component.settings }));
 }
 export function backButton() {
     return new ActionRowBuilder();
@@ -54,7 +54,12 @@ export function sectionButtons(section) {
         ],
         backoffice: [
             { label: "Banner & Image", id: "banner-image", emoji: UI_EMOJI.component.image },
-            { label: "จัดการยอดผู้ใช้", id: "user-balance", emoji: UI_EMOJI.component.payment }
+            { label: "ดูตัวอย่าง", id: "preview", emoji: UI_EMOJI.component.browse }
+        ],
+        "user-balance": [
+            { label: "Add Balance", id: "add-balance", emoji: UI_EMOJI.component.payment },
+            { label: "Remove Balance", id: "remove-balance", emoji: UI_EMOJI.component.remove },
+            { label: "Check Balance", id: "check-balance", emoji: UI_EMOJI.component.analytics }
         ],
         payment: [{ label: "การชำระเงิน", id: "payment", emoji: UI_EMOJI.component.payment }],
         tickets: [
@@ -330,6 +335,29 @@ export function botSettingsEmbed(guildId, settings) {
         embed,
         components: [
             new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:bot:bot").setLabel("ตั้งค่าบอต").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.settings))
+        ]
+    };
+}
+/**
+ * Creates a NEW embed for User Balance Manager page
+ */
+export function userBalanceManagerEmbed(guildId) {
+    const embed = new EmbedBuilder()
+        .setColor("#8B5CF6")
+        .setTitle(`${UI_EMOJI.text.brand} USER BALANCE`)
+        .setDescription([
+        "*Manage user balance and points*",
+        "",
+        DIVIDER,
+        "",
+        `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อดำเนินการ`
+    ].join("\n"))
+        .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+        .setTimestamp();
+    return {
+        embed,
+        components: [
+            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("setup:modal:user-balance:add-balance").setLabel("Add Balance").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.payment), new ButtonBuilder().setCustomId("setup:modal:user-balance:remove-balance").setLabel("Remove Balance").setStyle(ButtonStyle.Danger).setEmoji(UI_EMOJI.component.remove), new ButtonBuilder().setCustomId("setup:modal:user-balance:check-balance").setLabel("Check Balance").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.analytics))
         ]
     };
 }

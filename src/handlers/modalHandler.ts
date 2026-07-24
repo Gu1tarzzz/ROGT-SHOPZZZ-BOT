@@ -113,6 +113,27 @@ export async function openModal(interaction: import("discord.js").ButtonInteract
       ]));
     }
   }
+  
+  // Handle user-balance with subsections (add-balance, remove-balance, check-balance)
+  if (type === "user-balance") {
+    if (subSection === "add-balance") {
+      return interaction.showModal(createModal("balance:add", "✦ Add Balance", [
+        { id: "userId", label: "Discord User ID", placeholder: "1442163370223730789", required: true, maxLength: 30 },
+        { id: "amount", label: "Amount", placeholder: "500", required: true, maxLength: 20 }
+      ]));
+    }
+    if (subSection === "remove-balance") {
+      return interaction.showModal(createModal("balance:remove", "✦ Remove Balance", [
+        { id: "userId", label: "Discord User ID", placeholder: "1442163370223730789", required: true, maxLength: 30 },
+        { id: "amount", label: "Amount", placeholder: "200", required: true, maxLength: 20 }
+      ]));
+    }
+    if (subSection === "check-balance") {
+      return interaction.showModal(createModal("balance:check", "✦ Check Balance", [
+        { id: "userId", label: "Discord User ID", placeholder: "1442163370223730789", required: true, maxLength: 30 }
+      ]));
+    }
+  }
 }
 
 async function openAppearanceModal(interaction: import("discord.js").ButtonInteraction, settings: Awaited<ReturnType<typeof settingsRepository.get>>): Promise<unknown> {

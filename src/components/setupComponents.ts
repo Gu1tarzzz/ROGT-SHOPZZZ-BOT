@@ -23,6 +23,7 @@ export function dashboardMenu(): ActionRowBuilder<StringSelectMenuBuilder> {
         { label: "ดีไซน์หลังร้าน", value: "backoffice", description: "รูปลักษณ์แดชบอร์ด", emoji: UI_EMOJI.component.image },
         { label: "การชำระเงิน", value: "payment", description: "ช่องทางและบัญชีรับเงิน", emoji: UI_EMOJI.component.payment },
         { label: "Ticket", value: "tickets", description: "หมวดหมู่และทีมงาน", emoji: UI_EMOJI.component.ticket },
+        { label: "ยอดผู้ใช้", value: "user-balance", description: "จัดการยอดเงินและคะแนน", emoji: UI_EMOJI.component.payment },
         { label: "ตั้งค่าระบบ", value: "bot", description: "สิทธิ์และสถานะบอต", emoji: UI_EMOJI.component.settings }
       )
   );
@@ -91,7 +92,7 @@ export function productCategoryMenu(categories: Category[]): ActionRowBuilder<St
   );
 }
 
-export function sectionButtons(section: "appearance" | "backoffice" | "payment" | "tickets" | "bot"): ActionRowBuilder<ButtonBuilder> {
+export function sectionButtons(section: "appearance" | "backoffice" | "payment" | "tickets" | "bot" | "user-balance"): ActionRowBuilder<ButtonBuilder> {
   const map = {
     appearance: [
       { label: "ข้อมูลร้าน", id: "basic", emoji: UI_EMOJI.component.edit },
@@ -100,7 +101,12 @@ export function sectionButtons(section: "appearance" | "backoffice" | "payment" 
     ],
     backoffice: [
       { label: "Banner & Image", id: "banner-image", emoji: UI_EMOJI.component.image },
-      { label: "จัดการยอดผู้ใช้", id: "user-balance", emoji: UI_EMOJI.component.payment }
+      { label: "ดูตัวอย่าง", id: "preview", emoji: UI_EMOJI.component.browse }
+    ],
+    "user-balance": [
+      { label: "Add Balance", id: "add-balance", emoji: UI_EMOJI.component.payment },
+      { label: "Remove Balance", id: "remove-balance", emoji: UI_EMOJI.component.remove },
+      { label: "Check Balance", id: "check-balance", emoji: UI_EMOJI.component.analytics }
     ],
     payment: [{ label: "การชำระเงิน", id: "payment", emoji: UI_EMOJI.component.payment }],
     tickets: [
@@ -431,5 +437,34 @@ export function botSettingsEmbed(guildId: string, settings: Awaited<ReturnType<t
         new ButtonBuilder().setCustomId("setup:modal:bot:bot").setLabel("ตั้งค่าบอต").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.settings)
       )
     ] 
+  };
+}
+
+/**
+ * Creates a NEW embed for User Balance Manager page
+ */
+export function userBalanceManagerEmbed(guildId: string): { embed: EmbedBuilder, components: ActionRowBuilder<any>[] } {
+  const embed = new EmbedBuilder()
+    .setColor("#8B5CF6")
+    .setTitle(`${UI_EMOJI.text.brand} USER BALANCE`)
+    .setDescription([
+      "*Manage user balance and points*",
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อดำเนินการ`
+    ].join("\n"))
+    .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+    .setTimestamp();
+
+  return {
+    embed,
+    components: [
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId("setup:modal:user-balance:add-balance").setLabel("Add Balance").setStyle(ButtonStyle.Success).setEmoji(UI_EMOJI.component.payment),
+        new ButtonBuilder().setCustomId("setup:modal:user-balance:remove-balance").setLabel("Remove Balance").setStyle(ButtonStyle.Danger).setEmoji(UI_EMOJI.component.remove),
+        new ButtonBuilder().setCustomId("setup:modal:user-balance:check-balance").setLabel("Check Balance").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.analytics)
+      )
+    ]
   };
 }

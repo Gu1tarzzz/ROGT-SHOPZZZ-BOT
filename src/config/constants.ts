@@ -125,7 +125,8 @@ export const DEFAULT_GUILD_SETTINGS: GuildSettings = {
     footerText: "ROGT SHOPZZZ  •  Backend Dashboard",
     dividerStyle: "line",
     statusIconStyle: "dot"
-  }
+  },
+  balance: {}
 };
 
 export const BUTTON_STYLES: Record<ButtonColor, ButtonStyle> = {

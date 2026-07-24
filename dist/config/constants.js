@@ -113,7 +113,8 @@ export const DEFAULT_GUILD_SETTINGS = {
         footerText: "ROGT SHOPZZZ  •  Backend Dashboard",
         dividerStyle: "line",
         statusIconStyle: "dot"
-    }
+    },
+    balance: {}
 };
 export const BUTTON_STYLES = {
     Primary: ButtonStyle.Primary,

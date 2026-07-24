@@ -2,8 +2,7 @@ import { TextInputStyle } from "discord.js";
 import { createModal } from "../components/modal.js";
 import { categoryRepository, productRepository, settingsRepository, UserRepository } from "../database/repositories.js";
 import { isValidHex, parseOptional, parseThaiNumber, formatNumber } from "../utils/formatters.js";
-import { premiumEmbed } from "../utils/discord.js";
-import { DIVIDER, UI_EMOJI } from "../config/constants.js";
+import { balanceEmbed } from "../utils/discord.js";
 const value = (interaction, id) => interaction.fields.getTextInputValue(id).trim();
 const splitLines = (input) => input.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
 const validColor = (input) => ["Primary", "Secondary", "Success", "Danger"].includes(input) ? input : "Primary";
@@ -246,22 +245,9 @@ export async function handleModal(interaction) {
                 }
             }
             if (action === "check") {
-                const balance = await userRepo.getBalance(interaction.guildId, userId);
-                const user = await userRepo.findByUserId(interaction.guildId, userId);
-                const userName = user?.userName || `<@${userId}>`;
+                const client = interaction.client;
                 return interaction.reply({
-                    embeds: [await premiumEmbed(interaction.guildId, "━━━━━━━━━━━━━━━━", [
-                            `**User Balance**`,
-                            "",
-                            `${UI_EMOJI.text.bullet} **User ID**  ${userId}`,
-                            `${UI_EMOJI.text.bullet} **Name**  ${userName}`,
-                            "",
-                            DIVIDER,
-                            "",
-                            `${UI_EMOJI.text.section} Current Balance`,
-                            "",
-                            `**${formatNumber(balance)}** points`
-                        ].join("\n"))],
+                    embeds: [await balanceEmbed(interaction.guildId, userId, client)],
                     ephemeral: true
                 });
             }

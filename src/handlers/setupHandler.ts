@@ -10,7 +10,7 @@ type SetupInteraction = ChatInputCommandInteraction | ButtonInteraction | String
 const statusMark = (isPositive: boolean, positive: string, negative: string): string =>
   `${isPositive ? UI_EMOJI.text.active : UI_EMOJI.text.inactive} **${isPositive ? positive : negative}**`;
 
-export async function showDashboard(interaction: SetupInteraction): Promise<void> {
+export async function showDashboard(interaction: SetupInteraction, previewMode = false): Promise<void> {
   if (!interaction.guildId) return;
   const settings = await settingsRepository.get(interaction.guildId);
   const categories = await categoryRepository.list(interaction.guildId, false);
@@ -57,7 +57,7 @@ export async function showDashboard(interaction: SetupInteraction): Promise<void
   
   const baseEmbed = await premiumEmbed(interaction.guildId, "⟡ DASHBOARD", description);
   
-  const components = [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
+  const components = previewMode ? [] : [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
   const payload = { embeds: [baseEmbed], components };
   
   if (interaction.isChatInputCommand()) {

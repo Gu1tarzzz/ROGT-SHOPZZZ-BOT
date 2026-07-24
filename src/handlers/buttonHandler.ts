@@ -74,8 +74,8 @@ export async function handleButton(interaction: ButtonInteraction): Promise<unkn
       return interaction.reply({ embeds: [await shopEmbed(interaction.guildId!)], ephemeral: true });
     }
     if (action === "preview" && id === "dashboard") {
-      // Preview dashboard - creates new ephemeral embed showing back office dashboard appearance
-      return showDashboard(interaction);
+      // Preview dashboard - creates new ephemeral embed showing back office dashboard appearance (no buttons)
+      return showDashboard(interaction, true);
     }
     if (action === "refresh") {
       if (id === "dashboard") {

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { DEFAULT_GUILD_SETTINGS, DEFAULT_STOCK_SETTINGS } from "../config/constants.js";
-import type { Category, DatabaseFile, GuildSettings, HexColor, Order, Product, StockTransaction, StockReservation, StockAlert, RestockRequest, StockItem, Coupon, CouponUsage, ShoppingCart, OrderHistory, PurchaseLog, ShopStatistics, ProductTag, TaggedProduct, ShopAppearance } from "../types.js";
+import type { Category, DatabaseFile, GuildSettings, HexColor, Order, Product, StockTransaction, StockReservation, StockAlert, RestockRequest, StockItem, Coupon, CouponUsage, ShoppingCart, OrderHistory, PurchaseLog, ShopStatistics, ProductTag, TaggedProduct, ShopAppearance, UserAccount } from "../types.js";
 import { JsonStore } from "./jsonStore.js";
 
 type Entity = Category | Product | Order;
@@ -63,6 +63,55 @@ export class SettingsRepository {
       this.paymentStore.update((file) => ({ ...file, data: { ...file.data, [guildId]: value.payment } })),
       this.settingsStore.update((file) => ({ ...file, data: { ...file.data, [guildId]: { tickets: value.tickets, bot: value.bot, backOffice: value.backOffice } } }))
     ]);
+  }
+}
+
+export class UserRepository {
+  private readonly userStore = new JsonStore<DatabaseFile<UserAccount>>("users.json", emptyFile<UserAccount>());
+
+  public async findByUserId(guildId: string, userId: string): Promise<UserAccount | undefined> {
+    const file = await this.userStore.read();
+    return Object.values(file.data).find((user) => user.guildId === guildId && user.userId === userId);
+  }
+
+  public async findOrCreate(guildId: string, userId: string, userName?: string): Promise<UserAccount> {
+    const existing = await this.findByUserId(guildId, userId);
+    if (existing) return existing;
+    
+    const now = new Date().toISOString();
+    const newUser: UserAccount = {
+      id: `${guildId}:${userId}`,
+      guildId,
+      userId,
+      userName: userName || `User_${userId.slice(0, 8)}`,
+      balance: 0,
+      points: 0,
+      totalSpent: 0,
+      totalOrders: 0,
+      warnings: 0,
+      blacklisted: false,
+      createdAt: now,
+      updatedAt: now
+    };
+    await this.userStore.update((file) => ({ ...file, data: { ...file.data, [newUser.id]: newUser } }));
+    return newUser;
+  }
+
+  public async updateBalance(guildId: string, userId: string, amount: number): Promise<UserAccount> {
+    const user = await this.findOrCreate(guildId, userId);
+    const newBalance = user.balance + amount;
+    if (newBalance < 0) {
+      throw new Error("INSUFFICIENT_BALANCE");
+    }
+    user.balance = newBalance;
+    user.updatedAt = new Date().toISOString();
+    await this.userStore.update((file) => ({ ...file, data: { ...file.data, [user.id]: user } }));
+    return user;
+  }
+
+  public async getBalance(guildId: string, userId: string): Promise<number> {
+    const user = await this.findByUserId(guildId, userId);
+    return user?.balance ?? 0;
   }
 }
 

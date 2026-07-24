@@ -99,7 +99,8 @@ export function sectionButtons(section: "appearance" | "backoffice" | "payment" 
       { label: "แบรนด์", id: "branding", emoji: UI_EMOJI.component.gem }
     ],
     backoffice: [
-      { label: "Banner & Image", id: "banner-image", emoji: UI_EMOJI.component.image }
+      { label: "Banner & Image", id: "banner-image", emoji: UI_EMOJI.component.image },
+      { label: "จัดการยอดผู้ใช้", id: "user-balance", emoji: UI_EMOJI.component.payment }
     ],
     payment: [{ label: "การชำระเงิน", id: "payment", emoji: UI_EMOJI.component.payment }],
     tickets: [

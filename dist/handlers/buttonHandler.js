@@ -78,6 +78,10 @@ export async function handleButton(interaction) {
             const { shopEmbed } = await import("../utils/discord.js");
             return interaction.reply({ embeds: [await shopEmbed(interaction.guildId)], ephemeral: true });
         }
+        if (action === "preview" && id === "dashboard") {
+            // Preview dashboard - creates new ephemeral embed showing back office dashboard appearance
+            return showDashboard(interaction);
+        }
         if (action === "refresh") {
             if (id === "dashboard") {
                 // Refresh Summary - updates the SAME dashboard message (not creating new one)

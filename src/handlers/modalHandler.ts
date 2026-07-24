@@ -1,9 +1,11 @@
 import type { ModalSubmitInteraction } from "discord.js";
 import { TextInputStyle } from "discord.js";
 import { createModal } from "../components/modal.js";
-import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
+import { categoryRepository, productRepository, settingsRepository, UserRepository } from "../database/repositories.js";
 import type { ButtonColor, Product } from "../types.js";
-import { isValidHex, parseOptional, parseThaiNumber } from "../utils/formatters.js";
+import { isValidHex, parseOptional, parseThaiNumber, formatNumber } from "../utils/formatters.js";
+import { premiumEmbed } from "../utils/discord.js";
+import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 
 const value = (interaction: ModalSubmitInteraction, id: string): string => interaction.fields.getTextInputValue(id).trim();
 const splitLines = (input: string): string[] => input.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
@@ -95,12 +97,19 @@ export async function openModal(interaction: import("discord.js").ButtonInteract
     ]));
   }
   
-  // Handle backoffice with subsections (banner-image)
+  // Handle backoffice with subsections (banner-image, user-balance)
   if (type === "backoffice") {
     if (subSection === "banner-image") {
       return interaction.showModal(createModal("settings:backoffice:banner-image", "✦ ดีไซน์หลังร้าน • รูปภาพ", [
         { id: "imageUrl", label: "Image Banner URL", value: settings.backOffice.imageUrl, placeholder: "https://...", maxLength: 1024 },
         { id: "thumbnailUrl", label: "Thumbnail URL", value: settings.backOffice.thumbnailUrl, placeholder: "https://...", maxLength: 1024 }
+      ]));
+    }
+    if (subSection === "user-balance") {
+      return interaction.showModal(createModal("balance:action", "✦ จัดการยอดผู้ใช้", [
+        { id: "action", label: "เลือกการจัดการ (add/remove/check)", value: "check", required: true, maxLength: 10 },
+        { id: "userId", label: "Discord User ID", placeholder: "1442163370223730789", required: true, maxLength: 30 },
+        { id: "amount", label: "จำนวน (ถ้ามี)", placeholder: "500", maxLength: 20 }
       ]));
     }
   }
@@ -258,6 +267,69 @@ console.log("Guild ID =", interaction.guildId);
       console.log("DEBUG backoffice updated settings.backOffice:", updated.backOffice);
       return updated;
     });
+  } else if (action === "balance") {
+    const userRepo = new UserRepository();
+    const actionType = value(interaction, "action").toLowerCase().trim();
+    const userId = value(interaction, "userId").trim();
+    const amountStr = value(interaction, "amount");
+    
+    // Validate Discord User ID (must be numeric)
+    if (!/^\d+$/.test(userId)) {
+      return interaction.reply({ content: "○ Discord User ID ต้องเป็นตัวเลขเท่านั้น", ephemeral: true });
+    }
+    
+    try {
+      if (actionType === "add") {
+        const amount = Number(amountStr);
+        if (!Number.isInteger(amount) || amount <= 0) {
+          return interaction.reply({ content: "○ จำนวนต้องเป็นจำนวนเต็มบวก", ephemeral: true });
+        }
+        const user = await userRepo.updateBalance(interaction.guildId!, userId, amount);
+        return interaction.reply({ content: `✔ เพิ่มยอดแล้ว **${formatNumber(amount)}** คะแนน\nผู้ใช้: <@${userId}>\nยอดคงเหลือใหม่: **${formatNumber(user.balance)}**`, ephemeral: true });
+      }
+      
+      if (actionType === "remove") {
+        const amount = Number(amountStr);
+        if (!Number.isInteger(amount) || amount <= 0) {
+          return interaction.reply({ content: "○ จำนวนต้องเป็นจำนวนเต็มบวก", ephemeral: true });
+        }
+        try {
+          const user = await userRepo.updateBalance(interaction.guildId!, userId, -amount);
+          return interaction.reply({ content: `✔ ลบยอดแล้ว **${formatNumber(amount)}** คะแนน\nผู้ใช้: <@${userId}>\nยอดคงเหลือใหม่: **${formatNumber(user.balance)}**`, ephemeral: true });
+        } catch (err) {
+          if ((err as Error).message === "INSUFFICIENT_BALANCE") {
+            return interaction.reply({ content: `○ ผู้ใช้มียอดไม่เพียงพอ\nยอดปัจจุบัน: **${formatNumber(await userRepo.getBalance(interaction.guildId!, userId))}**`, ephemeral: true });
+          }
+          throw err;
+        }
+      }
+      
+      if (actionType === "check") {
+        const balance = await userRepo.getBalance(interaction.guildId!, userId);
+        const user = await userRepo.findByUserId(interaction.guildId!, userId);
+        const userName = user?.userName || `<@${userId}>`;
+        return interaction.reply({ 
+          embeds: [await premiumEmbed(interaction.guildId!, "━━━━━━━━━━━━━━━━", [
+            `**User Balance**`,
+            "",
+            `${UI_EMOJI.text.bullet} **User ID**  ${userId}`,
+            `${UI_EMOJI.text.bullet} **Name**  ${userName}`,
+            "",
+            DIVIDER,
+            "",
+            `${UI_EMOJI.text.section} Current Balance`,
+            "",
+            `**${formatNumber(balance)}** points`
+          ].join("\n"))],
+          ephemeral: true 
+        });
+      }
+      
+      return interaction.reply({ content: "○ การดำเนินการไม่ถูกต้อง ใช้ add, remove หรือ check", ephemeral: true });
+    } catch (error) {
+      console.error("Error in balance management:", error);
+      return interaction.reply({ content: "○ เกิดข้อผิดพลาดในการประมวลผล", ephemeral: true });
+    }
   }
   return interaction.reply({ content: "✔ บันทึกการตั้งค่าแล้ว  •  หน้าร้านจะอัปเดตทันที", ephemeral: true });
 }

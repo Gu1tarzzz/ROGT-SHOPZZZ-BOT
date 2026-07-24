@@ -57,6 +57,50 @@ export class SettingsRepository {
         ]);
     }
 }
+export class UserRepository {
+    userStore = new JsonStore("users.json", emptyFile());
+    async findByUserId(guildId, userId) {
+        const file = await this.userStore.read();
+        return Object.values(file.data).find((user) => user.guildId === guildId && user.userId === userId);
+    }
+    async findOrCreate(guildId, userId, userName) {
+        const existing = await this.findByUserId(guildId, userId);
+        if (existing)
+            return existing;
+        const now = new Date().toISOString();
+        const newUser = {
+            id: `${guildId}:${userId}`,
+            guildId,
+            userId,
+            userName: userName || `User_${userId.slice(0, 8)}`,
+            balance: 0,
+            points: 0,
+            totalSpent: 0,
+            totalOrders: 0,
+            warnings: 0,
+            blacklisted: false,
+            createdAt: now,
+            updatedAt: now
+        };
+        await this.userStore.update((file) => ({ ...file, data: { ...file.data, [newUser.id]: newUser } }));
+        return newUser;
+    }
+    async updateBalance(guildId, userId, amount) {
+        const user = await this.findOrCreate(guildId, userId);
+        const newBalance = user.balance + amount;
+        if (newBalance < 0) {
+            throw new Error("INSUFFICIENT_BALANCE");
+        }
+        user.balance = newBalance;
+        user.updatedAt = new Date().toISOString();
+        await this.userStore.update((file) => ({ ...file, data: { ...file.data, [user.id]: user } }));
+        return user;
+    }
+    async getBalance(guildId, userId) {
+        const user = await this.findByUserId(guildId, userId);
+        return user?.balance ?? 0;
+    }
+}
 export class CategoryRepository extends EntityRepository {
     constructor() { super(new JsonStore("categories.json", emptyFile())); }
     async list(guildId, includeHidden = true) {

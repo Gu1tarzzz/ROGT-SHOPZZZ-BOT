@@ -152,7 +152,8 @@ export function backOfficeDesignEmbed(guildId: string, settings: Awaited<ReturnT
     embed, 
     components: [
       new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder().setCustomId("setup:modal:backoffice:banner-image").setLabel("Banner & Image").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image)
+        new ButtonBuilder().setCustomId("setup:modal:backoffice:banner-image").setLabel("Banner & Image").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.image),
+        new ButtonBuilder().setCustomId("setup:preview:shop").setLabel("ดูตัวอย่าง").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.browse)
       )
     ] 
   };

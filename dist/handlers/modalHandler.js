@@ -245,14 +245,19 @@ export async function handleModal(interaction) {
         await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, bot: { ...settings.bot, ownerId: parseOptional(value(interaction, "owner")), staffRoleIds: value(interaction, "roles").split(",").map((item) => item.trim()).filter(Boolean), maintenanceMode: value(interaction, "maintenance").toLowerCase() === "yes" } }));
     }
     else if (action === "backoffice" && subAction === "banner-image") {
-        await settingsRepository.update(interaction.guildId, (settings) => ({
-            ...settings,
-            backOffice: {
-                ...settings.backOffice,
-                imageUrl: parseOptional(value(interaction, "imageUrl")),
-                thumbnailUrl: parseOptional(value(interaction, "thumbnailUrl"))
-            }
-        }));
+        console.log("DEBUG backoffice save:", { action, subAction, imageUrl: value(interaction, "imageUrl"), thumbnailUrl: value(interaction, "thumbnailUrl") });
+        await settingsRepository.update(interaction.guildId, (settings) => {
+            const updated = {
+                ...settings,
+                backOffice: {
+                    ...settings.backOffice,
+                    imageUrl: parseOptional(value(interaction, "imageUrl")),
+                    thumbnailUrl: parseOptional(value(interaction, "thumbnailUrl"))
+                }
+            };
+            console.log("DEBUG backoffice updated settings.backOffice:", updated.backOffice);
+            return updated;
+        });
     }
     return interaction.reply({ content: "✔ บันทึกการตั้งค่าแล้ว  •  หน้าร้านจะอัปเดตทันที", ephemeral: true });
 }

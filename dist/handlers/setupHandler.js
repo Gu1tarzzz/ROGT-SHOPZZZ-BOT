@@ -4,7 +4,7 @@ import { premiumEmbed, statusIndicator, compactMetricCard } from "../utils/disco
 import { formatNumber } from "../utils/formatters.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 const statusMark = (isPositive, positive, negative) => `${isPositive ? UI_EMOJI.text.active : UI_EMOJI.text.inactive} **${isPositive ? positive : negative}**`;
-export async function showDashboard(interaction) {
+export async function showDashboard(interaction, previewMode = false) {
     if (!interaction.guildId)
         return;
     const settings = await settingsRepository.get(interaction.guildId);
@@ -48,7 +48,7 @@ export async function showDashboard(interaction) {
         "เลือกส่วนจัดการด้านล่าง"
     ].filter(line => line !== "").join("\n");
     const baseEmbed = await premiumEmbed(interaction.guildId, "⟡ DASHBOARD", description);
-    const components = [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
+    const components = previewMode ? [] : [dashboardMenu(), refreshButtons(settings.shop.publishedMessageId)];
     const payload = { embeds: [baseEmbed], components };
     if (interaction.isChatInputCommand()) {
         await interaction.reply({ ...payload, ephemeral: false });

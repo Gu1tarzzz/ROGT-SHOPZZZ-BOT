@@ -1,25 +1,22 @@
 ```
+# Build artifacts
 dist/
-*.pyc
-__pycache__/
-*.o
-*.obj
+build/
+*.js
+
+# Dependencies
+node_modules/
+
+# Logs and temp files
 *.log
 *.tmp
-*.swp
-.env
-.env.local
-.env.*
+
+# Editors
 .vscode/
 .idea/
-node_modules/
-.venv/
-venv/
-build/
-target/
-.gradle/
-.mypy_cache/
-.pytest_cache/
-coverage/
-htmlcov/
+
+# Environment
+.env
+.env.local
+*.env.*
 ```

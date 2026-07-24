@@ -312,6 +312,80 @@ export function designSettingsEmbed(guildId: string, settings: Awaited<ReturnTyp
 /**
  * Creates a NEW embed for Payment Settings page (not editing existing dashboard)
  */
+/**
+ * Creates a NEW embed for Payment Dashboard (main payment management page)
+ */
+export function paymentDashboardEmbed(guildId: string, settings: Awaited<ReturnType<typeof settingsRepository.get>>): { embed: EmbedBuilder, components: ActionRowBuilder<any>[] } {
+  const payment = settings.payment;
+  
+  const trueMoneyDisplay = payment.trueMoneyPhone || "—";
+  const bankName = payment.bank?.bankName || "—";
+  const accountName = payment.bank?.accountName || "—";
+  const accountNumber = payment.bank?.accountNumber || "—";
+  const qrImage = payment.bank?.qrImage || "—";
+  const topupChannel = payment.logs?.topupChannel ? `<#${payment.logs.topupChannel}>` : "—";
+  const purchaseChannel = payment.logs?.purchaseChannel ? `<#${payment.logs.purchaseChannel}>` : "—";
+  
+  const embed = new EmbedBuilder()
+    .setColor("#8B5CF6")
+    .setTitle(`${UI_EMOJI.text.brand} PAYMENT DASHBOARD`)
+    .setDescription([
+      "*จัดการระบบการชำระเงิน*",
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} Status`,
+      "",
+      `${payment.enabled ? "●" : "○"} **Payment**  ${payment.enabled ? "เปิดรับชำระเงิน" : "ยังไม่เปิด"}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} TrueMoney Wallet`,
+      "",
+      `${UI_EMOJI.text.bullet} **Phone Number**  ${trueMoneyDisplay}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} Bank Account`,
+      "",
+      `${UI_EMOJI.text.bullet} **Bank Name**  ${bankName}`,
+      `${UI_EMOJI.text.bullet} **Account Name**  ${accountName}`,
+      `${UI_EMOJI.text.bullet} **Account Number**  ${accountNumber}`,
+      `${UI_EMOJI.text.bullet} **QR Image**  ${typeof qrImage === "string" && qrImage.startsWith("http") ? "✓ Set" : "○ Not Set"}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.section} Notification Channels`,
+      "",
+      `${UI_EMOJI.text.bullet} **Top Up Log**  ${topupChannel}`,
+      `${UI_EMOJI.text.bullet} **Purchase Log**  ${purchaseChannel}`,
+      "",
+      DIVIDER,
+      "",
+      `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่อตั้งค่า`
+    ].join("\n"))
+    .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
+    .setTimestamp();
+    
+  if (typeof qrImage === "string" && qrImage.startsWith("http")) {
+    embed.setThumbnail(qrImage);
+  }
+    
+  return { 
+    embed, 
+    components: [
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId("payment:setup:truemoney").setLabel("TrueMoney Setup").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.payment),
+        new ButtonBuilder().setCustomId("payment:setup:bank").setLabel("Bank Setup").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.bank),
+        new ButtonBuilder().setCustomId("payment:setup:notification").setLabel("Notification Setup").setStyle(ButtonStyle.Primary).setEmoji(UI_EMOJI.component.alert)
+      )
+    ] 
+  };
+}
+
+/**
+ * Creates a NEW embed for Payment Settings (legacy - kept for backwards compatibility)
+ */
 export function paymentSettingsEmbed(guildId: string, settings: Awaited<ReturnType<typeof settingsRepository.get>>): { embed: EmbedBuilder, components: ActionRowBuilder<any>[] } {
   const payment = settings.payment;
   

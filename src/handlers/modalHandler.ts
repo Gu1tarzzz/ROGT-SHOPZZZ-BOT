@@ -65,6 +65,44 @@ export async function openModal(interaction: import("discord.js").ButtonInteract
       { id: "bank", label: "ธนาคาร (ชื่อ / ชื่อบัญชี / เลข)", value: bank, style: TextInputStyle.Paragraph, maxLength: 400 }
     ]));
   }
+  
+  // Payment Dashboard button handlers
+  if (type === "setup") {
+    const subType = parts[3];
+    
+    // TrueMoney Setup - Phone Number only
+    if (subType === "truemoney") {
+      return interaction.showModal(createModal("payment:truemoney:save", "✦ TrueMoney Setup", [
+        { id: "phone", label: "Phone Number (10 digits)", value: settings.payment.trueMoneyPhone, placeholder: "0812345678", required: true, maxLength: 10 }
+      ]));
+    }
+    
+    // Bank Setup - Display current config with edit buttons
+    if (subType === "bank") {
+      return showBankSetupPage(interaction, settings);
+    }
+    
+    // Notification Setup - Channel selectors
+    if (subType === "notification") {
+      return showNotificationSetupPage(interaction, settings);
+    }
+  }
+  
+  // Bank Edit Modal
+  if (type === "bank" && subSection === "edit") {
+    return interaction.showModal(createModal("payment:bank:save", "✦ Edit Bank Account", [
+      { id: "bankName", label: "Bank Name", value: settings.payment.bank?.bankName, placeholder: "Kasikornbank", required: true, maxLength: 100 },
+      { id: "accountName", label: "Account Name", value: settings.payment.bank?.accountName, placeholder: "John Doe", required: true, maxLength: 100 },
+      { id: "accountNumber", label: "Account Number", value: settings.payment.bank?.accountNumber, placeholder: "123-4-56789-0", required: true, maxLength: 20 }
+    ]));
+  }
+  
+  // QR Edit Modal
+  if (type === "qr" && subSection === "edit") {
+    return interaction.showModal(createModal("payment:qr:save", "✦ Edit QR Image", [
+      { id: "qrImage", label: "QR Image URL", value: settings.payment.bank?.qrImage, placeholder: "https://...", required: true, maxLength: 1024 }
+    ]));
+  }
   if (type === "tickets") {
     const subSection = parts[3];
     if (subSection === "ticket-categories") {

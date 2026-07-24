@@ -71,6 +71,17 @@ export interface PaymentSettings {
   paymentChannelId?: string;
   slipChannelId?: string;
   instructions: string;
+  trueMoneyPhone?: string;
+  bank?: {
+    bankName?: string;
+    accountName?: string;
+    accountNumber?: string;
+    qrImage?: string;
+  };
+  logs?: {
+    topupChannel?: string;
+    purchaseChannel?: string;
+  };
 }
 
 export interface TicketSettings {

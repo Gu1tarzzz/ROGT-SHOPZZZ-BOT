@@ -29,9 +29,7 @@ export function dashboardMenu(): ActionRowBuilder<StringSelectMenuBuilder> {
 }
 
 export function backButton(): ActionRowBuilder<ButtonBuilder> {
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId("setup:home").setLabel("กลับแดชบอร์ด").setStyle(ButtonStyle.Secondary).setEmoji(UI_EMOJI.component.back)
-  );
+  return new ActionRowBuilder<ButtonBuilder>();
 }
 
 export function refreshButtons(publishedMessageId?: string): ActionRowBuilder<ButtonBuilder> {

@@ -6,6 +6,7 @@ import { formatPrice, formatStock, formatNumber } from "../utils/formatters.js";
 import { hasAdminAccess } from "../utils/permissions.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 import { showSetupSection } from "./setupHandler.js";
+import { handleCategoryPick, handleProductPick } from "./buttonHandler.js";
 
 async function admin(interaction: StringSelectMenuInteraction): Promise<boolean> {
   if (!interaction.guild) return false;
@@ -296,4 +297,15 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
   
   if (!(await admin(interaction))) return;
   if (scope === "setup" && action === "section") return showSetupSection(interaction, interaction.values[0]);
+  
+  // Handle product and category pick select menus
+  if (scope === "category" && action === "pick") {
+    const mode = extra as "edit" | "delete" | "visibility" | "sort";
+    return handleCategoryPick(interaction, mode);
+  }
+  
+  if (scope === "product" && action === "pick") {
+    const mode = extra as "create" | "edit" | "delete" | "visibility";
+    return handleProductPick(interaction, mode);
+  }
 }

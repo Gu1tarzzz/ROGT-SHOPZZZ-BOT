@@ -244,7 +244,7 @@ console.log("Guild ID =", interaction.guildId);
     await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, tickets: { categoryId: parseOptional(value(interaction, "category")), supportCategoryId: parseOptional(value(interaction, "supportCategory")), staffRoleIds: value(interaction, "roles").split(",").map((item) => item.trim()).filter(Boolean), transcriptChannelId: parseOptional(value(interaction, "transcript")), ticketPrefix: value(interaction, "prefix").replace(/[^a-z0-9-]/gi, "").toLowerCase() || "order" }, }));
   } else if (action === "bot") {
     await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, bot: { ...settings.bot, ownerId: parseOptional(value(interaction, "owner")), staffRoleIds: value(interaction, "roles").split(",").map((item) => item.trim()).filter(Boolean), maintenanceMode: value(interaction, "maintenance").toLowerCase() === "yes" } }));
-  } else if (action === "backoffice:banner-image") {
+  } else if (action === "backoffice" && subAction === "banner-image") {
     await settingsRepository.update(interaction.guildId, (settings) => ({
       ...settings,
       backOffice: {

@@ -4,7 +4,7 @@ import { createModal } from "../components/modal.js";
 import { categoryRepository, productRepository, settingsRepository, UserRepository } from "../database/repositories.js";
 import type { ButtonColor, Product } from "../types.js";
 import { isValidHex, parseOptional, parseThaiNumber, formatNumber } from "../utils/formatters.js";
-import { premiumEmbed } from "../utils/discord.js";
+import { premiumEmbed, balanceEmbed } from "../utils/discord.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 
 const value = (interaction: ModalSubmitInteraction, id: string): string => interaction.fields.getTextInputValue(id).trim();

@@ -216,6 +216,73 @@ console.log("Guild ID =", interaction.guildId);
     await productRepository.save(product);
     return interaction.reply({ content: `✔ บันทึกสินค้า **${product.name}** แล้ว`, ephemeral: true });
   }
+  // Handle balance modals separately (scope = "balance")
+  if (scope === "balance") {
+    const userRepo = new UserRepository();
+    const userId = value(interaction, "userId").trim();
+    
+    // Validate Discord User ID (must be numeric)
+    if (!/^\d+$/.test(userId)) {
+      return interaction.reply({ content: "○ Discord User ID ต้องเป็นตัวเลขเท่านั้น", ephemeral: true });
+    }
+    
+    try {
+      if (action === "add") {
+        const amountStr = value(interaction, "amount");
+        const amount = Number(amountStr);
+        if (!Number.isInteger(amount) || amount <= 0) {
+          return interaction.reply({ content: "○ จำนวนต้องเป็นจำนวนเต็มบวก", ephemeral: true });
+        }
+        const user = await userRepo.updateBalance(interaction.guildId!, userId, amount);
+        return interaction.reply({ content: `✔ เพิ่มยอดแล้ว **${formatNumber(amount)}** คะแนน\nผู้ใช้: <@${userId}>\nยอดคงเหลือใหม่: **${formatNumber(user.balance)}**`, ephemeral: true });
+      }
+      
+      if (action === "remove") {
+        const amountStr = value(interaction, "amount");
+        const amount = Number(amountStr);
+        if (!Number.isInteger(amount) || amount <= 0) {
+          return interaction.reply({ content: "○ จำนวนต้องเป็นจำนวนเต็มบวก", ephemeral: true });
+        }
+        try {
+          const user = await userRepo.updateBalance(interaction.guildId!, userId, -amount);
+          return interaction.reply({ content: `✔ ลบยอดแล้ว **${formatNumber(amount)}** คะแนน\nผู้ใช้: <@${userId}>\nยอดคงเหลือใหม่: **${formatNumber(user.balance)}**`, ephemeral: true });
+        } catch (err) {
+          if ((err as Error).message === "INSUFFICIENT_BALANCE") {
+            return interaction.reply({ content: `○ ผู้ใช้มียอดไม่เพียงพอ\nยอดปัจจุบัน: **${formatNumber(await userRepo.getBalance(interaction.guildId!, userId))}**`, ephemeral: true });
+          }
+          throw err;
+        }
+      }
+      
+      if (action === "check") {
+        const balance = await userRepo.getBalance(interaction.guildId!, userId);
+        const user = await userRepo.findByUserId(interaction.guildId!, userId);
+        const userName = user?.userName || `<@${userId}>`;
+        return interaction.reply({ 
+          embeds: [await premiumEmbed(interaction.guildId!, "━━━━━━━━━━━━━━━━", [
+            `**User Balance**`,
+            "",
+            `${UI_EMOJI.text.bullet} **User ID**  ${userId}`,
+            `${UI_EMOJI.text.bullet} **Name**  ${userName}`,
+            "",
+            DIVIDER,
+            "",
+            `${UI_EMOJI.text.section} Current Balance`,
+            "",
+            `**${formatNumber(balance)}** points`
+          ].join("\n"))],
+          ephemeral: true 
+        });
+      }
+      
+      return interaction.reply({ content: "○ การดำเนินการไม่ถูกต้อง ใช้ add, remove หรือ check", ephemeral: true });
+    } catch (error) {
+      console.error("Error in balance management:", error);
+      return interaction.reply({ content: "○ เกิดข้อผิดพลาดในการประมวลผล", ephemeral: true });
+    }
+  }
+  
+  // Handle settings modals (scope = "settings")
   if (scope !== "settings") return;
   const subAction = parts[2]; // e.g., "appearance:basic" -> "basic"
   
@@ -288,69 +355,6 @@ console.log("Guild ID =", interaction.guildId);
       console.log("DEBUG backoffice updated settings.backOffice:", updated.backOffice);
       return updated;
     });
-  } else if (action === "balance") {
-    const userRepo = new UserRepository();
-    const actionType = value(interaction, "action").toLowerCase().trim();
-    const userId = value(interaction, "userId").trim();
-    const amountStr = value(interaction, "amount");
-    
-    // Validate Discord User ID (must be numeric)
-    if (!/^\d+$/.test(userId)) {
-      return interaction.reply({ content: "○ Discord User ID ต้องเป็นตัวเลขเท่านั้น", ephemeral: true });
-    }
-    
-    try {
-      if (actionType === "add") {
-        const amount = Number(amountStr);
-        if (!Number.isInteger(amount) || amount <= 0) {
-          return interaction.reply({ content: "○ จำนวนต้องเป็นจำนวนเต็มบวก", ephemeral: true });
-        }
-        const user = await userRepo.updateBalance(interaction.guildId!, userId, amount);
-        return interaction.reply({ content: `✔ เพิ่มยอดแล้ว **${formatNumber(amount)}** คะแนน\nผู้ใช้: <@${userId}>\nยอดคงเหลือใหม่: **${formatNumber(user.balance)}**`, ephemeral: true });
-      }
-      
-      if (actionType === "remove") {
-        const amount = Number(amountStr);
-        if (!Number.isInteger(amount) || amount <= 0) {
-          return interaction.reply({ content: "○ จำนวนต้องเป็นจำนวนเต็มบวก", ephemeral: true });
-        }
-        try {
-          const user = await userRepo.updateBalance(interaction.guildId!, userId, -amount);
-          return interaction.reply({ content: `✔ ลบยอดแล้ว **${formatNumber(amount)}** คะแนน\nผู้ใช้: <@${userId}>\nยอดคงเหลือใหม่: **${formatNumber(user.balance)}**`, ephemeral: true });
-        } catch (err) {
-          if ((err as Error).message === "INSUFFICIENT_BALANCE") {
-            return interaction.reply({ content: `○ ผู้ใช้มียอดไม่เพียงพอ\nยอดปัจจุบัน: **${formatNumber(await userRepo.getBalance(interaction.guildId!, userId))}**`, ephemeral: true });
-          }
-          throw err;
-        }
-      }
-      
-      if (actionType === "check") {
-        const balance = await userRepo.getBalance(interaction.guildId!, userId);
-        const user = await userRepo.findByUserId(interaction.guildId!, userId);
-        const userName = user?.userName || `<@${userId}>`;
-        return interaction.reply({ 
-          embeds: [await premiumEmbed(interaction.guildId!, "━━━━━━━━━━━━━━━━", [
-            `**User Balance**`,
-            "",
-            `${UI_EMOJI.text.bullet} **User ID**  ${userId}`,
-            `${UI_EMOJI.text.bullet} **Name**  ${userName}`,
-            "",
-            DIVIDER,
-            "",
-            `${UI_EMOJI.text.section} Current Balance`,
-            "",
-            `**${formatNumber(balance)}** points`
-          ].join("\n"))],
-          ephemeral: true 
-        });
-      }
-      
-      return interaction.reply({ content: "○ การดำเนินการไม่ถูกต้อง ใช้ add, remove หรือ check", ephemeral: true });
-    } catch (error) {
-      console.error("Error in balance management:", error);
-      return interaction.reply({ content: "○ เกิดข้อผิดพลาดในการประมวลผล", ephemeral: true });
-    }
   }
   return interaction.reply({ content: "✔ บันทึกการตั้งค่าแล้ว  •  หน้าร้านจะอัปเดตทันที", ephemeral: true });
 }

@@ -33,7 +33,7 @@ class EntityRepository<T extends Entity> {
 }
 
 export class SettingsRepository {
-  private readonly settingsStore = new JsonStore<DatabaseFile<Pick<GuildSettings, "tickets" | "bot" | "backOffice">>>("settings.json", emptyFile<Pick<GuildSettings, "tickets" | "bot" | "backOffice">>());
+  private readonly settingsStore = new JsonStore<DatabaseFile<Pick<GuildSettings, "tickets" | "bot" | "backOffice" | "balance">>>("settings.json", emptyFile<Pick<GuildSettings, "tickets" | "bot" | "backOffice" | "balance">>());
   private readonly shopStore = new JsonStore<DatabaseFile<GuildSettings["shop"]>>("shop.json", emptyFile<GuildSettings["shop"]>());
   private readonly paymentStore = new JsonStore<DatabaseFile<GuildSettings["payment"]>>("payment.json", emptyFile<GuildSettings["payment"]>());
 
@@ -45,7 +45,8 @@ export class SettingsRepository {
       payment: paymentFile.data[guildId] ?? defaults.payment,
       tickets: settingsFile.data[guildId]?.tickets ?? defaults.tickets,
       bot: settingsFile.data[guildId]?.bot ?? defaults.bot,
-      backOffice: settingsFile.data[guildId]?.backOffice ?? defaults.backOffice
+      backOffice: settingsFile.data[guildId]?.backOffice ?? defaults.backOffice,
+      balance: settingsFile.data[guildId]?.balance ?? defaults.balance
     };
     if (!settingsFile.data[guildId] || !shopFile.data[guildId] || !paymentFile.data[guildId]) await this.persist(guildId, current);
     return current;
@@ -61,7 +62,7 @@ export class SettingsRepository {
     await Promise.all([
       this.shopStore.update((file) => ({ ...file, data: { ...file.data, [guildId]: value.shop } })),
       this.paymentStore.update((file) => ({ ...file, data: { ...file.data, [guildId]: value.payment } })),
-      this.settingsStore.update((file) => ({ ...file, data: { ...file.data, [guildId]: { tickets: value.tickets, bot: value.bot, backOffice: value.backOffice } } }))
+      this.settingsStore.update((file) => ({ ...file, data: { ...file.data, [guildId]: { tickets: value.tickets, bot: value.bot, backOffice: value.backOffice, balance: value.balance } } }))
     ]);
   }
 }

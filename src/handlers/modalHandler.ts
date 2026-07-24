@@ -255,22 +255,9 @@ console.log("Guild ID =", interaction.guildId);
       }
       
       if (action === "check") {
-        const balance = await userRepo.getBalance(interaction.guildId!, userId);
-        const user = await userRepo.findByUserId(interaction.guildId!, userId);
-        const userName = user?.userName || `<@${userId}>`;
+        const client = interaction.client;
         return interaction.reply({ 
-          embeds: [await premiumEmbed(interaction.guildId!, "━━━━━━━━━━━━━━━━", [
-            `**User Balance**`,
-            "",
-            `${UI_EMOJI.text.bullet} **User ID**  ${userId}`,
-            `${UI_EMOJI.text.bullet} **Name**  ${userName}`,
-            "",
-            DIVIDER,
-            "",
-            `${UI_EMOJI.text.section} Current Balance`,
-            "",
-            `**${formatNumber(balance)}** points`
-          ].join("\n"))],
+          embeds: [await balanceEmbed(interaction.guildId!, userId, client)],
           ephemeral: true 
         });
       }

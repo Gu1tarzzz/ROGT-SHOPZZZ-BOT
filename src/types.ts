@@ -357,12 +357,17 @@ export interface BackOfficeDesign {
   statusIconStyle: "dot" | "circle" | "square";
 }
 
+export interface BalanceDesign {
+  bannerUrl?: string;
+}
+
 export interface GuildSettings {
   shop: ShopSettings;
   payment: PaymentSettings;
   tickets: TicketSettings;
   bot: BotSettings;
   backOffice: BackOfficeDesign;
+  balance: BalanceDesign;
 }
 
 export interface DatabaseFile<T> {

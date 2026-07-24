@@ -61,6 +61,49 @@ export async function premiumEmbed(guildId: string, title: string, description?:
   return embed;
 }
 
+export async function balanceEmbed(guildId: string, userId: string, client: import("discord.js").Client): Promise<EmbedBuilder> {
+  const { shop, balance } = await settingsRepository.get(guildId);
+  const userRepo = new (await import("../database/repositories.js")).UserRepository();
+  const user = await userRepo.findByUserId(guildId, userId);
+  
+  // Fetch Discord user for avatar and display name
+  let discordUser = null;
+  let displayName = `User_${userId.slice(0, 8)}`;
+  let avatarUrl: string | undefined;
+  
+  try {
+    discordUser = await client.users.fetch(userId);
+    displayName = discordUser.displayName || discordUser.username;
+    avatarUrl = discordUser.displayAvatarURL({ extension: "png", size: 512 });
+  } catch {
+    // User not found, use defaults
+  }
+  
+  const currentBalance = user?.balance ?? 0;
+  
+  const embed = new EmbedBuilder()
+    .setColor(shop.embedColor)
+    .setTitle("💰 USER BALANCE")
+    .setDescription([
+      `**${UI_EMOJI.text.section} ${displayName}**`,
+      "",
+      `${UI_EMOJI.text.bullet} **Discord ID**  ${userId}`,
+      `${UI_EMOJI.text.bullet} **Current Balance**  **${formatNumber(currentBalance)}** points`,
+      "",
+      DIVIDER
+    ].join("\n"))
+    .setFooter({ text: uiFooter(shop.footer), iconURL: shop.storeLogo })
+    .setTimestamp();
+  
+  // Set thumbnail to user's Discord avatar
+  if (avatarUrl) embed.setThumbnail(avatarUrl);
+  
+  // Set image to balance banner if configured (independent from shop banner)
+  if (balance.bannerUrl) embed.setImage(balance.bannerUrl);
+  
+  return embed;
+}
+
 export async function shopEmbed(guildId: string, showAdminControls = false): Promise<EmbedBuilder> {
   const { shop } = await settingsRepository.get(guildId);
   const [categories, products] = await Promise.all([

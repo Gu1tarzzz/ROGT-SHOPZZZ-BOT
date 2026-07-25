@@ -541,3 +541,38 @@ export const categoryRepository = new CategoryRepository();
 export const productRepository = new ProductRepository();
 export const orderRepository = new OrderRepository();
 export const stockRepository = new StockRepository();
+export class TopUpRequestRepository {
+    store = new JsonStore("topupRequests.json", emptyFile());
+    async create(input) {
+        const request = {
+            ...input,
+            id: randomUUID(),
+            createdAt: new Date().toISOString()
+        };
+        await this.store.update((file) => ({ ...file, data: { ...file.data, [request.id]: request } }));
+        return request;
+    }
+    async find(id) {
+        return (await this.store.read()).data[id];
+    }
+    async update(id, updates) {
+        const file = await this.store.read();
+        const existing = file.data[id];
+        if (!existing)
+            return undefined;
+        const updated = {
+            ...existing,
+            ...updates,
+            updatedAt: new Date().toISOString()
+        };
+        await this.store.update((file) => ({ ...file, data: { ...file.data, [id]: updated } }));
+        return updated;
+    }
+    async getPendingByGuild(guildId) {
+        const file = await this.store.read();
+        return Object.values(file.data)
+            .filter((r) => r.guildId === guildId && r.status === "pending")
+            .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    }
+}
+export const topUpRequestRepository = new TopUpRequestRepository();

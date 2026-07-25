@@ -101,6 +101,28 @@ export interface BotSettings {
 
 export type OrderStatus = "pending_payment" | "pending_review" | "approved" | "rejected" | "refunded" | "cancelled" | "closed";
 
+export type TopUpMethod = "truemoney" | "bank_transfer";
+export type TopUpStatus = "pending" | "approved" | "rejected";
+
+export interface TopUpRequest {
+  id: string;
+  guildId: string;
+  userId: string;
+  userName?: string;
+  method: TopUpMethod;
+  amount?: number;
+  giftLink?: string;
+  slipMessageId?: string;
+  status: TopUpStatus;
+  approvedBy?: string;
+  rejectedBy?: string;
+  rejectReason?: string;
+  createdAt: string;
+  updatedAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+}
+
 export interface Order {
   id: string;
   guildId: string;

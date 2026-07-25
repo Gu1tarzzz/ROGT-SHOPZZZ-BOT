@@ -1,8 +1,9 @@
-import { TextInputStyle } from "discord.js";
+import { TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from "discord.js";
 import { createModal } from "../components/modal.js";
-import { categoryRepository, productRepository, settingsRepository, UserRepository } from "../database/repositories.js";
+import { categoryRepository, productRepository, settingsRepository, UserRepository, topUpRequestRepository } from "../database/repositories.js";
 import { isValidHex, parseOptional, parseThaiNumber, formatNumber } from "../utils/formatters.js";
-import { balanceEmbed } from "../utils/discord.js";
+import { premiumEmbed, balanceEmbed } from "../utils/discord.js";
+import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 import { bankSetupEmbed, notificationSetupEmbed } from "../components/setupComponents.js";
 const value = (interaction, id) => interaction.fields.getTextInputValue(id).trim();
 const splitLines = (input) => input.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
@@ -485,6 +486,120 @@ export async function handleModal(interaction) {
             console.log("DEBUG backoffice updated settings.backOffice:", updated.backOffice);
             return updated;
         });
+    }
+    else if (action === "topup") {
+        // Handle Top Up modal submissions
+        if (subAction === "truemoney" && extra === "submit") {
+            const giftLink = value(interaction, "giftLink");
+            const phoneInfo = value(interaction, "phoneInfo");
+            // Extract phone number from payment settings
+            const settings = await settingsRepository.get(interaction.guildId);
+            const phoneNumber = settings.payment?.trueMoneyPhone || "N/A";
+            // Create top-up request
+            const userRepo = new UserRepository();
+            const user = await userRepo.findOrCreate(interaction.guildId, interaction.user.id, interaction.user.username);
+            const request = await topUpRequestRepository.create({
+                guildId: interaction.guildId,
+                userId: interaction.user.id,
+                userName: interaction.user.username,
+                method: "truemoney",
+                giftLink,
+                status: "pending"
+            });
+            // Send notification to Top Up Log channel
+            const logChannelId = settings.payment?.logs?.topupChannel;
+            if (logChannelId) {
+                const guild = await interaction.client.guilds.fetch(interaction.guildId);
+                const channel = await guild.channels.fetch(logChannelId);
+                if (channel?.isTextBased()) {
+                    const embed = new EmbedBuilder()
+                        .setTitle("💰 New Top Up Request - TrueMoney")
+                        .setColor(0x00AE86) // TrueMoney green
+                        .addFields({ name: "User", value: `<@${interaction.user.id}>`, inline: true }, { name: "Method", value: "TrueMoney Wallet", inline: true }, { name: "Request ID", value: `\`${request.id}\``, inline: true }, { name: "Gift Link", value: giftLink || "Not provided", inline: false }, { name: "Phone Number", value: phoneNumber, inline: false })
+                        .setFooter({ text: `Requested by ${interaction.user.username}` })
+                        .setTimestamp();
+                    const approveButton = new ButtonBuilder()
+                        .setCustomId(`topup:approve:${request.id}`)
+                        .setLabel("Approve")
+                        .setStyle(ButtonStyle.Success)
+                        .setEmoji("✅");
+                    const rejectButton = new ButtonBuilder()
+                        .setCustomId(`topup:reject:${request.id}`)
+                        .setLabel("Reject")
+                        .setStyle(ButtonStyle.Danger)
+                        .setEmoji("❌");
+                    await channel.send({
+                        embeds: [embed],
+                        components: [new ActionRowBuilder().addComponents(approveButton, rejectButton)]
+                    });
+                }
+            }
+            return interaction.reply({
+                content: "✓ Your TrueMoney top-up request has been submitted. Staff will review it shortly.",
+                ephemeral: true
+            });
+        }
+        if (subAction === "bank" && extra === "submit") {
+            const amountStr = value(interaction, "amount");
+            const amount = parseFloat(amountStr);
+            if (isNaN(amount) || amount <= 0) {
+                return interaction.reply({
+                    content: "❌ Invalid amount. Please enter a valid positive number.",
+                    ephemeral: true
+                });
+            }
+            // Get bank settings
+            const settings = await settingsRepository.get(interaction.guildId);
+            const bankName = settings.payment?.bank?.bankName || settings.payment?.bankName || "Not configured";
+            const accountName = settings.payment?.bank?.accountName || settings.payment?.accountName || "Not configured";
+            const accountNumber = settings.payment?.bank?.accountNumber || settings.payment?.bankAccount || "Not configured";
+            const qrImage = settings.payment?.bank?.qrImage || settings.payment?.qrImage;
+            // Create top-up request
+            const userRepo = new UserRepository();
+            await userRepo.findOrCreate(interaction.guildId, interaction.user.id, interaction.user.username);
+            const request = await topUpRequestRepository.create({
+                guildId: interaction.guildId,
+                userId: interaction.user.id,
+                userName: interaction.user.username,
+                method: "bank_transfer",
+                amount,
+                status: "pending"
+            });
+            // Show bank details with upload slip button
+            const description = [
+                `**${UI_EMOJI.text.section} Bank Transfer Details**`,
+                "",
+                DIVIDER,
+                "",
+                premiumMetricBlock("🏦", "Bank", bankName),
+                premiumMetricBlock("👤", "Account Name", accountName),
+                premiumMetricBlock("🔢", "Account Number", accountNumber),
+                premiumMetricBlock("💰", "Amount", `${amount.toFixed(2)} THB`),
+                "",
+                "**Instructions:**",
+                "> Transfer the exact amount and upload your payment slip below.",
+                "",
+                DIVIDER,
+                `${UI_EMOJI.text.bullet} Click the button below to upload your slip`
+            ].filter(line => line !== "").join("\n");
+            const embed = await premiumEmbed(interaction.guildId, "🏦 BANK TRANSFER", description);
+            if (qrImage) {
+                embed.setImage(qrImage);
+            }
+            else {
+                embed.setFooter({ text: "QR Code not configured" });
+            }
+            const slipButton = new ButtonBuilder()
+                .setCustomId(`shop:topup:slip:${request.id}`)
+                .setLabel("Upload Slip")
+                .setStyle(ButtonStyle.Success)
+                .setEmoji("📤");
+            return interaction.reply({
+                embeds: [embed],
+                components: [new ActionRowBuilder().addComponents(slipButton)],
+                ephemeral: true
+            });
+        }
     }
     return interaction.reply({ content: "✔ บันทึกการตั้งค่าแล้ว  •  หน้าร้านจะอัปเดตทันที", ephemeral: true });
 }

@@ -447,86 +447,21 @@ console.log("Guild ID =", interaction.guildId);
     return interaction.reply({ content: "○ Invalid payment action", ephemeral: true });
   }
   
-  if (scope !== "settings") return;
-  const subAction = parts[2]; // e.g., "appearance:basic" -> "basic"
-  
-  // Handle appearance subsections
-  if (action === "appearance") {
-    const currentSettings = await settingsRepository.get(interaction.guildId);
-    const colorField = subAction === "branding" ? value(interaction, "color") : 
-                       subAction === "basic" ? "#FFFFFF" : currentSettings.shop.embedColor;
-    
-    if (subAction === "branding" && !isValidHex(colorField)) {
-      return interaction.reply({ content: "○ สี Embed ต้องอยู่ในรูปแบบ #RRGGBB", ephemeral: true });
-    }
-    
-    await settingsRepository.update(interaction.guildId, (settings) => ({ 
-      ...settings, 
-      shop: { 
-        ...settings.shop, 
-        storeName: subAction === "basic" ? value(interaction, "name") : settings.shop.storeName,
-        description: subAction === "basic" ? value(interaction, "description") : settings.shop.description,
-        footer: subAction === "basic" ? value(interaction, "footer") : settings.shop.footer,
-        status: subAction === "basic" ? (value(interaction, "status").toLowerCase() === "closed" ? "closed" : "open") : settings.shop.status,
-        banner: subAction === "images" ? parseOptional(value(interaction, "banner")) : settings.shop.banner,
-        bannerGif: subAction === "images" ? parseOptional(value(interaction, "bannerGif")) : settings.shop.bannerGif,
-        thumbnail: subAction === "images" ? parseOptional(value(interaction, "thumbnail")) : settings.shop.thumbnail,
-        storeLogo: subAction === "images" ? parseOptional(value(interaction, "storeLogo")) : settings.shop.storeLogo,
-        embedColor: (subAction === "branding" ? colorField : settings.shop.embedColor) as `#${string}`,
-        authorName: subAction === "branding" ? parseOptional(value(interaction, "authorName")) : settings.shop.authorName,
-        authorIcon: subAction === "branding" ? parseOptional(value(interaction, "authorIcon")) : settings.shop.authorIcon
-      } 
-    }));
-  } else if (action === "tickets:categories") {
-    await settingsRepository.update(interaction.guildId, (settings) => ({ 
-      ...settings, 
-      tickets: { 
-        ...settings.tickets, 
-        categoryId: parseOptional(value(interaction, "category")), 
-        supportCategoryId: parseOptional(value(interaction, "supportCategory")) 
-      } 
-    }));
-  } else if (action === "tickets:staff") {
-    await settingsRepository.update(interaction.guildId, (settings) => ({ 
-      ...settings, 
-      tickets: { 
-        ...settings.tickets, 
-        staffRoleIds: value(interaction, "roles").split(",").map((r) => r.trim()).filter(Boolean), 
-        transcriptChannelId: parseOptional(value(interaction, "transcript")), 
-        ticketPrefix: value(interaction, "prefix") 
-      } 
-    }));
-  } else if (action === "labels") {
-    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, shop: { ...settings.shop, buttons: { browse: value(interaction, "browse"), order: value(interaction, "order"), support: value(interaction, "support"), information: value(interaction, "information") } } }));
-  } else if (action === "payment") {
-    const bank = splitLines(value(interaction, "bank"));
-    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, payment: { ...settings.payment, enabled: value(interaction, "enabled").toLowerCase() === "yes", trueMoneyWallet: parseOptional(value(interaction, "wallet")), promptPay: parseOptional(value(interaction, "promptpay")), bankName: parseOptional(bank[0]), accountName: parseOptional(bank[1]), bankAccount: parseOptional(bank[2]) } }));
-  } else if (action === "tickets") {
-    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, tickets: { categoryId: parseOptional(value(interaction, "category")), supportCategoryId: parseOptional(value(interaction, "supportCategory")), staffRoleIds: value(interaction, "roles").split(",").map((item) => item.trim()).filter(Boolean), transcriptChannelId: parseOptional(value(interaction, "transcript")), ticketPrefix: value(interaction, "prefix").replace(/[^a-z0-9-]/gi, "").toLowerCase() || "order" }, }));
-  } else if (action === "bot") {
-    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, bot: { ...settings.bot, ownerId: parseOptional(value(interaction, "owner")), staffRoleIds: value(interaction, "roles").split(",").map((item) => item.trim()).filter(Boolean), maintenanceMode: value(interaction, "maintenance").toLowerCase() === "yes" } }));
-  } else if (action === "backoffice" && subAction === "banner-image") {
-    console.log("DEBUG backoffice save:", { action, subAction, imageUrl: value(interaction, "imageUrl"), thumbnailUrl: value(interaction, "thumbnailUrl") });
-    await settingsRepository.update(interaction.guildId, (settings) => {
-      const updated = {
-        ...settings,
-        backOffice: {
-          ...settings.backOffice,
-          imageUrl: parseOptional(value(interaction, "imageUrl")),
-          thumbnailUrl: parseOptional(value(interaction, "thumbnailUrl"))
-        }
-      };
-      console.log("DEBUG backoffice updated settings.backOffice:", updated.backOffice);
-      return updated;
-    });
-  } else if (action === "topup") {
-    // Handle Top Up modal submissions
+  // Handle shop modals (scope = "shop") - user-facing modals like topup
+  if (scope === "shop" && action === "topup") {
     const subAction = parts[2];
     const extra = parts[3];
     
     if (subAction === "truemoney" && extra === "submit") {
       const giftLink = value(interaction, "giftLink");
-      const phoneInfo = value(interaction, "phoneInfo");
+      
+      // Validate gift link format
+      if (!giftLink || !giftLink.startsWith("https://gift.truemoney.com")) {
+        return interaction.reply({ 
+          content: "○ Please provide a valid TrueMoney gift link (must start with https://gift.truemoney.com)", 
+          ephemeral: true 
+        });
+      }
       
       // Extract phone number from payment settings
       const settings = await settingsRepository.get(interaction.guildId!);
@@ -534,7 +469,7 @@ console.log("Guild ID =", interaction.guildId);
       
       // Create top-up request
       const userRepo = new UserRepository();
-      const user = await userRepo.findOrCreate(interaction.guildId!, interaction.user.id, interaction.user.username);
+      await userRepo.findOrCreate(interaction.guildId!, interaction.user.id, interaction.user.username);
       
       const request = await topUpRequestRepository.create({
         guildId: interaction.guildId!,
@@ -559,7 +494,7 @@ console.log("Guild ID =", interaction.guildId);
               { name: "User", value: `<@${interaction.user.id}>`, inline: true },
               { name: "Method", value: "TrueMoney Wallet", inline: true },
               { name: "Request ID", value: `\`${request.id}\``, inline: true },
-              { name: "Gift Link", value: giftLink || "Not provided", inline: false },
+              { name: "Gift Link", value: giftLink, inline: false },
               { name: "Phone Number", value: phoneNumber, inline: false }
             )
             .setFooter({ text: `Requested by ${interaction.user.username}` })
@@ -590,75 +525,83 @@ console.log("Guild ID =", interaction.guildId);
       });
     }
     
-    if (subAction === "bank" && extra === "submit") {
-      const amountStr = value(interaction, "amount");
-      const amount = parseFloat(amountStr);
-      
-      if (isNaN(amount) || amount <= 0) {
-        return interaction.reply({
-          content: "❌ Invalid amount. Please enter a valid positive number.",
-          ephemeral: true
-        });
-      }
-      
-      // Get bank settings
-      const settings = await settingsRepository.get(interaction.guildId!);
-      const bankName = settings.payment?.bank?.bankName || settings.payment?.bankName || "Not configured";
-      const accountName = settings.payment?.bank?.accountName || settings.payment?.accountName || "Not configured";
-      const accountNumber = settings.payment?.bank?.accountNumber || settings.payment?.bankAccount || "Not configured";
-      const qrImage = settings.payment?.bank?.qrImage || settings.payment?.qrImage;
-      
-      // Create top-up request
-      const userRepo = new UserRepository();
-      await userRepo.findOrCreate(interaction.guildId!, interaction.user.id, interaction.user.username);
-      
-      const request = await topUpRequestRepository.create({
-        guildId: interaction.guildId!,
-        userId: interaction.user.id,
-        userName: interaction.user.username,
-        method: "bank_transfer",
-        amount,
-        status: "pending"
-      });
-      
-      // Show bank details with upload slip button
-      const description = [
-        `**${UI_EMOJI.text.section} Bank Transfer Details**`,
-        "",
-        DIVIDER,
-        "",
-        premiumMetricBlock("🏦", "Bank", bankName),
-        premiumMetricBlock("👤", "Account Name", accountName),
-        premiumMetricBlock("🔢", "Account Number", accountNumber),
-        premiumMetricBlock("💰", "Amount", `${amount.toFixed(2)} THB`),
-        "",
-        "**Instructions:**",
-        "> Transfer the exact amount and upload your payment slip below.",
-        "",
-        DIVIDER,
-        `${UI_EMOJI.text.bullet} Click the button below to upload your slip`
-      ].filter(line => line !== "").join("\n");
-      
-      const embed = await premiumEmbed(interaction.guildId!, "🏦 BANK TRANSFER", description);
-      
-      if (qrImage) {
-        embed.setImage(qrImage);
-      } else {
-        embed.setFooter({ text: "QR Code not configured" });
-      }
-      
-      const slipButton = new ButtonBuilder()
-        .setCustomId(`shop:topup:slip:${request.id}`)
-        .setLabel("Upload Slip")
-        .setStyle(ButtonStyle.Success)
-        .setEmoji("📤");
-      
-      return interaction.reply({
-        embeds: [embed],
-        components: [new ActionRowBuilder<ButtonBuilder>().addComponents(slipButton)],
-        ephemeral: true
-      });
-    }
+    return interaction.reply({ content: "○ Invalid topup action", ephemeral: true });
   }
+  
+  // Handle settings modals - appearance, labels, tickets, payment, bot, etc.
+  if (scope !== "settings") return;
+  const settingsSubAction = parts[2]; // e.g., "appearance:basic" -> "basic"
+  
+  // Handle appearance subsections
+  if (action === "appearance") {
+    const currentSettings = await settingsRepository.get(interaction.guildId);
+    const colorField = settingsSubAction === "branding" ? value(interaction, "color") : 
+                       settingsSubAction === "basic" ? "#FFFFFF" : currentSettings.shop.embedColor;
+    
+    if (settingsSubAction === "branding" && !isValidHex(colorField)) {
+      return interaction.reply({ content: "○ สี Embed ต้องอยู่ในรูปแบบ #RRGGBB", ephemeral: true });
+    }
+    
+    await settingsRepository.update(interaction.guildId, (settings) => ({ 
+      ...settings, 
+      shop: { 
+        ...settings.shop, 
+        storeName: settingsSubAction === "basic" ? value(interaction, "name") : settings.shop.storeName,
+        description: settingsSubAction === "basic" ? value(interaction, "description") : settings.shop.description,
+        footer: settingsSubAction === "basic" ? value(interaction, "footer") : settings.shop.footer,
+        status: settingsSubAction === "basic" ? (value(interaction, "status").toLowerCase() === "closed" ? "closed" : "open") : settings.shop.status,
+        banner: settingsSubAction === "images" ? parseOptional(value(interaction, "banner")) : settings.shop.banner,
+        bannerGif: settingsSubAction === "images" ? parseOptional(value(interaction, "bannerGif")) : settings.shop.bannerGif,
+        thumbnail: settingsSubAction === "images" ? parseOptional(value(interaction, "thumbnail")) : settings.shop.thumbnail,
+        storeLogo: settingsSubAction === "images" ? parseOptional(value(interaction, "storeLogo")) : settings.shop.storeLogo,
+        embedColor: (settingsSubAction === "branding" ? colorField : settings.shop.embedColor) as `#${string}`,
+        authorName: settingsSubAction === "branding" ? parseOptional(value(interaction, "authorName")) : settings.shop.authorName,
+        authorIcon: settingsSubAction === "branding" ? parseOptional(value(interaction, "authorIcon")) : settings.shop.authorIcon
+      } 
+    }));
+  } else if (action === "tickets:categories") {
+    await settingsRepository.update(interaction.guildId, (settings) => ({ 
+      ...settings, 
+      tickets: { 
+        ...settings.tickets, 
+        categoryId: parseOptional(value(interaction, "category")), 
+        supportCategoryId: parseOptional(value(interaction, "supportCategory")) 
+      } 
+    }));
+  } else if (action === "tickets:staff") {
+    await settingsRepository.update(interaction.guildId, (settings) => ({ 
+      ...settings, 
+      tickets: { 
+        ...settings.tickets, 
+        staffRoleIds: value(interaction, "roles").split(",").map((r) => r.trim()).filter(Boolean), 
+        transcriptChannelId: parseOptional(value(interaction, "transcript")), 
+        ticketPrefix: value(interaction, "prefix") 
+      } 
+    }));
+  } else if (action === "labels") {
+    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, shop: { ...settings.shop, buttons: { browse: value(interaction, "browse"), order: value(interaction, "order"), support: value(interaction, "support"), information: value(interaction, "information") } } }));
+  } else if (action === "payment") {
+    const bank = splitLines(value(interaction, "bank"));
+    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, payment: { ...settings.payment, enabled: value(interaction, "enabled").toLowerCase() === "yes", trueMoneyWallet: parseOptional(value(interaction, "wallet")), promptPay: parseOptional(value(interaction, "promptpay")), bankName: parseOptional(bank[0]), accountName: parseOptional(bank[1]), bankAccount: parseOptional(bank[2]) } }));
+  } else if (action === "tickets") {
+    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, tickets: { categoryId: parseOptional(value(interaction, "category")), supportCategoryId: parseOptional(value(interaction, "supportCategory")), staffRoleIds: value(interaction, "roles").split(",").map((item) => item.trim()).filter(Boolean), transcriptChannelId: parseOptional(value(interaction, "transcript")), ticketPrefix: value(interaction, "prefix").replace(/[^a-z0-9-]/gi, "").toLowerCase() || "order" }, }));
+  } else if (action === "bot") {
+    await settingsRepository.update(interaction.guildId, (settings) => ({ ...settings, bot: { ...settings.bot, ownerId: parseOptional(value(interaction, "owner")), staffRoleIds: value(interaction, "roles").split(",").map((item) => item.trim()).filter(Boolean), maintenanceMode: value(interaction, "maintenance").toLowerCase() === "yes" } }));
+  } else if (action === "backoffice" && settingsSubAction === "banner-image") {
+    console.log("DEBUG backoffice save:", { action, subAction: settingsSubAction, imageUrl: value(interaction, "imageUrl"), thumbnailUrl: value(interaction, "thumbnailUrl") });
+    await settingsRepository.update(interaction.guildId, (settings) => {
+      const updated = {
+        ...settings,
+        backOffice: {
+          ...settings.backOffice,
+          imageUrl: parseOptional(value(interaction, "imageUrl")),
+          thumbnailUrl: parseOptional(value(interaction, "thumbnailUrl"))
+        }
+      };
+      console.log("DEBUG backoffice updated settings.backOffice:", updated.backOffice);
+      return updated;
+    });
+  }
+  
   return interaction.reply({ content: "✔ บันทึกการตั้งค่าแล้ว  •  หน้าร้านจะอัปเดตทันที", ephemeral: true });
 }

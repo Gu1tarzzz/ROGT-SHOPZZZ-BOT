@@ -1,4 +1,5 @@
-import { purchaseButton, productBrowserComponents, paymentMethodMenu, uploadSlipButton } from "../components/shopComponents.js";
+import { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
+import { purchaseButton, productBrowserComponents, paymentMethodMenu } from "../components/shopComponents.js";
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
 import { premiumEmbed, compactMetricCard, premiumMetricBlock, statusIndicator } from "../utils/discord.js";
 import { formatPrice, formatStock, formatNumber } from "../utils/formatters.js";
@@ -211,57 +212,42 @@ export async function handleSelectMenu(interaction) {
             const settings = await settingsRepository.get(interaction.guildId);
             if (selectedMethod === "truemoney") {
                 const phoneDisplay = settings.payment?.trueMoneyPhone || "ไม่ได้ตั้งค่า";
-                const description = [
-                    `**${UI_EMOJI.text.section} TrueMoney Wallet**`,
-                    "",
-                    DIVIDER,
-                    "",
-                    premiumMetricBlock("📱", "Phone Number", phoneDisplay),
-                    "",
-                    "**คำแนะนำ:**",
-                    "> โอนเงินผ่าน TrueMoney Wallet และอัปโหลดสลิปการโอนเงิน",
-                    "",
-                    DIVIDER,
-                    `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่ออัปโหลดสลิป`
-                ].filter(line => line !== "").join("\n");
-                const embed = await premiumEmbed(interaction.guildId, "💳 TRUEMONEY PAYMENT", description);
-                return interaction.update({
-                    embeds: [embed],
-                    components: [uploadSlipButton()]
-                });
+                // Open modal for TrueMoney gift link
+                const modal = new ModalBuilder()
+                    .setCustomId("shop:topup:truemoney:submit")
+                    .setTitle("TrueMoney Gift Link");
+                const giftLinkInput = new TextInputBuilder()
+                    .setCustomId("giftLink")
+                    .setLabel("Gift Link")
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder("https://gift.truemoney.com/...")
+                    .setRequired(true)
+                    .setMaxLength(500);
+                const phoneInfo = new TextInputBuilder()
+                    .setCustomId("phoneInfo")
+                    .setLabel("Phone Number")
+                    .setStyle(TextInputStyle.Paragraph)
+                    .setValue(`Please transfer to: ${phoneDisplay}`)
+                    .setRequired(false)
+                    .setMaxLength(100);
+                modal.addComponents(new ActionRowBuilder().addComponents(giftLinkInput), new ActionRowBuilder().addComponents(phoneInfo));
+                return interaction.showModal(modal);
             }
             if (selectedMethod === "bank") {
-                const bankName = settings.payment?.bank?.bankName || settings.payment?.bankName || "ไม่ได้ตั้งค่า";
-                const accountName = settings.payment?.bank?.accountName || settings.payment?.accountName || "ไม่ได้ตั้งค่า";
-                const accountNumber = settings.payment?.bank?.accountNumber || settings.payment?.bankAccount || "ไม่ได้ตั้งค่า";
-                const description = [
-                    `**${UI_EMOJI.text.section} Bank Transfer**`,
-                    "",
-                    DIVIDER,
-                    "",
-                    premiumMetricBlock("🏦", "Bank", bankName),
-                    premiumMetricBlock("👤", "Account Name", accountName),
-                    premiumMetricBlock("🔢", "Account Number", accountNumber),
-                    "",
-                    "**คำแนะนำ:**",
-                    "> โอนเงินผ่านธนาคารและอัปโหลดสลิปการโอนเงิน",
-                    "",
-                    DIVIDER,
-                    `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่ออัปโหลดสลิป`
-                ].filter(line => line !== "").join("\n");
-                const embed = await premiumEmbed(interaction.guildId, "🏦 BANK TRANSFER", description);
-                // Add QR image if configured
-                const qrImage = settings.payment?.bank?.qrImage || settings.payment?.qrImage;
-                if (qrImage) {
-                    embed.setImage(qrImage);
-                }
-                else {
-                    embed.setFooter({ text: "QR Code ไม่ได้ตั้งค่า" });
-                }
-                return interaction.update({
-                    embeds: [embed],
-                    components: [uploadSlipButton()]
-                });
+                // Open modal for bank transfer amount
+                const modal = new ModalBuilder()
+                    .setCustomId("shop:topup:bank:submit")
+                    .setTitle("Bank Transfer Amount");
+                const amountInput = new TextInputBuilder()
+                    .setCustomId("amount")
+                    .setLabel("Amount (THB)")
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder("100")
+                    .setRequired(true)
+                    .setMinLength(1)
+                    .setMaxLength(10);
+                modal.addComponents(new ActionRowBuilder().addComponents(amountInput));
+                return interaction.showModal(modal);
             }
         }
         if (action === "credit") {

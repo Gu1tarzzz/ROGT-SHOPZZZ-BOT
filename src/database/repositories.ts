@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { DEFAULT_GUILD_SETTINGS, DEFAULT_STOCK_SETTINGS } from "../config/constants.js";
-import type { Category, DatabaseFile, GuildSettings, HexColor, Order, Product, StockTransaction, StockReservation, StockAlert, RestockRequest, StockItem, Coupon, CouponUsage, ShoppingCart, OrderHistory, PurchaseLog, ShopStatistics, ProductTag, TaggedProduct, ShopAppearance, UserAccount } from "../types.js";
+import type { Category, DatabaseFile, GuildSettings, HexColor, Order, Product, StockTransaction, StockReservation, StockAlert, RestockRequest, StockItem, Coupon, CouponUsage, ShoppingCart, OrderHistory, PurchaseLog, ShopStatistics, ProductTag, TaggedProduct, ShopAppearance, UserAccount, TopUpRequest } from "../types.js";
 import { JsonStore } from "./jsonStore.js";
 
 type Entity = Category | Product | Order;
@@ -593,3 +593,44 @@ export const categoryRepository = new CategoryRepository();
 export const productRepository = new ProductRepository();
 export const orderRepository = new OrderRepository();
 export const stockRepository = new StockRepository();
+
+export class TopUpRequestRepository {
+  private readonly store = new JsonStore<DatabaseFile<TopUpRequest>>("topupRequests.json", emptyFile<TopUpRequest>());
+
+  public async create(input: Omit<TopUpRequest, "id" | "createdAt">): Promise<TopUpRequest> {
+    const request: TopUpRequest = {
+      ...input,
+      id: randomUUID(),
+      createdAt: new Date().toISOString()
+    };
+    await this.store.update((file) => ({ ...file, data: { ...file.data, [request.id]: request } }));
+    return request;
+  }
+
+  public async find(id: string): Promise<TopUpRequest | undefined> {
+    return (await this.store.read()).data[id];
+  }
+
+  public async update(id: string, updates: Partial<TopUpRequest>): Promise<TopUpRequest | undefined> {
+    const file = await this.store.read();
+    const existing = file.data[id];
+    if (!existing) return undefined;
+    
+    const updated: TopUpRequest = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    await this.store.update((file) => ({ ...file, data: { ...file.data, [id]: updated } }));
+    return updated;
+  }
+
+  public async getPendingByGuild(guildId: string): Promise<TopUpRequest[]> {
+    const file = await this.store.read();
+    return Object.values(file.data)
+      .filter((r) => r.guildId === guildId && r.status === "pending")
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+}
+
+export const topUpRequestRepository = new TopUpRequestRepository();

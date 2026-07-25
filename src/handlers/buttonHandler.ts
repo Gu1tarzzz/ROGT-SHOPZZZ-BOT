@@ -111,39 +111,6 @@ export async function handleButton(interaction: ButtonInteraction): Promise<unkn
         return interaction.editReply({ embeds: [embed], components });
       }
     }
-    // Manual channel ID input buttons
-    if (action === "notification" && id === "topup:manual") {
-      const modal = new ModalBuilder()
-        .setCustomId("payment:notification:topup:manual:submit")
-        .setTitle("Enter Top Up Channel ID");
-      
-      const input = new TextInputBuilder()
-        .setCustomId("channel_id")
-        .setLabel("Channel ID")
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder("1522801328156442776")
-        .setRequired(true)
-        .setMaxLength(25);
-      
-      modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
-      return interaction.showModal(modal);
-    }
-    if (action === "notification" && id === "purchase:manual") {
-      const modal = new ModalBuilder()
-        .setCustomId("payment:notification:purchase:manual:submit")
-        .setTitle("Enter Purchase Channel ID");
-      
-      const input = new TextInputBuilder()
-        .setCustomId("channel_id")
-        .setLabel("Channel ID")
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder("1522801328156442776")
-        .setRequired(true)
-        .setMaxLength(25);
-      
-      modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
-      return interaction.showModal(modal);
-    }
     // Bank Edit button - opens modal
     if (action === "bank" && id === "edit") {
       return openModal(interaction, "bank:edit");

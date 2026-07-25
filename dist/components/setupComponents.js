@@ -278,9 +278,6 @@ export function paymentDashboardEmbed(guildId, settings) {
     ].join("\n"))
         .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
         .setTimestamp();
-    if (typeof qrImage === "string" && qrImage.startsWith("http")) {
-        embed.setThumbnail(qrImage);
-    }
     return {
         embed,
         components: [
@@ -456,9 +453,6 @@ export function bankSetupEmbed(guildId, settings) {
     ].join("\n"))
         .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
         .setTimestamp();
-    if (typeof qrImage === "string" && qrImage.startsWith("http")) {
-        embed.setThumbnail(qrImage);
-    }
     return {
         embed,
         components: [
@@ -488,7 +482,7 @@ export function notificationSetupEmbed(guildId, settings, guildChannels) {
         "",
         DIVIDER,
         "",
-        `${UI_EMOJI.text.bullet} เลือกช่องด้านล่างเพื่อตั้งค่าหรือป้อน Channel ID ด้วยตนเอง`
+        `${UI_EMOJI.text.bullet} เลือกช่องด้านล่างเพื่อตั้งค่า`
     ].join("\n"))
         .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
         .setTimestamp();
@@ -499,12 +493,10 @@ export function notificationSetupEmbed(guildId, settings, guildChannels) {
                 .setCustomId("payment:notification:topup")
                 .setPlaceholder(`${UI_EMOJI.component.alert} Select Top Up Log Channel`)
                 .addChannelTypes(ChannelType.GuildText)),
-            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("payment:notification:topup:manual").setLabel("Enter Top Up Channel ID").setStyle(ButtonStyle.Secondary).setEmoji("✏️")),
             new ActionRowBuilder().addComponents(new ChannelSelectMenuBuilder()
                 .setCustomId("payment:notification:purchase")
                 .setPlaceholder(`${UI_EMOJI.component.alert} Select Purchase Log Channel`)
-                .addChannelTypes(ChannelType.GuildText)),
-            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("payment:notification:purchase:manual").setLabel("Enter Purchase Channel ID").setStyle(ButtonStyle.Secondary).setEmoji("✏️"))
+                .addChannelTypes(ChannelType.GuildText))
         ]
     };
 }

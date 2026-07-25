@@ -624,7 +624,7 @@ export function notificationSetupEmbed(guildId: string, settings: Awaited<Return
       "",
       DIVIDER,
       "",
-      `${UI_EMOJI.text.bullet} เลือกช่องด้านล่างเพื่อตั้งค่า`
+      `${UI_EMOJI.text.bullet} เลือกช่องด้านล่างเพื่อตั้งค่าหรือป้อน Channel ID ด้วยตนเอง`
     ].join("\n"))
     .setFooter({ text: `${UI_EMOJI.text.brand} ROGT SHOPZZZ` })
     .setTimestamp();
@@ -638,11 +638,17 @@ export function notificationSetupEmbed(guildId: string, settings: Awaited<Return
           .setPlaceholder(`${UI_EMOJI.component.alert} Select Top Up Log Channel`)
           .addOptions(topupOptions.slice(0, 25))
       ),
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId("payment:notification:topup:manual").setLabel("Enter Top Up Channel ID").setStyle(ButtonStyle.Secondary).setEmoji("✏️")
+      ),
       new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId("payment:notification:purchase")
           .setPlaceholder(`${UI_EMOJI.component.alert} Select Purchase Log Channel`)
           .addOptions(purchaseOptions.slice(0, 25))
+      ),
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId("payment:notification:purchase:manual").setLabel("Enter Purchase Channel ID").setStyle(ButtonStyle.Secondary).setEmoji("✏️")
       )
     ] 
   };

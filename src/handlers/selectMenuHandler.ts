@@ -180,7 +180,7 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
           ...settings.payment,
           logs: {
             ...settings.payment.logs,
-            topupChannel: selectedValue === "clear_topup" ? null : selectedValue
+            topupChannel: selectedValue === "clear_topup" ? undefined : selectedValue
           }
         }
       }));
@@ -198,7 +198,7 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
           ...settings.payment,
           logs: {
             ...settings.payment.logs,
-            purchaseChannel: selectedValue === "clear_purchase" ? null : selectedValue
+            purchaseChannel: selectedValue === "clear_purchase" ? undefined : selectedValue
           }
         }
       }));

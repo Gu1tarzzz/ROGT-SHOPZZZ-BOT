@@ -146,6 +146,45 @@ export async function handleSelectMenu(interaction) {
     if (!interaction.guildId)
         return;
     const [scope, action, extra] = interaction.customId.split(":");
+    // Handle notification channel selection
+    if (scope === "payment" && action === "notification") {
+        if (!(await admin(interaction)))
+            return;
+        const selectedValue = interaction.values[0];
+        const settings = await settingsRepository.get(interaction.guildId);
+        if (extra === "topup") {
+            await settingsRepository.update(interaction.guildId, (settings) => ({
+                ...settings,
+                payment: {
+                    ...settings.payment,
+                    logs: {
+                        ...settings.payment.logs,
+                        topupChannel: selectedValue === "clear_topup" ? undefined : selectedValue
+                    }
+                }
+            }));
+            const updatedSettings = await settingsRepository.get(interaction.guildId);
+            const { notificationSetupEmbed } = await import("../components/setupComponents.js");
+            const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings);
+            return interaction.update({ embeds: [embed], components });
+        }
+        if (extra === "purchase") {
+            await settingsRepository.update(interaction.guildId, (settings) => ({
+                ...settings,
+                payment: {
+                    ...settings.payment,
+                    logs: {
+                        ...settings.payment.logs,
+                        purchaseChannel: selectedValue === "clear_purchase" ? undefined : selectedValue
+                    }
+                }
+            }));
+            const updatedSettings = await settingsRepository.get(interaction.guildId);
+            const { notificationSetupEmbed } = await import("../components/setupComponents.js");
+            const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings);
+            return interaction.update({ embeds: [embed], components });
+        }
+    }
     if (scope === "shop") {
         if (action === "category") {
             const categoryId = interaction.values[0];

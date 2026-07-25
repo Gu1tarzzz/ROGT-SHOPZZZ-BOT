@@ -12,8 +12,8 @@ export async function openModal(interaction, section) {
         return;
     const settings = await settingsRepository.get(interaction.guildId);
     const parts = interaction.customId.split(":");
-    const type = parts[2];
-    const subSection = parts[3];
+    const type = parts[1];
+    const subSection = parts[2];
     // Handle appearance with subsections (basic, images, branding)
     if (type === "appearance") {
         if (subSection === "basic") {
@@ -62,7 +62,7 @@ export async function openModal(interaction, section) {
     }
     // Payment Dashboard button handlers
     if (type === "setup") {
-        const subType = parts[3];
+        const subType = parts[2];
         // TrueMoney Setup - Phone Number only
         if (subType === "truemoney") {
             return interaction.showModal(createModal("payment:truemoney:save", "✦ TrueMoney Setup", [
@@ -93,7 +93,7 @@ export async function openModal(interaction, section) {
         ]));
     }
     if (type === "tickets") {
-        const subSection = parts[3];
+        const subSection = parts[2];
         if (subSection === "ticket-categories") {
             return interaction.showModal(createModal("settings:tickets:categories", "✦ Ticket • หมวดหมู่", [
                 { id: "category", label: "Order Category ID", value: settings.tickets.categoryId, placeholder: "ใส่ - เพื่อล้าง", maxLength: 30 },

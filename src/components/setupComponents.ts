@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, EmbedBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, EmbedBuilder, type GuildTextBasedChannel } from "discord.js";
 import type { Category, Product, StockTransaction, ShopSettings } from "../types.js";
 import { formatStock, truncate, formatPrice } from "../utils/formatters.js";
 import { componentEmoji } from "../utils/componentEmoji.js";
@@ -593,10 +593,21 @@ export function bankSetupEmbed(guildId: string, settings: Awaited<ReturnType<typ
 /**
  * Creates a NEW embed for Notification Setup page
  */
-export function notificationSetupEmbed(guildId: string, settings: Awaited<ReturnType<typeof settingsRepository.get>>): { embed: EmbedBuilder, components: ActionRowBuilder<any>[] } {
+export function notificationSetupEmbed(guildId: string, settings: Awaited<ReturnType<typeof settingsRepository.get>>, guildChannels?: GuildTextBasedChannel[]): { embed: EmbedBuilder, components: ActionRowBuilder<any>[] } {
   const payment = settings.payment;
   const topupChannel = payment.logs?.topupChannel ? `<#${payment.logs.topupChannel}>` : "—";
   const purchaseChannel = payment.logs?.purchaseChannel ? `<#${payment.logs.purchaseChannel}>` : "—";
+  
+  // Build channel options for select menus
+  const channelOptions = guildChannels?.filter(c => c.isTextBased()).map(c => ({
+    label: c.name.length > 100 ? c.name.substring(0, 97) + "..." : c.name,
+    value: c.id,
+    description: `Channel ID: ${c.id}`
+  })) || [];
+  
+  // Add Clear Selection option at the beginning
+  const topupOptions = [{ label: "Clear Selection", value: "clear_topup", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }, ...channelOptions];
+  const purchaseOptions = [{ label: "Clear Selection", value: "clear_purchase", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }, ...channelOptions];
   
   const embed = new EmbedBuilder()
     .setColor("#8B5CF6")
@@ -625,13 +636,13 @@ export function notificationSetupEmbed(guildId: string, settings: Awaited<Return
         new StringSelectMenuBuilder()
           .setCustomId("payment:notification:topup")
           .setPlaceholder(`${UI_EMOJI.component.alert} Select Top Up Log Channel`)
-          .addOptions([{ label: "Clear Selection", value: "clear_topup", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }])
+          .addOptions(topupOptions.slice(0, 25))
       ),
       new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId("payment:notification:purchase")
           .setPlaceholder(`${UI_EMOJI.component.alert} Select Purchase Log Channel`)
-          .addOptions([{ label: "Clear Selection", value: "clear_purchase", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }])
+          .addOptions(purchaseOptions.slice(0, 25))
       )
     ] 
   };

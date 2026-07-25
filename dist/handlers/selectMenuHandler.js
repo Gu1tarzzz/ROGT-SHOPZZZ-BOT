@@ -164,8 +164,10 @@ export async function handleSelectMenu(interaction) {
                 }
             }));
             const updatedSettings = await settingsRepository.get(interaction.guildId);
+            const guild = await interaction.client.guilds.fetch(interaction.guildId);
+            const channels = guild.channels.cache.filter(c => c.isTextBased()).map(c => c);
             const { notificationSetupEmbed } = await import("../components/setupComponents.js");
-            const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings);
+            const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings, Array.from(channels));
             return interaction.update({ embeds: [embed], components });
         }
         if (extra === "purchase") {
@@ -180,8 +182,10 @@ export async function handleSelectMenu(interaction) {
                 }
             }));
             const updatedSettings = await settingsRepository.get(interaction.guildId);
+            const guild = await interaction.client.guilds.fetch(interaction.guildId);
+            const channels = guild.channels.cache.filter(c => c.isTextBased()).map(c => c);
             const { notificationSetupEmbed } = await import("../components/setupComponents.js");
-            const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings);
+            const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings, Array.from(channels));
             return interaction.update({ embeds: [embed], components });
         }
     }

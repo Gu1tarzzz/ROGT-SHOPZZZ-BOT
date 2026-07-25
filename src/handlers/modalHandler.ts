@@ -16,37 +16,41 @@ export async function openModal(interaction: import("discord.js").ButtonInteract
   if (!interaction.guildId) return;
   const settings = await settingsRepository.get(interaction.guildId);
   const parts = interaction.customId.split(":");
-  const type = parts[2];
-  const subSection = parts[3];
+  const scope = parts[0];    // e.g., "payment", "setup", "category"
+  const type = parts[1];     // e.g., "setup", "modal", "bank", "qr"
+  const subType = parts[2];  // e.g., "truemoney", "bank", "notification", "edit"
+  const subSection = parts[3]; // e.g., "edit"
   
   // Handle appearance with subsections (basic, images, branding)
-  if (type === "appearance") {
-    if (subSection === "basic") {
-      return interaction.showModal(createModal("settings:appearance:basic", "✦ ดีไซน์ร้าน • ข้อมูล", [
-        { id: "name", label: "ชื่อร้าน", value: settings.shop.storeName, required: true, maxLength: 100 },
-        { id: "description", label: "คำอธิบายร้าน", value: settings.shop.description, required: true, style: TextInputStyle.Paragraph, maxLength: 1000 },
-        { id: "footer", label: "ข้อความท้าย Embed", value: settings.shop.footer, required: true, maxLength: 200 },
-        { id: "status", label: "สถานะ (open / closed)", value: settings.shop.status, required: true, maxLength: 10 }
-      ]));
+  if (scope === "setup" && type === "modal") {
+    if (subType === "appearance") {
+      const appearanceSubSection = parts[3];
+      if (appearanceSubSection === "basic") {
+        return interaction.showModal(createModal("settings:appearance:basic", "✦ ดีไซน์ร้าน • ข้อมูล", [
+          { id: "name", label: "ชื่อร้าน", value: settings.shop.storeName, required: true, maxLength: 100 },
+          { id: "description", label: "คำอธิบายร้าน", value: settings.shop.description, required: true, style: TextInputStyle.Paragraph, maxLength: 1000 },
+          { id: "footer", label: "ข้อความท้าย Embed", value: settings.shop.footer, required: true, maxLength: 200 },
+          { id: "status", label: "สถานะ (open / closed)", value: settings.shop.status, required: true, maxLength: 10 }
+        ]));
+      }
+      if (appearanceSubSection === "images") {
+        return interaction.showModal(createModal("settings:appearance:images", "✦ ดีไซน์ร้าน • รูปภาพ", [
+          { id: "banner", label: "Banner URL", value: settings.shop.banner, placeholder: "ภาพปกติ  •  https://...", maxLength: 1024 },
+          { id: "bannerGif", label: "Banner GIF URL", value: settings.shop.bannerGif, placeholder: "ภาพเคลื่อนไหว  •  https://...", maxLength: 1024 },
+          { id: "thumbnail", label: "Thumbnail URL", value: settings.shop.thumbnail, placeholder: "https://...", maxLength: 1024 },
+          { id: "storeLogo", label: "Store Logo URL", value: settings.shop.storeLogo, placeholder: "https://...", maxLength: 1024 }
+        ]));
+      }
+      if (appearanceSubSection === "branding") {
+        return interaction.showModal(createModal("settings:appearance:branding", "✦ ดีไซน์ร้าน • แบรนด์", [
+          { id: "color", label: "สี Embed (#RRGGBB)", value: settings.shop.embedColor, required: true, maxLength: 7 },
+          { id: "authorName", label: "Author Name", value: settings.shop.authorName, placeholder: "ชื่อที่แสดงด้านบน", maxLength: 100 },
+          { id: "authorIcon", label: "Author Icon URL", value: settings.shop.authorIcon, placeholder: "https://...", maxLength: 1024 }
+        ]));
+      }
+      // Fallback for old format
+      return openAppearanceModal(interaction, settings);
     }
-    if (subSection === "images") {
-      return interaction.showModal(createModal("settings:appearance:images", "✦ ดีไซน์ร้าน • รูปภาพ", [
-        { id: "banner", label: "Banner URL", value: settings.shop.banner, placeholder: "ภาพปกติ  •  https://...", maxLength: 1024 },
-        { id: "bannerGif", label: "Banner GIF URL", value: settings.shop.bannerGif, placeholder: "ภาพเคลื่อนไหว  •  https://...", maxLength: 1024 },
-        { id: "thumbnail", label: "Thumbnail URL", value: settings.shop.thumbnail, placeholder: "https://...", maxLength: 1024 },
-        { id: "storeLogo", label: "Store Logo URL", value: settings.shop.storeLogo, placeholder: "https://...", maxLength: 1024 }
-      ]));
-    }
-    if (subSection === "branding") {
-      return interaction.showModal(createModal("settings:appearance:branding", "✦ ดีไซน์ร้าน • แบรนด์", [
-        { id: "color", label: "สี Embed (#RRGGBB)", value: settings.shop.embedColor, required: true, maxLength: 7 },
-        { id: "authorName", label: "Author Name", value: settings.shop.authorName, placeholder: "ชื่อที่แสดงด้านบน", maxLength: 100 },
-        { id: "authorIcon", label: "Author Icon URL", value: settings.shop.authorIcon, placeholder: "https://...", maxLength: 1024 }
-      ]));
-    }
-    // Fallback for old format
-    return openAppearanceModal(interaction, settings);
-  }
   
   if (type === "labels") {
     return interaction.showModal(createModal("settings:labels", "✦ ปุ่มหน้าร้าน", [

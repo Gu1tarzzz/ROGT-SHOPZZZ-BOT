@@ -186,8 +186,10 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
       }));
       
       const updatedSettings = await settingsRepository.get(interaction.guildId);
+      const guild = await interaction.client.guilds.fetch(interaction.guildId);
+      const channels = guild.channels.cache.filter(c => c.isTextBased()).map(c => c as import("discord.js").GuildTextBasedChannel);
       const { notificationSetupEmbed } = await import("../components/setupComponents.js");
-      const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings);
+      const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings, Array.from(channels));
       return interaction.update({ embeds: [embed], components });
     }
     
@@ -204,8 +206,10 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
       }));
       
       const updatedSettings = await settingsRepository.get(interaction.guildId);
+      const guild = await interaction.client.guilds.fetch(interaction.guildId);
+      const channels = guild.channels.cache.filter(c => c.isTextBased()).map(c => c as import("discord.js").GuildTextBasedChannel);
       const { notificationSetupEmbed } = await import("../components/setupComponents.js");
-      const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings);
+      const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings, Array.from(channels));
       return interaction.update({ embeds: [embed], components });
     }
   }

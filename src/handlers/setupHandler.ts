@@ -122,7 +122,9 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
   // Notification Setup - creates new dedicated embed
   if (section === "notification-setup") {
     const settings = await settingsRepository.get(guildId);
-    const { embed, components } = notificationSetupEmbed(guildId, settings);
+    const guild = await interaction.client.guilds.fetch(guildId);
+    const channels = guild.channels.cache.filter(c => c.isTextBased()).map(c => c as import("discord.js").GuildTextBasedChannel);
+    const { embed, components } = notificationSetupEmbed(guildId, settings, Array.from(channels));
     await interaction.reply({ embeds: [embed], components, ephemeral: true });
     return;
   }

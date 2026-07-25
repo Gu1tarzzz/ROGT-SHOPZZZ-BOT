@@ -469,10 +469,19 @@ export function bankSetupEmbed(guildId, settings) {
 /**
  * Creates a NEW embed for Notification Setup page
  */
-export function notificationSetupEmbed(guildId, settings) {
+export function notificationSetupEmbed(guildId, settings, guildChannels) {
     const payment = settings.payment;
     const topupChannel = payment.logs?.topupChannel ? `<#${payment.logs.topupChannel}>` : "—";
     const purchaseChannel = payment.logs?.purchaseChannel ? `<#${payment.logs.purchaseChannel}>` : "—";
+    // Build channel options for select menus
+    const channelOptions = guildChannels?.filter(c => c.isTextBased()).map(c => ({
+        label: c.name.length > 100 ? c.name.substring(0, 97) + "..." : c.name,
+        value: c.id,
+        description: `Channel ID: ${c.id}`
+    })) || [];
+    // Add Clear Selection option at the beginning
+    const topupOptions = [{ label: "Clear Selection", value: "clear_topup", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }, ...channelOptions];
+    const purchaseOptions = [{ label: "Clear Selection", value: "clear_purchase", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }, ...channelOptions];
     const embed = new EmbedBuilder()
         .setColor("#8B5CF6")
         .setTitle(`${UI_EMOJI.text.brand} NOTIFICATION SETUP`)
@@ -498,11 +507,11 @@ export function notificationSetupEmbed(guildId, settings) {
             new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
                 .setCustomId("payment:notification:topup")
                 .setPlaceholder(`${UI_EMOJI.component.alert} Select Top Up Log Channel`)
-                .addOptions([{ label: "Clear Selection", value: "clear_topup", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }])),
+                .addOptions(topupOptions.slice(0, 25))),
             new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
                 .setCustomId("payment:notification:purchase")
                 .setPlaceholder(`${UI_EMOJI.component.alert} Select Purchase Log Channel`)
-                .addOptions([{ label: "Clear Selection", value: "clear_purchase", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }]))
+                .addOptions(purchaseOptions.slice(0, 25)))
         ]
     };
 }

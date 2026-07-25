@@ -242,46 +242,38 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
     // Handle payment method selection
     if (action === "topup" && extra === "method") {
       const selectedMethod = interaction.values[0];
+      console.log(`Payment method selected: ${selectedMethod}`);
       const settings = await settingsRepository.get(interaction.guildId);
-      
+
       if (selectedMethod === "truemoney") {
-        const phoneDisplay = settings.payment?.trueMoneyPhone || "ไม่ได้ตั้งค่า";
-        
+        console.log("Opening TrueMoney modal");
         // Open modal for TrueMoney gift link
         const modal = new ModalBuilder()
           .setCustomId("shop:topup:truemoney:submit")
           .setTitle("TrueMoney Gift Link");
-        
+
         const giftLinkInput = new TextInputBuilder()
           .setCustomId("giftLink")
           .setLabel("Gift Link")
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder("https://gift.truemoney.com/...")
+          .setStyle(TextInputStyle.Paragraph)
+          .setPlaceholder("https://gift.truemoney.com/campaign/?v=...")
           .setRequired(true)
           .setMaxLength(500);
-        
-        const phoneInfo = new TextInputBuilder()
-          .setCustomId("phoneInfo")
-          .setLabel("Phone Number")
-          .setStyle(TextInputStyle.Paragraph)
-          .setValue(`Please transfer to: ${phoneDisplay}`)
-          .setRequired(false)
-          .setMaxLength(100);
-        
+
         modal.addComponents(
-          new ActionRowBuilder<TextInputBuilder>().addComponents(giftLinkInput),
-          new ActionRowBuilder<TextInputBuilder>().addComponents(phoneInfo)
+          new ActionRowBuilder<TextInputBuilder>().addComponents(giftLinkInput)
         );
-        
+
         return interaction.showModal(modal);
       }
-      
+
       if (selectedMethod === "bank") {
+        console.log("Opening Bank modal");
         // Open modal for bank transfer amount
         const modal = new ModalBuilder()
           .setCustomId("shop:topup:bank:submit")
           .setTitle("Bank Transfer Amount");
-        
+
         const amountInput = new TextInputBuilder()
           .setCustomId("amount")
           .setLabel("Amount (THB)")
@@ -290,9 +282,9 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
           .setRequired(true)
           .setMinLength(1)
           .setMaxLength(10);
-        
+
         modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput));
-        
+
         return interaction.showModal(modal);
       }
     }

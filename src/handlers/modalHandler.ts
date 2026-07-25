@@ -325,6 +325,92 @@ console.log("Guild ID =", interaction.guildId);
   }
   
   // Handle settings modals (scope = "settings")
+  if (scope === "payment") {
+    const currentSettings = await settingsRepository.get(interaction.guildId);
+    
+    // TrueMoney phone number save
+    if (action === "truemoney") {
+      const phone = value(interaction, "phone").trim();
+      
+      // Validate 10 digits, numbers only
+      if (!/^\d{10}$/.test(phone)) {
+        return interaction.reply({ content: "○ Phone number must be exactly 10 digits", ephemeral: true });
+      }
+      
+      await settingsRepository.update(interaction.guildId, (settings) => ({
+        ...settings,
+        payment: {
+          ...settings.payment,
+          trueMoneyPhone: phone
+        }
+      }));
+      
+      // Refresh the payment setup page
+      const updatedSettings = await settingsRepository.get(interaction.guildId);
+      const { paymentDashboardEmbed } = await import("../components/setupComponents.js");
+      const { embed, components } = paymentDashboardEmbed(interaction.guildId, updatedSettings);
+      return interaction.update({ embeds: [embed], components });
+    }
+    
+    // Bank account save
+    if (action === "bank") {
+      const bankName = value(interaction, "bankName").trim();
+      const accountName = value(interaction, "accountName").trim();
+      const accountNumber = value(interaction, "accountNumber").trim();
+      
+      if (!bankName || !accountName || !accountNumber) {
+        return interaction.reply({ content: "○ All bank fields are required", ephemeral: true });
+      }
+      
+      await settingsRepository.update(interaction.guildId, (settings) => ({
+        ...settings,
+        payment: {
+          ...settings.payment,
+          bank: {
+            ...settings.payment.bank,
+            bankName,
+            accountName,
+            accountNumber
+          }
+        }
+      }));
+      
+      // Refresh the bank setup page
+      const updatedSettings = await settingsRepository.get(interaction.guildId);
+      const { bankSetupEmbed } = await import("../components/setupComponents.js");
+      const { embed, components } = bankSetupEmbed(interaction.guildId, updatedSettings);
+      return interaction.update({ embeds: [embed], components });
+    }
+    
+    // QR image save
+    if (action === "qr") {
+      const qrImage = value(interaction, "qrImage").trim();
+      
+      if (!qrImage || !qrImage.startsWith("http")) {
+        return interaction.reply({ content: "○ QR Image must be a valid URL", ephemeral: true });
+      }
+      
+      await settingsRepository.update(interaction.guildId, (settings) => ({
+        ...settings,
+        payment: {
+          ...settings.payment,
+          bank: {
+            ...settings.payment.bank,
+            qrImage
+          }
+        }
+      }));
+      
+      // Refresh the bank setup page
+      const updatedSettings = await settingsRepository.get(interaction.guildId);
+      const { bankSetupEmbed } = await import("../components/setupComponents.js");
+      const { embed, components } = bankSetupEmbed(interaction.guildId, updatedSettings);
+      return interaction.update({ embeds: [embed], components });
+    }
+    
+    return interaction.reply({ content: "○ Invalid payment action", ephemeral: true });
+  }
+  
   if (scope !== "settings") return;
   const subAction = parts[2]; // e.g., "appearance:basic" -> "basic"
   

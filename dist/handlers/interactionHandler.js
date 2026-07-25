@@ -1,7 +1,7 @@
 import { commands } from "../commands/index.js";
 import { handleButton } from "./buttonHandler.js";
 import { handleModal } from "./modalHandler.js";
-import { handleSelectMenu } from "./selectMenuHandler.js";
+import { handleSelectMenu, handleChannelSelectMenu } from "./selectMenuHandler.js";
 import { hasAdminAccess } from "../utils/permissions.js";
 export function registerInteractionHandler(client) {
     client.on("interactionCreate", async (interaction) => {
@@ -24,6 +24,9 @@ export function registerInteractionHandler(client) {
             }
             else if (interaction.isStringSelectMenu()) {
                 await handleSelectMenu(interaction);
+            }
+            else if (interaction.isChannelSelectMenu()) {
+                await handleChannelSelectMenu(interaction);
             }
             else if (interaction.isModalSubmit()) {
                 const member = interaction.guild ? await interaction.guild.members.fetch(interaction.user.id) : undefined;

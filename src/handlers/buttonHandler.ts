@@ -29,14 +29,20 @@ export async function handleButton(interaction: ButtonInteraction): Promise<unkn
   if (scope === "shop") {
     // Handle topup and credit button interactions
     if (action === "topup") {
-      const embed = await premiumEmbed(interaction.guildId, "TOP UP CREDIT", [
+      // Show payment method selection embed
+      const embed = await premiumEmbed(interaction.guildId, "💰 TOP UP CREDIT", [
         "*เติมเครดิตเพื่อซื้อสินค้า*",
         "",
         DIVIDER,
-        "▸ ติดต่อทีมงานเพื่อเติมเครดิต",
-        "▸ หรือใช้คำสั่งซื้อเพื่อชำระเงิน"
+        "กรุณาเลือกวิธีการชำระเงินของคุณจากเมนูด้านล่าง"
       ].join("\n"));
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      
+      const { paymentMethodMenu } = await import("../components/shopComponents.js");
+      return interaction.reply({ 
+        embeds: [embed], 
+        components: [paymentMethodMenu()],
+        ephemeral: true 
+      });
     }
     if (action === "credit") {
       const embed = await premiumEmbed(interaction.guildId, "CHECK CREDIT", [

@@ -2,15 +2,22 @@
 # Build artifacts
 dist/
 build/
-*.js
-
 # Dependencies
 node_modules/
-
-# Editors
-.vscode/
-
+# Compiled files
+*.js
+*.ts
+*.tsx
+*.jsx
 # Logs and temp files
 *.log
 *.tmp
+*.swp
+# Environment
+.env
+.env.local
+*.env.*
+# Editors
+.vscode/
+.idea/
 ```

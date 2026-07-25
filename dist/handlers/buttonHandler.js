@@ -108,8 +108,10 @@ export async function handleButton(interaction) {
             if (id === "notification") {
                 await interaction.deferReply({ ephemeral: true });
                 const settings = await settingsRepository.get(interaction.guildId);
+                const guild = await interaction.client.guilds.fetch(interaction.guildId);
+                const channels = guild.channels.cache.filter(c => c.isTextBased()).map(c => c);
                 const { notificationSetupEmbed } = await import("../components/setupComponents.js");
-                const { embed, components } = notificationSetupEmbed(interaction.guildId, settings);
+                const { embed, components } = notificationSetupEmbed(interaction.guildId, settings, Array.from(channels));
                 return interaction.editReply({ embeds: [embed], components });
             }
         }

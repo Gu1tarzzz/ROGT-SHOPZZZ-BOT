@@ -1,4 +1,4 @@
-import { purchaseButton, productBrowserComponents } from "../components/shopComponents.js";
+import { purchaseButton, productBrowserComponents, paymentMethodMenu, uploadSlipButton } from "../components/shopComponents.js";
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
 import { premiumEmbed, compactMetricCard, premiumMetricBlock, statusIndicator } from "../utils/discord.js";
 import { formatPrice, formatStock, formatNumber } from "../utils/formatters.js";
@@ -192,14 +192,77 @@ export async function handleSelectMenu(interaction) {
         }
         // Handle utility buttons - show only ephemeral replies
         if (action === "topup") {
-            const embed = await premiumEmbed(interaction.guildId, "🪙 TOP UP CREDIT", [
+            // Show payment method selection embed
+            const embed = await premiumEmbed(interaction.guildId, "💰 TOP UP CREDIT", [
                 "*เติมเครดิตเพื่อซื้อสินค้า*",
                 "",
                 DIVIDER,
-                `${UI_EMOJI.text.bullet} ติดต่อทีมงานเพื่อเติมเครดิต`,
-                `${UI_EMOJI.text.bullet} หรือใช้คำสั่งซื้อเพื่อชำระเงิน`
+                "กรุณาเลือกวิธีการชำระเงินของคุณจากเมนูด้านล่าง"
             ].join("\n"));
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({
+                embeds: [embed],
+                components: [paymentMethodMenu()],
+                ephemeral: true
+            });
+        }
+        // Handle payment method selection
+        if (action === "topup" && extra === "method") {
+            const selectedMethod = interaction.values[0];
+            const settings = await settingsRepository.get(interaction.guildId);
+            if (selectedMethod === "truemoney") {
+                const phoneDisplay = settings.payment?.trueMoneyPhone || "ไม่ได้ตั้งค่า";
+                const description = [
+                    `**${UI_EMOJI.text.section} TrueMoney Wallet**`,
+                    "",
+                    DIVIDER,
+                    "",
+                    premiumMetricBlock("📱", "Phone Number", phoneDisplay),
+                    "",
+                    "**คำแนะนำ:**",
+                    "> โอนเงินผ่าน TrueMoney Wallet และอัปโหลดสลิปการโอนเงิน",
+                    "",
+                    DIVIDER,
+                    `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่ออัปโหลดสลิป`
+                ].filter(line => line !== "").join("\n");
+                const embed = await premiumEmbed(interaction.guildId, "💳 TRUEMONEY PAYMENT", description);
+                return interaction.update({
+                    embeds: [embed],
+                    components: [uploadSlipButton()]
+                });
+            }
+            if (selectedMethod === "bank") {
+                const bankName = settings.payment?.bank?.bankName || settings.payment?.bankName || "ไม่ได้ตั้งค่า";
+                const accountName = settings.payment?.bank?.accountName || settings.payment?.accountName || "ไม่ได้ตั้งค่า";
+                const accountNumber = settings.payment?.bank?.accountNumber || settings.payment?.bankAccount || "ไม่ได้ตั้งค่า";
+                const description = [
+                    `**${UI_EMOJI.text.section} Bank Transfer**`,
+                    "",
+                    DIVIDER,
+                    "",
+                    premiumMetricBlock("🏦", "Bank", bankName),
+                    premiumMetricBlock("👤", "Account Name", accountName),
+                    premiumMetricBlock("🔢", "Account Number", accountNumber),
+                    "",
+                    "**คำแนะนำ:**",
+                    "> โอนเงินผ่านธนาคารและอัปโหลดสลิปการโอนเงิน",
+                    "",
+                    DIVIDER,
+                    `${UI_EMOJI.text.bullet} กดปุ่มด้านล่างเพื่ออัปโหลดสลิป`
+                ].filter(line => line !== "").join("\n");
+                const embed = await premiumEmbed(interaction.guildId, "🏦 BANK TRANSFER", description);
+                // Add QR image if configured
+                const qrImage = settings.payment?.bank?.qrImage || settings.payment?.qrImage;
+                if (qrImage) {
+                    embed.setImage(qrImage);
+                }
+                else {
+                    embed.setFooter({ text: "QR Code ไม่ได้ตั้งค่า" });
+                }
+                return interaction.update({
+                    embeds: [embed],
+                    components: [uploadSlipButton()]
+                });
+            }
         }
         if (action === "credit") {
             const embed = await premiumEmbed(interaction.guildId, "💎 CHECK CREDIT", [

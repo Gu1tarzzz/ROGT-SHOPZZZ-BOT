@@ -2,16 +2,61 @@
 # Build artifacts
 dist/
 build/
+*.js
+
 # Dependencies
 node_modules/
-# Compiled files
-*.js
-*.ts
+
+# Editors
+.vscode/
+
+# Compiled/Generated
+*.pyc
+__pycache__/
+*.o
+*.obj
+*.class
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
 # Logs and temp files
 *.log
 *.tmp
 *.swp
-# Editors
-.vscode/
+*.swo
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# IDE
 .idea/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.mypy_cache/
+.pytest_cache/
+.nyc_output/
+coverage/
+
+# Distribution
+*.tar.gz
+*.zip
+*.rar
+*.7z
 ```

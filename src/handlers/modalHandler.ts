@@ -4,7 +4,7 @@ import { createModal } from "../components/modal.js";
 import { categoryRepository, productRepository, settingsRepository, UserRepository, topUpRequestRepository } from "../database/repositories.js";
 import type { ButtonColor, Product } from "../types.js";
 import { isValidHex, parseOptional, parseThaiNumber, formatNumber } from "../utils/formatters.js";
-import { premiumEmbed, balanceEmbed } from "../utils/discord.js";
+import { premiumEmbed, balanceEmbed, premiumMetricBlock } from "../utils/discord.js";
 import { DIVIDER, UI_EMOJI } from "../config/constants.js";
 import { bankSetupEmbed, notificationSetupEmbed } from "../components/setupComponents.js";
 
@@ -521,6 +521,9 @@ console.log("Guild ID =", interaction.guildId);
     });
   } else if (action === "topup") {
     // Handle Top Up modal submissions
+    const subAction = parts[2];
+    const extra = parts[3];
+    
     if (subAction === "truemoney" && extra === "submit") {
       const giftLink = value(interaction, "giftLink");
       const phoneInfo = value(interaction, "phoneInfo");

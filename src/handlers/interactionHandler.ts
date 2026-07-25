@@ -24,8 +24,16 @@ export function registerInteractionHandler(client: Client): void {
       } else if (interaction.isChannelSelectMenu()) {
         await handleChannelSelectMenu(interaction);
       } else if (interaction.isModalSubmit()) {
-        const member = interaction.guild ? await interaction.guild.members.fetch(interaction.user.id) : undefined;
-        if (!member || !(await hasAdminAccess(member))) return interaction.reply({ content: "○ คุณไม่มีสิทธิ์แก้ไขการตั้งค่า", ephemeral: true });
+        // Only require admin access for settings modals, not user-facing modals like topup
+        const parts = interaction.customId.split(":");
+        const scope = parts[0];
+        const action = parts[1];
+        
+        // Skip admin check for user topup modals (shop:topup:*)
+        if (!(scope === "shop" && action === "topup")) {
+          const member = interaction.guild ? await interaction.guild.members.fetch(interaction.user.id) : undefined;
+          if (!member || !(await hasAdminAccess(member))) return interaction.reply({ content: "○ คุณไม่มีสิทธิ์แก้ไขการตั้งค่า", ephemeral: true });
+        }
         await handleModal(interaction);
       }
     } catch (error) {

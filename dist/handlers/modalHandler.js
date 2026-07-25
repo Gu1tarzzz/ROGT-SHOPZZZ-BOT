@@ -326,7 +326,7 @@ export async function handleModal(interaction) {
             const updatedSettings = await settingsRepository.get(interaction.guildId);
             const { paymentDashboardEmbed } = await import("../components/setupComponents.js");
             const { embed, components } = paymentDashboardEmbed(interaction.guildId, updatedSettings);
-            return interaction.editReply({ embeds: [embed], components });
+            return interaction.reply({ embeds: [embed], components, ephemeral: true });
         }
         // Bank account save
         if (action === "bank") {
@@ -352,7 +352,7 @@ export async function handleModal(interaction) {
             const updatedSettings = await settingsRepository.get(interaction.guildId);
             const { bankSetupEmbed } = await import("../components/setupComponents.js");
             const { embed, components } = bankSetupEmbed(interaction.guildId, updatedSettings);
-            return interaction.editReply({ embeds: [embed], components });
+            return interaction.reply({ embeds: [embed], components, ephemeral: true });
         }
         // QR image save
         if (action === "qr") {
@@ -374,7 +374,7 @@ export async function handleModal(interaction) {
             const updatedSettings = await settingsRepository.get(interaction.guildId);
             const { bankSetupEmbed } = await import("../components/setupComponents.js");
             const { embed, components } = bankSetupEmbed(interaction.guildId, updatedSettings);
-            return interaction.editReply({ embeds: [embed], components });
+            return interaction.reply({ embeds: [embed], components, ephemeral: true });
         }
         return interaction.reply({ content: "○ Invalid payment action", ephemeral: true });
     }

@@ -15,6 +15,37 @@ const validColor = (input: string): ButtonColor => (["Primary", "Secondary", "Su
 export async function openModal(interaction: import("discord.js").ButtonInteraction, section?: string): Promise<unknown> {
   if (!interaction.guildId) return;
   const settings = await settingsRepository.get(interaction.guildId);
+  
+  // If section is provided, use it directly instead of parsing customId
+  if (section) {
+    const sectionParts = section.split(":");
+    
+    // TrueMoney Setup
+    if (section === "truemoney") {
+      return interaction.showModal(createModal("payment:truemoney:save", "✦ TrueMoney Setup", [
+        { id: "phone", label: "Phone Number (10 digits)", value: settings.payment.trueMoneyPhone, placeholder: "0812345678", required: true, maxLength: 10 }
+      ]));
+    }
+    
+    // Bank Edit
+    if (sectionParts[0] === "bank" && sectionParts[1] === "edit") {
+      return interaction.showModal(createModal("payment:bank:save", "✦ Edit Bank Account", [
+        { id: "bankName", label: "Bank Name", value: settings.payment.bank?.bankName, placeholder: "Kasikornbank", required: true, maxLength: 100 },
+        { id: "accountName", label: "Account Name", value: settings.payment.bank?.accountName, placeholder: "John Doe", required: true, maxLength: 100 },
+        { id: "accountNumber", label: "Account Number", value: settings.payment.bank?.accountNumber, placeholder: "123-4-56789-0", required: true, maxLength: 20 }
+      ]));
+    }
+    
+    // QR Edit
+    if (sectionParts[0] === "qr" && sectionParts[1] === "edit") {
+      return interaction.showModal(createModal("payment:qr:save", "✦ Edit QR Image", [
+        { id: "qrImage", label: "QR Image URL", value: settings.payment.bank?.qrImage, placeholder: "https://...", required: true, maxLength: 1024 }
+      ]));
+    }
+    
+    return;
+  }
+  
   const parts = interaction.customId.split(":");
   const scope = parts[0];    // e.g., "payment", "setup", "category"
   const type = parts[1];     // e.g., "setup", "modal", "bank", "qr"
@@ -51,6 +82,7 @@ export async function openModal(interaction: import("discord.js").ButtonInteract
       // Fallback for old format
       return openAppearanceModal(interaction, settings);
     }
+  }
   
   if (type === "labels") {
     return interaction.showModal(createModal("settings:labels", "✦ ปุ่มหน้าร้าน", [

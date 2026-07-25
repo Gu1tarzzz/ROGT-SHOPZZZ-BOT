@@ -92,6 +92,26 @@ export async function handleButton(interaction) {
             }
         }
     }
+    // Payment setup button handlers
+    if (scope === "payment") {
+        if (action === "setup") {
+            if (id === "truemoney") {
+                return openModal(interaction, "truemoney");
+            }
+            if (id === "bank") {
+                const settings = await settingsRepository.get(interaction.guildId);
+                const { bankSetupEmbed } = await import("../components/setupComponents.js");
+                const { embed, components } = bankSetupEmbed(interaction.guildId, settings);
+                return interaction.reply({ embeds: [embed], components, ephemeral: true });
+            }
+            if (id === "notification") {
+                const settings = await settingsRepository.get(interaction.guildId);
+                const { notificationSetupEmbed } = await import("../components/setupComponents.js");
+                const { embed, components } = notificationSetupEmbed(interaction.guildId, settings);
+                return interaction.reply({ embeds: [embed], components, ephemeral: true });
+            }
+        }
+    }
     if (scope === "category") {
         const categories = await categoryRepository.list(interaction.guildId);
         if (action === "create")

@@ -1,3 +1,10 @@
-```ts
-
+```
+# Build artifacts
+dist/
+build/
+# Dependencies
+node_modules/
+# Compiled files
+*.js.map
+*.tsbuildinfo
 ```

@@ -111,6 +111,14 @@ export async function handleButton(interaction) {
                 return interaction.reply({ embeds: [embed], components, ephemeral: true });
             }
         }
+        // Bank Edit button - opens modal
+        if (action === "bank" && id === "edit") {
+            return openModal(interaction, "bank:edit");
+        }
+        // QR Edit button - opens modal
+        if (action === "qr" && id === "edit") {
+            return openModal(interaction, "qr:edit");
+        }
     }
     if (scope === "category") {
         const categories = await categoryRepository.list(interaction.guildId);

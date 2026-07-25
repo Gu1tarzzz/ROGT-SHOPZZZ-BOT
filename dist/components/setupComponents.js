@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, EmbedBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ChannelSelectMenuBuilder, ChannelType, EmbedBuilder } from "discord.js";
 import { formatStock, truncate, formatPrice } from "../utils/formatters.js";
 import { componentEmoji } from "../utils/componentEmoji.js";
 import { UI_EMOJI, DIVIDER } from "../config/constants.js";
@@ -473,15 +473,6 @@ export function notificationSetupEmbed(guildId, settings, guildChannels) {
     const payment = settings.payment;
     const topupChannel = payment.logs?.topupChannel ? `<#${payment.logs.topupChannel}>` : "—";
     const purchaseChannel = payment.logs?.purchaseChannel ? `<#${payment.logs.purchaseChannel}>` : "—";
-    // Build channel options for select menus
-    const channelOptions = guildChannels?.filter(c => c.isTextBased()).map(c => ({
-        label: c.name.length > 100 ? c.name.substring(0, 97) + "..." : c.name,
-        value: c.id,
-        description: `Channel ID: ${c.id}`
-    })) || [];
-    // Add Clear Selection option at the beginning
-    const topupOptions = [{ label: "Clear Selection", value: "clear_topup", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }, ...channelOptions];
-    const purchaseOptions = [{ label: "Clear Selection", value: "clear_purchase", description: "Remove selected channel", emoji: UI_EMOJI.component.remove }, ...channelOptions];
     const embed = new EmbedBuilder()
         .setColor("#8B5CF6")
         .setTitle(`${UI_EMOJI.text.brand} NOTIFICATION SETUP`)
@@ -504,15 +495,15 @@ export function notificationSetupEmbed(guildId, settings, guildChannels) {
     return {
         embed,
         components: [
-            new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
+            new ActionRowBuilder().addComponents(new ChannelSelectMenuBuilder()
                 .setCustomId("payment:notification:topup")
                 .setPlaceholder(`${UI_EMOJI.component.alert} Select Top Up Log Channel`)
-                .addOptions(topupOptions.slice(0, 25))),
+                .addChannelTypes(ChannelType.GuildText)),
             new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("payment:notification:topup:manual").setLabel("Enter Top Up Channel ID").setStyle(ButtonStyle.Secondary).setEmoji("✏️")),
-            new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
+            new ActionRowBuilder().addComponents(new ChannelSelectMenuBuilder()
                 .setCustomId("payment:notification:purchase")
                 .setPlaceholder(`${UI_EMOJI.component.alert} Select Purchase Log Channel`)
-                .addOptions(purchaseOptions.slice(0, 25))),
+                .addChannelTypes(ChannelType.GuildText)),
             new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("payment:notification:purchase:manual").setLabel("Enter Purchase Channel ID").setStyle(ButtonStyle.Secondary).setEmoji("✏️"))
         ]
     };

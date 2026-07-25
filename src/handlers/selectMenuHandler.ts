@@ -1,4 +1,4 @@
-import type { StringSelectMenuInteraction } from "discord.js";
+import type { StringSelectMenuInteraction, ChannelSelectMenuInteraction } from "discord.js";
 import { categoryMenu, productMenu, purchaseButton, productBrowserComponents } from "../components/shopComponents.js";
 import { categoryRepository, productRepository, settingsRepository } from "../database/repositories.js";
 import { premiumEmbed, compactMetricCard, premiumMetricBlock, statusIndicator } from "../utils/discord.js";
@@ -165,55 +165,9 @@ async function buildCheckoutEmbed(guildId: string, product: any) {
 export async function handleSelectMenu(interaction: StringSelectMenuInteraction) {
   if (!interaction.guildId) return;
   const [scope, action, extra] = interaction.customId.split(":");
-  
-  // Handle notification channel selection
-  if (scope === "payment" && action === "notification") {
-    if (!(await admin(interaction))) return;
-    
-    const selectedValue = interaction.values[0];
-    const settings = await settingsRepository.get(interaction.guildId);
-    
-    if (extra === "topup") {
-      await settingsRepository.update(interaction.guildId, (settings) => ({
-        ...settings,
-        payment: {
-          ...settings.payment,
-          logs: {
-            ...settings.payment.logs,
-            topupChannel: selectedValue === "clear_topup" ? undefined : selectedValue
-          }
-        }
-      }));
-      
-      const updatedSettings = await settingsRepository.get(interaction.guildId);
-      const guild = await interaction.client.guilds.fetch(interaction.guildId);
-      const channels = guild.channels.cache.filter(c => c.isTextBased()).map(c => c as import("discord.js").GuildTextBasedChannel);
-      const { notificationSetupEmbed } = await import("../components/setupComponents.js");
-      const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings, Array.from(channels));
-      return interaction.update({ embeds: [embed], components });
-    }
-    
-    if (extra === "purchase") {
-      await settingsRepository.update(interaction.guildId, (settings) => ({
-        ...settings,
-        payment: {
-          ...settings.payment,
-          logs: {
-            ...settings.payment.logs,
-            purchaseChannel: selectedValue === "clear_purchase" ? undefined : selectedValue
-          }
-        }
-      }));
-      
-      const updatedSettings = await settingsRepository.get(interaction.guildId);
-      const guild = await interaction.client.guilds.fetch(interaction.guildId);
-      const channels = guild.channels.cache.filter(c => c.isTextBased()).map(c => c as import("discord.js").GuildTextBasedChannel);
-      const { notificationSetupEmbed } = await import("../components/setupComponents.js");
-      const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings, Array.from(channels));
-      return interaction.update({ embeds: [embed], components });
-    }
-  }
-  
+
+  // Note: Notification channel selection is now handled by handleChannelSelectMenu
+
   if (scope === "shop") {
     if (action === "category") {
       const categoryId = interaction.values[0];
@@ -355,5 +309,60 @@ export async function handleSelectMenu(interaction: StringSelectMenuInteraction)
   if (scope === "product" && action === "pick") {
     const mode = extra as "create" | "edit" | "delete" | "visibility";
     return handleProductPick(interaction, mode);
+  }
+}
+
+export async function handleChannelSelectMenu(interaction: ChannelSelectMenuInteraction) {
+  if (!interaction.guildId) return;
+  const [scope, action, extra] = interaction.customId.split(":");
+
+  // Handle notification channel selection
+  if (scope === "payment" && action === "notification") {
+    if (!(await admin(interaction as any))) return;
+
+    const selectedChannel = interaction.channels.first();
+    if (!selectedChannel) return;
+
+    const settings = await settingsRepository.get(interaction.guildId);
+
+    if (extra === "topup") {
+      await settingsRepository.update(interaction.guildId, (settings) => ({
+        ...settings,
+        payment: {
+          ...settings.payment,
+          logs: {
+            ...settings.payment.logs,
+            topupChannel: selectedChannel.id
+          }
+        }
+      }));
+
+      const updatedSettings = await settingsRepository.get(interaction.guildId);
+      const guild = await interaction.client.guilds.fetch(interaction.guildId);
+      const channels = guild.channels.cache.filter(c => c.isTextBased()).map(c => c as import("discord.js").GuildTextBasedChannel);
+      const { notificationSetupEmbed } = await import("../components/setupComponents.js");
+      const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings, Array.from(channels));
+      return interaction.update({ embeds: [embed], components });
+    }
+
+    if (extra === "purchase") {
+      await settingsRepository.update(interaction.guildId, (settings) => ({
+        ...settings,
+        payment: {
+          ...settings.payment,
+          logs: {
+            ...settings.payment.logs,
+            purchaseChannel: selectedChannel.id
+          }
+        }
+      }));
+
+      const updatedSettings = await settingsRepository.get(interaction.guildId);
+      const guild = await interaction.client.guilds.fetch(interaction.guildId);
+      const channels = guild.channels.cache.filter(c => c.isTextBased()).map(c => c as import("discord.js").GuildTextBasedChannel);
+      const { notificationSetupEmbed } = await import("../components/setupComponents.js");
+      const { embed, components } = notificationSetupEmbed(interaction.guildId, updatedSettings, Array.from(channels));
+      return interaction.update({ embeds: [embed], components });
+    }
   }
 }

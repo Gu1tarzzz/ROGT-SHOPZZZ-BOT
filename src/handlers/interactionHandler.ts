@@ -2,7 +2,7 @@ import type { Client, Interaction } from "discord.js";
 import { commands } from "../commands/index.js";
 import { handleButton } from "./buttonHandler.js";
 import { handleModal } from "./modalHandler.js";
-import { handleSelectMenu } from "./selectMenuHandler.js";
+import { handleSelectMenu, handleChannelSelectMenu } from "./selectMenuHandler.js";
 import { hasAdminAccess } from "../utils/permissions.js";
 
 export function registerInteractionHandler(client: Client): void {
@@ -21,6 +21,8 @@ export function registerInteractionHandler(client: Client): void {
         await handleButton(interaction);
       } else if (interaction.isStringSelectMenu()) {
         await handleSelectMenu(interaction);
+      } else if (interaction.isChannelSelectMenu()) {
+        await handleChannelSelectMenu(interaction);
       } else if (interaction.isModalSubmit()) {
         const member = interaction.guild ? await interaction.guild.members.fetch(interaction.user.id) : undefined;
         if (!member || !(await hasAdminAccess(member))) return interaction.reply({ content: "○ คุณไม่มีสิทธิ์แก้ไขการตั้งค่า", ephemeral: true });

@@ -62,6 +62,29 @@ export function categoryMenu(categories, customId = "shop:category") {
         .addOptions(options));
 }
 /**
+ * Payment method select menu for Top Up flow
+ */
+export function paymentMethodMenu(customId = "shop:topup:method") {
+    const options = [
+        { label: "TrueMoney Wallet", value: "truemoney", description: "ชำระผ่าน TrueMoney Wallet" },
+        { label: "Bank Transfer", value: "bank", description: "โอนเงินผ่านธนาคาร" }
+    ];
+    return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
+        .setCustomId(customId)
+        .setPlaceholder("เลือกวิธีการชำระเงิน")
+        .addOptions(options));
+}
+/**
+ * Upload slip button for payment confirmation
+ */
+export function uploadSlipButton(orderId) {
+    return new ActionRowBuilder().addComponents(new ButtonBuilder()
+        .setCustomId(`shop:topup:slip${orderId ? `:${orderId}` : ""}`)
+        .setLabel("อัปโหลดสลิป")
+        .setStyle(ButtonStyle.Success)
+        .setEmoji("📤"));
+}
+/**
  * Product browser components for ephemeral Product Browser message
  * Contains: Product Select Menu + Product List with Price/Stock
  */

@@ -78,6 +78,36 @@ export function categoryMenu(categories: Category[], customId = "shop:category")
 }
 
 /**
+ * Payment method select menu for Top Up flow
+ */
+export function paymentMethodMenu(customId = "shop:topup:method"): ActionRowBuilder<StringSelectMenuBuilder> {
+  const options: APISelectMenuOption[] = [
+    { label: "TrueMoney Wallet", value: "truemoney", description: "ชำระผ่าน TrueMoney Wallet" },
+    { label: "Bank Transfer", value: "bank", description: "โอนเงินผ่านธนาคาร" }
+  ];
+  
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId(customId)
+      .setPlaceholder("เลือกวิธีการชำระเงิน")
+      .addOptions(options)
+  );
+}
+
+/**
+ * Upload slip button for payment confirmation
+ */
+export function uploadSlipButton(orderId?: string): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`shop:topup:slip${orderId ? `:${orderId}` : ""}`)
+      .setLabel("อัปโหลดสลิป")
+      .setStyle(ButtonStyle.Success)
+      .setEmoji("📤")
+  );
+}
+
+/**
  * Product browser components for ephemeral Product Browser message
  * Contains: Product Select Menu + Product List with Price/Stock
  */

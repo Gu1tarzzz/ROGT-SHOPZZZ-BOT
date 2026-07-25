@@ -72,18 +72,21 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
   if (!interaction.guildId) return;
   const guildId = interaction.guildId;
   
+  // Defer reply first to prevent timeout for all sections that do async work
+  await interaction.deferReply({ ephemeral: true });
+  
   // Each management page creates its OWN new embed (not editing existing dashboard)
   if (section === "categories") {
     const categories = await categoryRepository.list(guildId);
     const { embed, components } = categoryManagerEmbed(guildId, categories);
-    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    await interaction.editReply({ embeds: [embed], components });
     return;
   }
   
   if (section === "products") {
     const products = await productRepository.list(guildId);
     const { embed, components } = productManagerEmbed(guildId, products);
-    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    await interaction.editReply({ embeds: [embed], components });
     return;
   }
   
@@ -91,7 +94,7 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
   if (section === "appearance") {
     const settings = await settingsRepository.get(guildId);
     const { embed, components } = designSettingsEmbed(guildId, settings);
-    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    await interaction.editReply({ embeds: [embed], components });
     return;
   }
   
@@ -99,7 +102,7 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
   if (section === "backoffice") {
     const settings = await settingsRepository.get(guildId);
     const { embed, components } = backOfficeDesignEmbed(guildId, settings);
-    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    await interaction.editReply({ embeds: [embed], components });
     return;
   }
   
@@ -107,7 +110,7 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
   if (section === "payment") {
     const settings = await settingsRepository.get(guildId);
     const { embed, components } = paymentDashboardEmbed(guildId, settings);
-    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    await interaction.editReply({ embeds: [embed], components });
     return;
   }
   
@@ -115,7 +118,7 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
   if (section === "bank-setup") {
     const settings = await settingsRepository.get(guildId);
     const { embed, components } = bankSetupEmbed(guildId, settings);
-    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    await interaction.editReply({ embeds: [embed], components });
     return;
   }
   
@@ -125,7 +128,7 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
     const guild = await interaction.client.guilds.fetch(guildId);
     const channels = guild.channels.cache.filter(c => c.isTextBased()).map(c => c as import("discord.js").GuildTextBasedChannel);
     const { embed, components } = notificationSetupEmbed(guildId, settings, Array.from(channels));
-    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    await interaction.editReply({ embeds: [embed], components });
     return;
   }
   
@@ -133,7 +136,7 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
   if (section === "tickets") {
     const settings = await settingsRepository.get(guildId);
     const { embed, components } = ticketSettingsEmbed(guildId, settings);
-    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    await interaction.editReply({ embeds: [embed], components });
     return;
   }
   
@@ -141,14 +144,14 @@ export async function showSetupSection(interaction: StringSelectMenuInteraction,
   if (section === "bot") {
     const settings = await settingsRepository.get(guildId);
     const { embed, components } = botSettingsEmbed(guildId, settings);
-    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    await interaction.editReply({ embeds: [embed], components });
     return;
   }
 
   // User Balance Manager - creates new dedicated embed
   if (section === "user-balance") {
     const { embed, components } = userBalanceManagerEmbed(guildId);
-    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+    await interaction.editReply({ embeds: [embed], components });
     return;
   }
 }

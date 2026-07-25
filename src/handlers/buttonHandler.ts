@@ -95,16 +95,18 @@ export async function handleButton(interaction: ButtonInteraction): Promise<unkn
         return openModal(interaction, "truemoney");
       }
       if (id === "bank") {
+        await interaction.deferReply({ ephemeral: true });
         const settings = await settingsRepository.get(interaction.guildId);
         const { bankSetupEmbed } = await import("../components/setupComponents.js");
         const { embed, components } = bankSetupEmbed(interaction.guildId!, settings);
-        return interaction.reply({ embeds: [embed], components, ephemeral: true });
+        return interaction.editReply({ embeds: [embed], components });
       }
       if (id === "notification") {
+        await interaction.deferReply({ ephemeral: true });
         const settings = await settingsRepository.get(interaction.guildId);
         const { notificationSetupEmbed } = await import("../components/setupComponents.js");
         const { embed, components } = notificationSetupEmbed(interaction.guildId!, settings);
-        return interaction.reply({ embeds: [embed], components, ephemeral: true });
+        return interaction.editReply({ embeds: [embed], components });
       }
     }
     // Bank Edit button - opens modal
